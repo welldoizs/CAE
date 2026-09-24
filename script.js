@@ -198,7 +198,7 @@
   // Desabafos não têm o texto alterado aqui: eles seguem para moderação humana.
   const CHAT_REDACT_TERMS = [
     // Vulgaridades / palavrões em PT-BR
-    'merda','merdinha','merdao','merdão','porra','caralho','cacete','foda','fodase','foda-se',
+    'merda','smt','se mata','merdinha','merdao','merdão','porra','caralho','cacete','foda','fodase','foda-se',
     'foder','fodeu','fode','fodendo','fudendo','fudeu','fude','fudido','fudida','cu','cuzão','cusao',
     'cuzao','cuzona','cuzinho','pau no cu','tomar no cu','vai tomar no cu','vai se foder','vai se fude',
     'vai pro caralho','vai para o caralho','vai a merda','vai à merda','puta','puto','putinha','putão',
