@@ -372,7 +372,7 @@
     'seu palhaco','sua palhaca','seu trouxa','sua trouxa',
     'seu corno','sua corna','seu safado','sua safada',
     'seu vagabundo','sua vagabunda','seu fracassado','sua fracassada',
-    'seu inútil','seu inutil','sua inútil','sua inutil','merda','vtmnc','vtmmc''smt','se mata','merdinha','merdao','merdão','porra','caralho','cacete','foda','fodase','foda-se',
+    'seu inútil','seu inutil','sua inútil','sua inutil','merda','vtmnc','vtmmc','smt','se mata','merdinha','merdao','merdão','porra','caralho','cacete','foda','fodase','foda-se',
     'foder','fodeu','fode','fodendo','fudendo','fudeu','fude','fudido','fudida','cu','cuzão','cusao',
     'cuzao','cuzona','cuzinho','pau no cu','tomar no cu','vai tomar no cu','vai se foder','vai se fude',
     'vai pro caralho','vai para o caralho','vai a merda','vai à merda','puta','puto','putinha','putão',
