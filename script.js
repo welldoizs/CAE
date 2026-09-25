@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const SUPABASE_URL = 'https://kigljplotmlzeiivmq.supabase.co';
+  const SUPABASE_URL = 'https://kigljplotmlzeiivrymq.supabase.co/rest/v1/';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_sS5QFRQeYl1uJXXzfyJdxw_ZjVO3vn4';
 
   const TABLE = Object.freeze({
