@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CAE — Centro de Acolhimento Estudantil">
+  <title>CAE — Centro de Acolhimento Estudantil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+<!-- CAE — HTML PARA O PAINEL HTML DO CODEPEN.
+     Supabase e Lucide já estão carregados neste próprio HTML; não adicione cópias extras no painel JS.
+-->
+<section id="auth-screen" class="auth-screen">
+    <div class="auth-shell">
+      <div class="auth-hero">
+        <div class="auth-visual" aria-hidden="true">
+          <div class="visual-glow visual-glow-a"></div>
+          <div class="visual-glow visual-glow-b"></div>
+          <div class="visual-card visual-card-main">
+            <span class="visual-card-kicker">CAE · acolhimento</span>
+            <strong>Um espaço para<br>ser ouvido.</strong>
+            <span class="visual-card-line"></span>
+            <span class="visual-card-small">privacidade · escuta · comunidade</span>
+          </div>
+          <div class="visual-card visual-card-float">
+            <i data-lucide="message-circle-heart"></i>
+            <span>Você pode começar<br>pelo que conseguir.</span>
+          </div>
+          <div class="visual-orbit visual-orbit-1"></div>
+          <div class="visual-orbit visual-orbit-2"></div>
+        </div>
+        <div class="auth-copy">
+          <div class="brand"><span class="brand-mark"><i data-lucide="heart-handshake"></i></span><span>CAE</span></div>
+          <h1>Você não precisa passar por tudo sozinho.</h1>
+          <p>Um espaço estudantil para conversar, desabafar, compartilhar ideias e encontrar caminhos de apoio.</p>
+        </div>
+        <div class="auth-note"><i data-lucide="shield-check"></i><span>Use um apelido público no CAE. Seu e-mail permanece ligado à sua conta, mas não aparece nas conversas.</span></div>
+      </div>
+      <div class="auth-panel">
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="auth-tab-login" type="button">Entrar</button>
+          <button class="auth-tab" id="auth-tab-signup" type="button">Criar conta</button>
+        </div>
+
+        <form id="login-form">
+          <h2>Bem-vindo de volta</h2>
+          <p class="muted">Entre para acessar o espaço do CAE.</p>
+          <div class="field"><label for="login-email">E-mail escolar</label><input id="login-email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required></div>
+          <div class="field"><label for="login-password">Senha</label><input id="login-password" type="password" autocomplete="current-password" required></div>
+          <div id="login-status" aria-live="polite" aria-atomic="true"></div>
+          <div class="auth-actions">
+            <button class="btn primary" id="login-button" type="submit"><i data-lucide="log-in"></i>Entrar</button>
+            <button class="btn secondary" id="magic-button" type="button"><i data-lucide="mail"></i>Entrar por link de e-mail</button>
+            <button class="btn ghost" id="forgot-button" type="button">Esqueci minha senha</button>
+          </div>
+        </form>
+
+        <form id="signup-form" class="hidden">
+          <h2>Crie sua conta</h2>
+          <p class="muted">Seu nome público é gerado automaticamente para preservar sua privacidade.</p>
+          <div class="field"><label for="signup-email">E-mail escolar</label><input id="signup-email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required></div>
+          <div class="field"><label for="signup-password">Senha</label><input id="signup-password" type="password" minlength="6" autocomplete="new-password" required></div>
+          <div id="signup-status" aria-live="polite" aria-atomic="true"></div>
+          <div class="auth-actions">
+            <button class="btn primary" id="signup-button" type="submit"><i data-lucide="user-plus"></i>Criar conta</button>
+            <button class="btn secondary hidden" id="resend-confirmation" type="button"><i data-lucide="mail-check"></i>Reenviar confirmação</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="app-ambient ambient-a"></div><div class="app-ambient ambient-b"></div>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <button id="brand-home" class="brand-button" type="button">
+          <span class="brand"><span class="brand-mark"><i data-lucide="heart-handshake"></i></span><span>CAE</span></span>
+        </button>
+        <nav class="nav" aria-label="Navegação principal">
+          <button type="button" data-view="home-view"><i data-lucide="house"></i>Início</button>
+          <button type="button" data-view="chat-view"><i data-lucide="messages-square"></i>Chat</button>
+          <button type="button" data-view="desabafo-view"><i data-lucide="notebook-pen"></i>Desabafo</button>
+          <button type="button" data-view="public-vents-view" class="nav-highlight"><i data-lucide="heart-handshake"></i>Desabafos</button>
+          <button type="button" data-view="mural-view"><i data-lucide="layout-dashboard"></i>Mural</button>
+          <button type="button" data-view="history-view"><i data-lucide="history"></i>Histórico</button>
+          <button type="button" data-view="help-view"><i data-lucide="life-buoy"></i>Ajuda</button>
+          <button type="button" data-view="account-view"><i data-lucide="user-round"></i>Conta</button>
+          <button type="button" id="nav-admin" class="hidden" data-view="admin-view"><i data-lucide="shield"></i>Admin</button>
+        </nav>
+        <div class="top-actions"><span class="session-pill"><span class="session-dot"></span>Conta protegida</span><button class="btn secondary" id="logout-button" type="button"><i data-lucide="log-out"></i><span class="desktop-only">Sair</span></button></div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section id="home-view" class="view active">
+        <div class="hero">
+          <div class="hero-card hero-main-card">
+            <div class="hero-main-decoration" aria-hidden="true"><span></span><span></span><span></span></div>
+            <div class="eyebrow">Centro de Acolhimento Estudantil</div>
+            <h2>Um canto para respirar, conversar e ser ouvido.</h2>
+            <p class="muted">Aqui você pode conversar com outros estudantes, escrever o que está sentindo e encontrar recursos de apoio.</p>
+            <div class="actions">
+              <button class="btn primary" type="button" data-open-view="desabafo-view"><i data-lucide="pen-line"></i>Escrever um desabafo</button>
+              <button class="btn secondary" type="button" data-open-view="chat-view"><i data-lucide="message-circle"></i>Entrar no chat</button>
+            </div>
+          </div>
+          <aside class="hero-side">
+            <div class="eyebrow">Hoje</div>
+            <h3>Pequeno passo também conta.</h3>
+            <p class="muted">Você não precisa explicar tudo de uma vez. Comece pelo que for mais fácil.</p>
+            <div id="home-daily-note" class="notice">O CAE está aqui para ser um espaço de acolhimento, não de julgamento.</div>
+          </aside>
+        </div>
+
+        <div class="section-head"><div><div class="eyebrow">Atalhos</div><h2>O que você quer fazer?</h2></div></div>
+        <div class="quick-grid">
+          <button class="quick quick-featured" type="button" data-open-view="public-vents-view"><span class="quick-icon"><i data-lucide="heart-handshake"></i></span><span><strong>Ouvir a comunidade</strong><br><span class="muted">Desabafos aprovados, publicados para todos.</span></span></button>
+          <button class="quick" type="button" data-open-view="desabafo-view"><span class="quick-icon"><i data-lucide="notebook-pen"></i></span><span><strong>Desabafar</strong><br><span class="muted">Texto, perguntas, sentimentos ou áudio.</span></span></button>
+          <button class="quick" type="button" data-open-view="chat-view"><span class="quick-icon"><i data-lucide="messages-square"></i></span><span><strong>Conversar</strong><br><span class="muted">Participar do chat estudantil.</span></span></button>
+          <button class="quick" type="button" data-open-view="mural-view"><span class="quick-icon"><i data-lucide="layout-dashboard"></i></span><span><strong>Ver o mural</strong><br><span class="muted">Avisos, eventos, posts e enquetes.</span></span></button>
+          <button class="quick" type="button" data-open-view="help-view"><span class="quick-icon"><i data-lucide="life-buoy"></i></span><span><strong>Buscar ajuda</strong><br><span class="muted">Contatos e orientações de apoio.</span></span></button>
+        </div>
+      </section>
+
+      <section id="chat-view" class="view">
+        <div class="section-head"><div><div class="eyebrow">Conversa estudantil</div><h2>Chat</h2><p class="muted">Use o nome público mostrado pelo CAE e trate as outras pessoas com respeito.</p></div></div>
+        <div class="chat-layout">
+          <div class="card">
+            <div id="chat-error"></div>
+            <div id="chat-messages" class="chat-box"></div>
+            <form id="chat-form" class="chat-form">
+              <textarea id="chat-input" maxlength="1500" placeholder="Escreva uma mensagem..." aria-label="Mensagem"></textarea>
+              <button class="btn primary" id="chat-send" type="submit"><i data-lucide="send"></i>Enviar</button>
+            </form>
+            <div class="chat-under-actions">
+              <button class="btn ghost" id="chat-rules-button" type="button"><i data-lucide="shield-check"></i>Ver regras do chat</button>
+              <p class="cae-muted">Dica: Ctrl/Cmd + Enter envia a mensagem.</p>
+            </div>
+          </div>
+          <aside class="card">
+            <div class="eyebrow">Convivência</div>
+            <h3>Faça do chat um lugar seguro.</h3>
+            <p class="muted">Não compartilhe senhas, endereço, telefone ou outros dados pessoais. Use o botão <b>Denunciar</b> quando uma mensagem precisar de moderação.</p>
+            <div class="notice"><b>O chat não substitui atendimento profissional.</b><br><span class="muted">Para apoio imediato, veja a página Ajuda.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="desabafo-view" class="view">
+        <div class="section-head"><div><div class="eyebrow">Espaço seguro</div><h2>Desabafo</h2><p class="muted">Escolha o formato que combina melhor com o que você consegue colocar em palavras hoje.</p></div></div><div class="notice" style="margin-bottom:14px"><b>Escolha a privacidade:</b> desabafos públicos passam por moderação e, se aprovados, aparecem em <b>Desabafos</b>. Desabafos privados não são publicados e ficam acessíveis somente para você e administradores.</div>
+        <div class="card vent-privacy-selector">
+          <div class="eyebrow">Escolha a privacidade</div>
+          <h3>Quem poderá acessar este desabafo?</h3>
+          <div class="vent-visibility-grid" role="group" aria-label="Privacidade do desabafo">
+            <button class="option vent-visibility-option active" type="button" data-vent-visibility="public" aria-pressed="true">
+              <i data-lucide="globe-2"></i><span><b>Público</b><small>Após aprovação, aparece para todos na área Desabafos.</small></span>
+            </button>
+            <button class="option vent-visibility-option" type="button" data-vent-visibility="private" aria-pressed="false">
+              <i data-lucide="lock-keyhole"></i><span><b>Privado</b><small>Somente você e administradores terão acesso. Não fica público.</small></span>
+            </button>
+          </div>
+          <p id="vent-visibility-help" class="cae-muted vent-visibility-help">Depois de aprovado, fica disponível para todos na área Desabafos.</p>
+        </div>
+
+        <div class="composer-grid">
+          <button class="option" data-compose="free" type="button"><i data-lucide="pen-line"></i><span><b>Texto livre</b><small>Escreva sem roteiro.</small></span></button>
+          <button class="option" data-compose="guided" type="button"><i data-lucide="list-question"></i><span><b>Perguntas guiadas</b><small>Uma pergunta por vez.</small></span></button>
+          <button class="option" data-compose="feelings" type="button"><i data-lucide="heart"></i><span><b>Como eu me sinto</b><small>Comece por uma frase.</small></span></button>
+          <button class="option" data-compose="audio" type="button"><i data-lucide="mic"></i><span><b>Áudio</b><small>Fale em vez de escrever.</small></span></button>
+        </div>
+
+        <div id="compose-free" class="compose card hidden">
+          <div class="eyebrow">Texto livre</div><h3>Escreva do seu jeito.</h3>
+          <textarea id="free-text" maxlength="2000" placeholder="Pode começar por “Hoje eu...”"></textarea>
+          <div class="section-head"><span id="free-counter" class="cae-muted">0 / 2000</span><button class="btn primary" id="send-free" type="button"><i data-lucide="send"></i>Enviar</button></div>
+        </div>
+
+        <div id="compose-guided" class="compose card hidden">
+          <div class="eyebrow" id="guided-progress">PERGUNTA 1 DE 4</div>
+          <div class="progress"><span id="guided-progress-bar" style="width:25%"></span></div>
+          <h3 id="guided-question"></h3>
+          <textarea id="guided-answer" maxlength="1200" placeholder="Escreva o que vier à mente..."></textarea>
+          <div class="actions"><button class="btn secondary" id="guided-back" type="button">Voltar</button><button class="btn primary" id="guided-next" type="button">Próxima</button></div>
+        </div>
+
+        <div id="compose-feelings" class="compose card hidden">
+          <div class="eyebrow">Como eu me sinto</div><h3>Qual frase chega mais perto?</h3>
+          <div id="feelings-list" class="admin-list"></div>
+          <div id="feeling-area" class="hidden" style="margin-top:14px">
+            <div class="notice"><b id="selected-feeling"></b></div>
+            <textarea id="feeling-text" maxlength="1600" placeholder="Quer contar um pouco mais?"></textarea>
+            <div class="actions"><button class="btn primary" id="send-feeling" type="button"><i data-lucide="send"></i>Enviar</button></div>
+          </div>
+        </div>
+
+        <div id="compose-audio" class="compose card hidden">
+          <div class="eyebrow">Áudio</div><h3>Fale o que você precisa colocar para fora.</h3>
+          <p id="record-status" class="muted">Pronto para gravar.</p>
+          <div class="actions">
+            <button class="btn primary" id="record-start" type="button"><i data-lucide="mic"></i>Começar</button>
+            <button class="btn secondary" id="record-stop" type="button" disabled><i data-lucide="square"></i>Parar</button>
+            <button class="btn secondary" id="record-clear" type="button" disabled>Apagar gravação</button>
+            <button class="btn primary" id="record-send" type="button" disabled><i data-lucide="upload"></i>Enviar áudio</button>
+          </div>
+          <audio id="audio-preview" class="audio-preview hidden" controls></audio>
+        </div>
+
+        <div class="card" style="margin-top:18px">
+          <div class="eyebrow">Privacidade</div><h3>Seu histórico é seu.</h3>
+          <p class="muted">Desabafos públicos ficam aguardando moderação antes de aparecer para a comunidade. Desabafos privados nunca entram na área pública e ficam acessíveis somente para você e administradores. Você pode acompanhar o status e excluir seus próprios registros na página Histórico.</p>
+        </div>
+      </section>
+
+      <section id="public-vents-view" class="view">
+        <div class="public-vents-hero">
+          <div class="public-vents-hero-copy">
+            <div class="eyebrow">O coração do CAE</div>
+            <h2>Desabafos</h2>
+            <p>Um espaço para ouvir o que outros estudantes estão vivendo. Aqui ficam apenas desabafos revisados e aprovados pela moderação.</p>
+            <div class="actions">
+              <button class="btn primary" type="button" data-open-view="desabafo-view"><i data-lucide="pen-line"></i>Fazer um desabafo</button>
+              <span class="public-vents-safe"><i data-lucide="shield-check"></i>Conteúdo revisado antes de ser publicado</span>
+            </div>
+          </div>
+          <div class="public-vents-orbit" aria-hidden="true">
+            <div class="public-vents-heart"><i data-lucide="heart-handshake"></i></div>
+            <span class="public-vents-orbit-dot dot-a"></span><span class="public-vents-orbit-dot dot-b"></span><span class="public-vents-orbit-dot dot-c"></span>
+          </div>
+        </div>
+        <div class="section-head public-vents-heading"><div><div class="eyebrow">Para a comunidade</div><h2>Vozes do CAE</h2><p class="muted">Leia, respire e lembre que você não está sozinho. O e-mail de ninguém é exibido aqui.</p></div></div>
+        <div id="public-vent-list" class="public-vent-feed"></div>
+      </section>
+
+      <section id="mural-view" class="view">
+        <div class="section-head"><div><div class="eyebrow">Comunidade</div><h2>Mural</h2><p class="muted">Veja o que está acontecendo no CAE e participe quando fizer sentido.</p></div></div>
+        <div class="tabs">
+          <button class="tab active" data-panel="announcements" type="button">Avisos</button>
+          <button class="tab" data-panel="events" type="button">Eventos</button>
+          <button class="tab" data-panel="posts" type="button">Publicações</button>
+          <button class="tab" data-panel="polls" type="button">Enquetes</button>
+        </div>
+        <div id="panel-announcements" class="panel active"><div id="announcement-list" class="admin-list"></div></div>
+        <div id="panel-events" class="panel"><div id="event-list" class="admin-list"></div></div>
+        <div id="panel-posts" class="panel">
+          <div class="card" style="margin-bottom:14px">
+            <div class="eyebrow">Compartilhe</div><h3>Crie uma publicação.</h3>
+            <div class="grid-2">
+              <div class="field"><label for="post-category">Categoria</label><select id="post-category"><option>Geral</option><option>Escola</option><option>Ideias</option><option>Eventos</option><option>Convivência</option><option>Ajuda</option></select></div>
+              <div class="field"><label for="post-body">Texto</label><textarea id="post-body" maxlength="2000" placeholder="Escreva algo para o mural..."></textarea></div>
+            </div>
+            <div id="post-status"></div><div class="actions"><button class="btn primary" id="post-send" type="button"><i data-lucide="send"></i>Enviar para moderação</button></div>
+          </div>
+          <div id="post-list" class="admin-list"></div>
+        </div>
+        <div id="panel-polls" class="panel"><div id="poll-list" class="admin-list"></div></div>
+      </section>
+
+      <section id="history-view" class="view">
+        <div class="section-head"><div><div class="eyebrow">Somente você</div><h2>Histórico</h2><p class="muted">Seus desabafos ficam aqui para você revisitar quando quiser.</p></div></div>
+        <div id="history-list" class="admin-list"></div>
+      </section>
+
+      <section id="help-view" class="view">
+        <div class="section-head"><div><div class="eyebrow">Apoio</div><h2>Ajuda e contatos</h2><p class="muted">O CAE pode acolher, mas não substitui profissionais e serviços de emergência. Em risco imediato, procure ajuda presencial.</p></div></div>
+        <div class="help-grid help-grid-wide">
+          <div class="help-card help-card-featured"><div class="eyebrow">CVV</div><h3>Conversa e apoio emocional</h3><p class="muted">Apoio emocional gratuito e sigiloso.</p><strong>188</strong><a href="https://cvv.org.br/" target="_blank" rel="noopener noreferrer">Site do CVV</a></div>
+          <div class="help-card"><div class="eyebrow">SAMU</div><h3>Urgência médica</h3><p class="muted">Para urgências e emergências médicas.</p><strong>192</strong></div>
+          <div class="help-card"><div class="eyebrow">Polícia</div><h3>Emergência de segurança</h3><p class="muted">Para crimes em andamento ou risco imediato.</p><strong>190</strong></div>
+          <div class="help-card"><div class="eyebrow">Bombeiros</div><h3>Emergências e resgate</h3><p class="muted">Incêndios, acidentes e situações de resgate.</p><strong>193</strong></div>
+          <div class="help-card"><div class="eyebrow">Disque 100</div><h3>Direitos humanos</h3><p class="muted">Recebe denúncias de violações de direitos, inclusive contra crianças e adolescentes. Gratuito e 24 horas.</p><strong>100</strong><a href="https://www.gov.br/mdh/pt-br/assuntos/noticias/2026/defeso-eleitoral/julho/saiba-quando-e-como-acionar-o-disque-100" target="_blank" rel="noopener noreferrer">Informações oficiais</a></div>
+          <div class="help-card"><div class="eyebrow">Ligue 180</div><h3>Violência contra a mulher</h3><p class="muted">Orientação, acolhimento e denúncia. Atendimento gratuito, 24 horas.</p><strong>180</strong><a href="https://www.gov.br/mulheres/pt-br/ligue180" target="_blank" rel="noopener noreferrer">Site oficial</a></div>
+          <div class="help-card"><div class="eyebrow">Sistema IPÊ</div><h3>Denúncia de trabalho infantil</h3><p class="muted">Canal do Ministério do Trabalho e Emprego para denúncias de trabalho infantil.</p><a href="https://ipetrabalhoinfantil.trabalho.gov.br/" target="_blank" rel="noopener noreferrer">Abrir Sistema IPÊ</a></div>
+          <div class="help-card"><div class="eyebrow">Na escola</div><h3>Pessoa de confiança</h3><p class="muted">Procure um responsável, professor, orientador, psicólogo escolar ou outro adulto de confiança quando precisar de apoio presencial.</p></div>
+        </div>
+        <div class="card" style="margin-top:16px"><div class="notice"><b>Em risco imediato?</b> Use o serviço de emergência adequado e procure uma pessoa de confiança perto de você. O CAE não é um serviço de emergência.</div></div>
+      </section>
+
+      <section id="account-view" class="view">
+        <div class="section-head"><div><div class="eyebrow">Sua conta</div><h2>Conta</h2></div></div>
+        <div class="card profile-card">
+          <div id="account-avatar" class="profile-mark">CA</div>
+          <div><h3 id="account-name">Estudante</h3><p id="account-public-id" class="cae-muted">Seu ID público: #------</p><p id="account-email" class="muted"></p><p class="cae-muted">Use esse ID nas áreas de moderação do CAE. Ele não revela seu e-mail.</p></div>
+        </div>
+        <div class="grid-2" style="margin-top:16px">
+          <div class="card"><div class="eyebrow">Privacidade</div><h3>O que fica privado?</h3><p class="muted">Seu e-mail não é mostrado no Mural, nos Desabafos públicos nem no chat. Desabafos aprovados usam apenas seu ID público.</p></div>
+          <div class="card"><div class="eyebrow">Sessão</div><h3>Quer sair?</h3><p class="muted">Use o botão Sair no topo. Seu acesso pode ser reaberto pelo login.</p><button class="btn secondary" type="button" data-action="logout">Sair da conta</button></div>
+        </div>
+      </section>
+
+      <section id="admin-view" class="view">
+        <div class="section-head"><div><div class="eyebrow">Moderação</div><h2>Painel administrativo</h2><p class="muted">Área visível somente para contas com papel de administrador ou moderador.</p></div></div>
+        <div class="stats">
+          <div class="stat"><div class="muted">Aprovadas</div><div id="stat-approved" class="stat-value">0</div></div>
+          <div class="stat"><div class="muted">Pendentes</div><div id="stat-pending" class="stat-value">0</div></div>
+          <div class="stat"><div class="muted">Desabafos</div><div id="stat-vents" class="stat-value">0</div></div>
+          <div class="stat"><div class="muted">Denúncias</div><div id="stat-reports" class="stat-value">0</div></div>
+        </div>
+        <div class="admin-grid">
+          <div class="card">
+            <div class="eyebrow">Publicar aviso</div><h3>Novo aviso</h3>
+            <form id="announcement-form"><div class="field"><label for="announcement-title">Título</label><input id="announcement-title" required maxlength="200"></div><div class="field"><label for="announcement-body">Texto</label><textarea id="announcement-body" required maxlength="4000"></textarea></div><button class="btn primary" type="submit">Publicar aviso</button></form>
+          </div>
+          <div class="card">
+            <div class="eyebrow">Publicar evento</div><h3>Novo evento</h3>
+            <form id="event-form"><div class="field"><label for="event-title">Título</label><input id="event-title" required maxlength="200"></div><div class="grid-2"><div class="field"><label for="event-date">Data</label><input id="event-date" type="date" required></div><div class="field"><label for="event-time">Hora</label><input id="event-time" type="time" required></div></div><div class="field"><label for="event-place">Local</label><input id="event-place" required maxlength="200"></div><div class="field"><label for="event-description">Descrição</label><textarea id="event-description" required maxlength="3000"></textarea></div><button class="btn primary" type="submit">Publicar evento</button></form>
+          </div>
+          <div class="card admin-user-card">
+            <div class="eyebrow">Contas e moderação</div>
+            <h3>Gerenciar uma conta</h3>
+            <p class="muted">Digite o ID público exato da conta. Exemplo: <b>#EstudanteABC123</b>. Administradores podem alterar o cargo; admin e moderador podem aplicar moderação.</p>
+            <div class="field"><label for="admin-user-identifier">ID público da conta</label><input id="admin-user-identifier" type="text" autocomplete="off" placeholder="#EstudanteABC123" maxlength="80"></div>
+            <div class="grid-2 admin-user-grid">
+              <div class="field"><label for="admin-user-role">Cargo</label><select id="admin-user-role"><option value="student">Estudante</option><option value="moderator">Moderador</option><option value="admin">Administrador</option></select></div>
+              <div class="field"><label for="admin-timeout-duration">Timeout</label><select id="admin-timeout-duration"><option value="10">10 minutos</option><option value="30">30 minutos</option><option value="60">1 hora</option><option value="1440">24 horas</option><option value="10080">7 dias</option></select></div>
+            </div>
+            <div class="actions admin-user-actions">
+              <button class="btn primary" id="admin-role-button" type="button" data-user-action="set-role">Salvar cargo</button>
+              <button class="btn secondary" type="button" data-user-moderation="timeout">Dar timeout</button>
+              <button class="btn secondary" type="button" data-user-moderation="clear_timeout">Remover timeout</button>
+              <button class="btn danger" type="button" data-user-moderation="ban">Bloquear conta</button>
+              <button class="btn ghost" type="button" data-user-moderation="unban">Desbloquear conta</button>
+            </div>
+            <div class="notice admin-user-note"><b>Como funciona:</b> “Ocultar” remove o texto do chat para os alunos; timeout impede novas mensagens; bloqueio impede o acesso ao CAE após a sessão ser revalidada.</div>
+          </div>
+          <div class="card"><div class="eyebrow">Moderação</div><h3>Posts pendentes</h3><div id="admin-post-list" class="admin-list"></div></div><div class="card"><div class="eyebrow">Moderação</div><h3>Desabafos pendentes</h3><p class="cae-muted">Públicos passam pela moderação normal. Privados aparecem nesta fila somente para administradores e nunca são publicados para a comunidade.</p><div id="admin-vent-list" class="admin-list"></div></div>
+          <div class="card hidden" id="admin-private-vents-card"><div class="eyebrow">Somente administradores</div><h3>Desabafos privados</h3><p class="cae-muted">Este conteúdo nunca é publicado e não fica disponível para moderadores. Aqui aparecem os privados pendentes, aprovados ou recusados.</p><div id="admin-private-vent-list" class="admin-list"></div></div>
+          <div class="card"><div class="eyebrow">Moderação</div><h3>Denúncias</h3><div id="admin-report-list" class="admin-list"></div></div>
+          <div class="card" id="poll-admin-card-placeholder">
+            <div class="eyebrow">Enquetes</div><h3>Nova enquete</h3>
+            <form id="poll-form">
+              <div class="field"><label for="poll-question">Pergunta</label><input id="poll-question" required maxlength="300" placeholder="O que a escola deveria melhorar?"></div>
+              <div class="field"><label>Opções</label><input class="poll-option-input" required maxlength="120" placeholder="Opção 1"><input class="poll-option-input" required maxlength="120" placeholder="Opção 2"><input class="poll-option-input" maxlength="120" placeholder="Opção 3"><input class="poll-option-input" maxlength="120" placeholder="Opção 4"></div>
+              <div class="field"><label for="poll-closes">Encerramento (opcional)</label><input id="poll-closes" type="datetime-local"></div>
+              <div class="actions"><button class="btn primary" type="submit"><i data-lucide="bar-chart-3"></i>Publicar enquete</button></div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="app-footer"><span>CAE · Centro de Acolhimento Estudantil</span><span>Um espaço de acolhimento, não de julgamento.</span></footer>
+  </section>
+
+  <div id="chat-rules-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="chat-rules-title">
+    <div class="modal-card">
+      <div class="modal-head"><div><div class="eyebrow">Convivência</div><h3 id="chat-rules-title">Regras do chat</h3></div><button class="icon-btn" id="chat-rules-close" type="button" aria-label="Fechar">×</button></div>
+      <p class="muted">Antes de enviar, confirme que você entendeu estas regras:</p>
+      <div class="rules-list">
+        <div><span>01</span><p>Trate outras pessoas com respeito. Nada de ameaças, perseguição, humilhação ou discriminação.</p></div>
+        <div><span>02</span><p>Não compartilhe senhas, endereço, telefone, documentos ou outros dados pessoais.</p></div>
+        <div><span>03</span><p>Não envie conteúdo sexual, pedidos de nudes, spam ou mensagens feitas para provocar ou atrapalhar o chat.</p></div>
+        <div><span>04</span><p>O CAE pode ocultar ou remover mensagens e aplicar timeout ou bloqueio quando necessário.</p></div>
+        <div><span>05</span><p>Use <b>Denunciar</b> quando uma mensagem precisar da atenção da moderação.</p></div>
+      </div>
+      <label class="check-row"><input id="chat-rules-never" type="checkbox"><span>Não mostrar estas regras novamente neste dispositivo.</span></label>
+      <div id="chat-rules-status"></div>
+      <div class="actions"><button class="btn primary" id="chat-rules-accept" type="button">Li e aceito as regras</button><button class="btn secondary" id="chat-rules-cancel" type="button">Cancelar</button></div>
+    </div>
+  </div>
+
+  <div id="password-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="password-modal-title">
+    <div class="modal-card">
+      <div class="modal-head"><div><div class="eyebrow">Segurança</div><h3 id="password-modal-title">Criar nova senha</h3></div><button class="icon-btn" id="password-modal-close" type="button" aria-label="Fechar">×</button></div>
+      <p class="muted">Escolha uma nova senha com pelo menos 6 caracteres.</p>
+      <form id="password-form">
+        <div class="field"><label for="new-password">Nova senha</label><input id="new-password" type="password" minlength="6" autocomplete="new-password" required></div>
+        <div class="field"><label for="new-password-confirm">Repita a senha</label><input id="new-password-confirm" type="password" minlength="6" autocomplete="new-password" required></div>
+        <div id="password-status"></div>
+        <div class="actions"><button class="btn primary" type="submit">Salvar nova senha</button><button class="btn secondary" id="password-modal-cancel" type="button">Cancelar</button></div>
+      </form>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
