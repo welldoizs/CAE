@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CAE — Centro de Acolhimento Estudantil">
+  <title>CAE — Centro de Acolhimento Estudantil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <link rel="preconnect" href="https://challenges.cloudflare.com">
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
+</head>
+<body>
+<!-- CAE — HTML PARA O PAINEL HTML DO CODEPEN.
+     Supabase e Lucide já estão carregados neste próprio HTML; não adicione cópias extras no painel JS.
+-->
+<section id="auth-screen" class="auth-screen">
+    <div class="auth-shell">
+      <div class="auth-hero">
+        <div class="auth-visual" aria-hidden="true">
+          <div class="visual-glow visual-glow-a"></div>
+          <div class="visual-glow visual-glow-b"></div>
+          <div class="visual-card visual-card-main">
+            <span class="visual-card-kicker">CAE · apoio estudantil</span>
+            <strong>Informação, conversa<br>e acolhimento.</strong>
+            <span class="visual-card-line"></span>
+            <span class="visual-card-small">privacidade · escuta · comunidade</span>
+          </div>
+          <div class="visual-card visual-card-float">
+            <i data-lucide="message-circle"></i>
+            <span>Você pode começar<br>pelo que conseguir.</span>
+          </div>
+          <div class="visual-orbit visual-orbit-1"></div>
+          <div class="visual-orbit visual-orbit-2"></div>
+        </div>
+        <div class="auth-copy">
+          <div class="brand"><span class="brand-mark"><i data-lucide="heart-handshake"></i></span><span>CAE</span></div>
+          <h1>Você não precisa passar por tudo sozinho.</h1>
+          <p>Um espaço estudantil para conversar, desabafar, compartilhar ideias e encontrar caminhos de apoio.</p>
+        </div>
+        <div class="auth-note"><i data-lucide="shield-check"></i><span>Use um apelido público no CAE. Seu e-mail permanece ligado à sua conta, mas não aparece nas conversas.</span></div>
+      </div>
+      <div class="auth-panel">
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="auth-tab-login" type="button">Entrar</button>
+          <button class="auth-tab" id="auth-tab-signup" type="button">Criar conta</button>
+        </div>
+
+        <form id="login-form">
+          <h2>Bem-vindo de volta</h2>
+          <p class="muted">Entre para acessar o espaço do CAE.</p>
+          <div class="field"><label for="login-email">E-mail escolar</label><input id="login-email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required></div>
+          <div class="field"><label for="login-password">Senha</label><input id="login-password" type="password" autocomplete="current-password" required></div>
+          <div class="cf-turnstile captcha-box" data-sitekey="0x4AAAAAAFOaueIKluQCdwZq" data-theme="light" data-size="compact" aria-label="Verificação de segurança"></div>
+          <div id="login-status" aria-live="polite" aria-atomic="true"></div>
+          <div class="auth-actions">
+            <button class="btn primary" id="login-button" type="submit"><i data-lucide="log-in"></i>Entrar</button>
+            <button class="btn secondary" id="magic-button" type="button"><i data-lucide="mail"></i>Entrar por link de e-mail</button>
+            <button class="btn ghost" id="forgot-button" type="button">Esqueci minha senha</button>
+          </div>
+        </form>
+
+        <form id="signup-form" class="hidden">
+          <h2>Crie sua conta</h2>
+          <p class="muted">Seu nome público é gerado automaticamente para preservar sua privacidade.</p>
+          <div class="field"><label for="signup-email">E-mail escolar</label><input id="signup-email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required></div>
+          <div class="field"><label for="signup-password">Senha</label><input id="signup-password" type="password" minlength="6" autocomplete="new-password" required></div>
+          <div class="cf-turnstile captcha-box" data-sitekey="0x4AAAAAAFOaueIKluQCdwZq" data-theme="light" data-size="compact" aria-label="Verificação de segurança"></div>
+          <div id="signup-status" aria-live="polite" aria-atomic="true"></div>
+          <div class="auth-actions">
+            <button class="btn primary" id="signup-button" type="submit"><i data-lucide="user-plus"></i>Criar conta</button>
+            <button class="btn secondary hidden" id="resend-confirmation" type="button"><i data-lucide="mail-check"></i>Reenviar confirmação</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="app-ambient ambient-a"></div><div class="app-ambient ambient-b"></div>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <button id="brand-home" class="brand-button" type="button">
+          <span class="brand"><span class="brand-mark"><i data-lucide="heart-handshake"></i></span><span>CAE</span></span>
+        </button>
+        <nav class="nav" aria-label="Navegação principal">
+          <button type="button" data-view="home-view"><i data-lucide="house"></i>Início</button>
+          <button type="button" data-view="chat-view"><i data-lucide="messages-square"></i>Chat</button>
+          <button type="button" data-view="desabafo-view"><i data-lucide="notebook-pen"></i>Desabafos</button>
+          <button type="button" data-view="mural-view"><i data-lucide="layout-dashboard"></i>Mural</button>
+          <button type="button" data-view="history-view"><i data-lucide="history"></i>Histórico</button>
+          <button type="button" data-view="help-view"><i data-lucide="life-buoy"></i>Ajuda</button>
+          <button type="button" data-view="account-view"><i data-lucide="user-round"></i>Conta</button>
+          <button type="button" id="nav-admin" class="hidden" data-view="admin-view"><i data-lucide="shield"></i>Moderação</button>
+        </nav>
+        <div class="top-actions">
+          <div class="notification-shell">
+            <button class="notification-button" id="notifications-button" type="button" aria-label="Notificações" aria-expanded="false">
+              <i data-lucide="bell"></i><span id="notifications-badge" class="notification-badge hidden">0</span>
+            </button>
+            <div id="notifications-panel" class="notification-panel hidden" aria-label="Central de notificações">
+              <div class="notification-panel-head"><div><div class="eyebrow">Central</div><h3>Notificações</h3></div><button class="btn ghost btn-small" id="notifications-mark-read" type="button">Marcar todas como lidas</button></div>
+              <div id="notifications-list" class="notifications-list"><div class="notification-empty">Nenhuma notificação nova.</div></div>
+            </div>
+          </div>
+          <span class="session-pill"><span class="session-dot"></span>Conta protegida</span>
+          <button class="btn secondary" id="logout-button" type="button"><i data-lucide="log-out"></i><span class="desktop-only">Sair</span></button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section id="home-view" class="view active">
+        <div class="home-simple-head">
+          <div>
+            <div class="eyebrow">Centro de Acolhimento Estudantil</div>
+            <h2>Um espaço para você.</h2>
+            <p class="muted">Desabafe, converse, acompanhe o mural ou encontre ajuda quando precisar.</p>
+          </div>
+          <div class="actions home-simple-actions">
+            <button class="btn primary" type="button" data-open-view="desabafo-view"><i data-lucide="pen-line"></i>Desabafar</button>
+            <button class="btn secondary" type="button" data-open-view="mural-view"><i data-lucide="layout-dashboard"></i>Ver mural</button>
+          </div>
+        </div>
+
+        <section class="tutorial-video-card" aria-labelledby="tutorial-video-title">
+          <div class="tutorial-video-screen">
+            <div class="tutorial-video-placeholder">
+              <span class="tutorial-play"><i data-lucide="play"></i></span>
+              <strong id="tutorial-video-title">Tutorial do CAE</strong>
+              <span>O vídeo de apresentação será colocado aqui.</span>
+            </div>
+          </div>
+        </section>
+
+        <div class="home-shortcuts">
+          <button type="button" data-open-view="chat-view"><i data-lucide="messages-square"></i><span><strong>Chat</strong><small>Converse com outros estudantes.</small></span></button>
+          <button type="button" data-open-view="history-view"><i data-lucide="history"></i><span><strong>Histórico</strong><small>Veja seus desabafos e status.</small></span></button>
+          <button type="button" data-open-view="help-view"><i data-lucide="life-buoy"></i><span><strong>Ajuda</strong><small>Encontre canais de apoio.</small></span></button>
+        </div>
+
+        <div id="home-help-note" class="notice home-simple-note">Em uma emergência, procure diretamente o serviço adequado na página Ajuda.</div>
+      </section>
+
+      <section id="chat-view" class="view">
+        <div class="section-head"><div><div class="eyebrow">Conversa estudantil</div><h2>Chat</h2><p class="muted">Use o nome público mostrado pelo CAE e trate as outras pessoas com respeito.</p></div></div>
+        <div class="chat-layout">
+          <div class="card">
+            <div id="chat-error"></div>
+            <div id="chat-messages" class="chat-box"></div>
+            <form id="chat-form" class="chat-form">
+              <textarea id="chat-input" maxlength="1500" placeholder="Escreva uma mensagem..." aria-label="Mensagem"></textarea>
+              <button class="btn primary" id="chat-send" type="submit"><i data-lucide="send"></i>Enviar</button>
+            </form>
+            <div class="chat-under-actions">
+              <button class="btn ghost" id="chat-rules-button" type="button"><i data-lucide="shield-check"></i>Ver regras do chat</button>
+              <p class="cae-muted">Dica: Ctrl/Cmd + Enter envia a mensagem.</p>
+            </div>
+          </div>
+          <aside class="card">
+            <div class="eyebrow">Convivência</div>
+            <h3>Faça do chat um lugar seguro.</h3>
+            <p class="muted">Não compartilhe senhas, endereço, telefone ou outros dados pessoais. Use o botão <b>Denunciar</b> quando uma mensagem precisar de moderação.</p>
+            <div class="notice"><b>O chat não substitui atendimento profissional.</b><br><span class="muted">Para apoio imediato, veja a página Ajuda.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="private-conversations-view" class="view">
+        <div class="section-head">
+          <div><div class="eyebrow">Espaço privado</div><h2>Conversas privadas</h2><p class="muted">Converse com uma pessoa específica somente depois que o convite for aceito.</p></div>
+        </div>
+        <div class="private-chat-layout">
+          <aside class="private-chat-sidebar">
+            <div class="card private-start-card">
+              <div class="eyebrow">Novo convite</div><h3>Conversar por código</h3>
+              <p class="muted">Digite o código público da pessoa. Ela precisará aceitar antes da conversa começar.</p>
+              <div class="field"><label for="private-chat-code">Código público</label><input id="private-chat-code" type="text" maxlength="20" placeholder="Ex.: J01" autocomplete="off"></div>
+              <div id="private-chat-target" class="admin-target-card hidden"></div>
+              <button class="btn primary" id="private-chat-request" type="button"><i data-lucide="send"></i>Enviar convite</button>
+              <div id="private-chat-request-status"></div>
+            </div>
+            <div class="card">
+              <div class="admin-panel-heading"><div><div class="eyebrow">Solicitações</div><h3>Convites recebidos</h3></div><span id="private-request-count" class="admin-summary-count">0</span></div>
+              <div id="private-request-list" class="private-request-list"></div>
+            </div>
+          </aside>
+          <section class="card private-chat-thread-card">
+            <div id="private-chat-thread-head" class="support-thread-head"><div><div class="eyebrow">Conversa</div><strong>Selecione uma conversa</strong></div><span class="cae-muted">Privada</span></div>
+            <div id="private-chat-thread" class="private-chat-thread"><div class="private-chat-empty"><i data-lucide="lock-keyhole"></i><h3>Suas conversas aparecem aqui.</h3><p class="muted">Aceite um convite recebido ou abra uma conversa já autorizada.</p></div></div>
+            <form id="private-chat-form" class="chat-form hidden"><textarea id="private-chat-input" maxlength="3000" placeholder="Escreva uma mensagem privada..."></textarea><button class="btn primary" id="private-chat-send" type="submit"><i data-lucide="send"></i>Enviar</button></form>
+            <p class="cae-muted private-chat-safety-note">Aviso: suas mensagens podem ser moderadas para segurança. Em situações graves ou suspeita de crime, a equipe poderá verificar o conteúdo.</p>
+          </section>
+        </div>
+      </section>
+
+      <section id="desabafo-view" class="view">
+        <div class="section-head">
+          <div><div class="eyebrow">Seu espaço</div><h2>Desabafos</h2><p class="muted">Leia, escreva ou grave um desabafo. Você escolhe se ele será público ou privado.</p></div>
+          <button class="btn ghost btn-small" type="button" data-open-view="private-conversations-view"><i data-lucide="lock-keyhole"></i>Conversas privadas</button>
+        </div>
+        <section class="public-vent-section public-vent-section-top" aria-labelledby="public-vent-title">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Comunidade</div>
+              <h3 id="public-vent-title">Desabafos públicos</h3>
+              <p class="muted">Conteúdos aprovados pela moderação, separados por tipo.</p>
+            </div>
+          </div>
+          <div class="tabs vent-type-tabs public-vent-tabs" role="tablist" aria-label="Tipos de desabafos públicos">
+            <button class="tab vent-tab active" type="button" data-public-filter="free" role="tab" aria-selected="true"><span class="vent-tab-icon"><i data-lucide="pen-line"></i></span><span><b>Texto livre</b><small>Escreva do seu jeito</small></span></button>
+            <button class="tab vent-tab" type="button" data-public-filter="guided" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="list-checks"></i></span><span><b>Perguntas guiadas</b><small>Responda passo a passo</small></span></button>
+            <button class="tab vent-tab" type="button" data-public-filter="feelings" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="heart"></i></span><span><b>Como eu me sinto</b><small>Comece por uma frase</small></span></button>
+            <button class="tab vent-tab" type="button" data-public-filter="audio" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="mic"></i></span><span><b>Áudio</b><small>Fale em vez de escrever</small></span></button>
+          </div>
+          <div id="public-vent-list" class="public-vent-feed" role="tabpanel"></div>
+        </section>
+
+        <div class="notice" style="margin-bottom:14px"><b>Quer escrever?</b> Escolha abaixo o tipo de desabafo e depois defina quem poderá acessá-lo. Os públicos passam por moderação; os privados ficam acessíveis a você e, quando necessário, a administradores. Áudios privados também podem ser revisados pela moderação autorizada.</div>
+        <div class="card vent-privacy-selector">
+          <div class="eyebrow">Escolha a privacidade</div>
+          <h3>Quem poderá acessar este desabafo?</h3>
+          <div class="vent-visibility-grid" role="group" aria-label="Privacidade do desabafo">
+            <button class="option vent-visibility-option active" type="button" data-vent-visibility="public" aria-pressed="true">
+              <i data-lucide="globe-2"></i><span><b>Público</b><small>Após aprovação, aparece para todos na área Desabafos.</small></span>
+            </button>
+            <button class="option vent-visibility-option" type="button" data-vent-visibility="private" aria-pressed="false">
+              <i data-lucide="lock-keyhole"></i><span><b>Privado</b><small>Não fica público. Textos ficam com você e a administração; áudios podem ser acessados pela equipe para moderação.</small></span>
+            </button>
+          </div>
+          <p id="vent-visibility-help" class="cae-muted vent-visibility-help">Depois de aprovado, fica disponível para todos na área Desabafos.</p>
+        </div>
+
+        <div class="tabs vent-type-tabs vent-compose-tabs" role="tablist" aria-label="Tipos de desabafo">
+          <button class="tab vent-tab active" type="button" data-compose="free"><span class="vent-tab-icon"><i data-lucide="pen-line"></i></span><span><b>Texto livre</b><small>Escreva do seu jeito</small></span></button>
+          <button class="tab vent-tab" type="button" data-compose="guided"><span class="vent-tab-icon"><i data-lucide="list-checks"></i></span><span><b>Perguntas guiadas</b><small>Uma pergunta de cada vez</small></span></button>
+          <button class="tab vent-tab" type="button" data-compose="feelings"><span class="vent-tab-icon"><i data-lucide="heart"></i></span><span><b>Como eu me sinto</b><small>Escolha o que combina</small></span></button>
+          <button class="tab vent-tab" type="button" data-compose="audio"><span class="vent-tab-icon"><i data-lucide="mic"></i></span><span><b>Áudio</b><small>Grave sem digitar</small></span></button>
+        </div>
+
+        <div id="compose-free" class="compose card hidden">
+          <div class="eyebrow">Texto livre</div><h3>Escreva do seu jeito.</h3>
+          <textarea id="free-text" maxlength="2000" placeholder="Pode começar por “Hoje eu...”"></textarea>
+          <div class="section-head"><span id="free-counter" class="cae-muted">0 / 2000</span><button class="btn primary" id="send-free" type="button"><i data-lucide="send"></i>Enviar</button></div>
+        </div>
+
+        <div id="compose-guided" class="compose card hidden">
+          <div class="guided-illustration-wrap" aria-label="Ilustração de perguntas guiadas">
+            <svg class="guided-illustration" viewBox="0 0 520 260" role="img" aria-label="Duas caixas de conversa e uma lista de perguntas">
+              <rect width="520" height="260" rx="42" fill="#f8f1f7"/>
+              <g fill="none" stroke="#7b4b73" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M72 88h150a22 22 0 0 1 22 22v50a22 22 0 0 1-22 22h-82l-42 32v-32H72a22 22 0 0 1-22-22v-50a22 22 0 0 1 22-22Z" fill="#fff"/>
+                <path d="M92 121h104M92 150h70"/>
+                <path d="M294 60h154a22 22 0 0 1 22 22v114a22 22 0 0 1-22 22h-154a22 22 0 0 1-22-22V82a22 22 0 0 1 22-22Z" fill="#fff"/>
+                <path d="M312 101h18M312 143h18M312 185h18"/>
+                <path d="m342 98 9 9 18-19M342 140l9 9 18-19M342 182l9 9 18-19"/>
+                <path d="M400 106h28M400 148h28M400 190h28"/>
+              </g>
+              <circle cx="457" cy="63" r="12" fill="#d98ac4"/>
+              <circle cx="61" cy="57" r="9" fill="#d98ac4"/>
+            </svg>
+          </div>
+          <div class="eyebrow" id="guided-progress">PERGUNTA 1 DE 4</div>
+          <div class="progress"><span id="guided-progress-bar" style="width:25%"></span></div>
+          <h3 id="guided-question"></h3>
+          <textarea id="guided-answer" maxlength="1200" placeholder="Escreva o que vier à mente..."></textarea>
+          <div class="actions"><button class="btn secondary" id="guided-back" type="button">Voltar</button><button class="btn primary" id="guided-next" type="button">Próxima</button></div>
+        </div>
+
+        <div id="compose-feelings" class="compose card hidden">
+          <div class="eyebrow">Como eu me sinto</div><h3>Qual frase chega mais perto?</h3>
+          <div id="feelings-list" class="admin-list"></div>
+          <div id="feeling-area" class="hidden" style="margin-top:14px">
+            <div class="notice"><b id="selected-feeling"></b></div>
+            <textarea id="feeling-text" maxlength="1600" placeholder="Quer contar um pouco mais?"></textarea>
+            <div class="actions"><button class="btn primary" id="send-feeling" type="button"><i data-lucide="send"></i>Enviar</button></div>
+          </div>
+        </div>
+
+        <div id="compose-audio" class="compose card hidden">
+          <div class="eyebrow">Áudio</div><h3>Gravação de áudio</h3>
+          <div class="audio-anonymity-notice"><span class="vent-tab-icon"><i data-lucide="mic"></i></span><div><strong>Escolha como sua voz será alterada</strong><p id="audio-anonymity-text">Quando este desabafo for público, o áudio será processado com um filtro real antes do envio.</p></div></div>
+          <div id="voice-filter-picker" class="voice-filter-picker">
+            <div class="eyebrow">Filtros de voz</div>
+            <div class="voice-filter-grid" role="group" aria-label="Escolha o filtro de voz">
+              <button class="voice-filter-option active" type="button" data-voice-filter="anonymized" aria-pressed="true"><i data-lucide="shield-check"></i><span><b>Anônimo</b><small>Mais forte</small></span></button>
+              <button class="voice-filter-option" type="button" data-voice-filter="robot" aria-pressed="false"><i data-lucide="bot"></i><span><b>Robótico</b><small>Metálico</small></span></button>
+              <button class="voice-filter-option" type="button" data-voice-filter="radio" aria-pressed="false"><i data-lucide="radio"></i><span><b>Rádio</b><small>Faixa limitada</small></span></button>
+              <button class="voice-filter-option" type="button" data-voice-filter="muffled" aria-pressed="false"><i data-lucide="audio-lines"></i><span><b>Abafado</b><small>Voz fechada</small></span></button>
+            </div>
+            <p id="audio-filter-selected" class="cae-muted audio-filter-selected">Anônimo: Filtro mais forte para alterar bastante o timbre da voz.</p>
+          </div>
+          <p id="record-status" class="muted">Pronto para gravar.</p>
+          <div class="actions">
+            <button class="btn primary" id="record-start" type="button"><i data-lucide="mic"></i>Começar</button>
+            <button class="btn secondary" id="record-stop" type="button" disabled><i data-lucide="square"></i>Parar</button>
+            <button class="btn secondary" id="record-clear" type="button" disabled>Apagar gravação</button>
+            <button class="btn primary" id="record-send" type="button" disabled><i data-lucide="upload"></i>Enviar áudio</button>
+          </div>
+          <audio id="audio-preview" class="audio-preview hidden" controls></audio>
+        </div>
+
+        <div class="card" style="margin-top:18px">
+          <div class="eyebrow">Histórico</div><h3>Seus desabafos e respectivos status.</h3>
+          <p class="muted">Cada tipo tem seu próprio histórico. Públicos aguardam moderação antes de aparecer para a comunidade; privados nunca entram na área pública. Você pode acompanhar o status e apagar seus próprios registros.</p>
+        </div>
+      </section>
+
+      <section id="mural-view" class="view">
+        <div class="section-head"><div><div class="eyebrow">Comunidade</div><h2>Mural</h2><p class="muted">Veja o que está acontecendo no CAE e participe quando fizer sentido.</p></div></div>
+        <div class="tabs">
+          <button class="tab active" data-panel="announcements" type="button">Avisos</button>
+          <button class="tab" data-panel="events" type="button">Eventos</button>
+          <button class="tab" data-panel="posts" type="button">Publicações</button>
+          <button class="tab" data-panel="polls" type="button">Enquetes</button>
+        </div>
+        <div id="panel-announcements" class="panel active"><div id="announcement-list" class="admin-list"></div></div>
+        <div id="panel-events" class="panel"><div id="event-list" class="admin-list"></div></div>
+        <div id="panel-posts" class="panel">
+          <div class="card" style="margin-bottom:14px">
+            <div class="eyebrow">Compartilhe</div><h3>Crie uma publicação.</h3>
+            <div class="grid-2">
+              <div class="field"><label for="post-category">Categoria</label><select id="post-category"><option>Geral</option><option>Escola</option><option>Ideias</option><option>Eventos</option><option>Convivência</option><option>Ajuda</option></select></div>
+              <div class="field"><label for="post-body">Texto</label><textarea id="post-body" maxlength="2000" placeholder="Escreva algo para o mural..."></textarea></div>
+            </div>
+            <div id="post-status"></div><div class="actions"><button class="btn primary" id="post-send" type="button"><i data-lucide="send"></i>Enviar para moderação</button></div>
+          </div>
+          <div id="post-list" class="admin-list"></div>
+        </div>
+        <div id="panel-polls" class="panel"><div id="poll-list" class="admin-list"></div></div>
+      </section>
+
+      <section id="history-view" class="view">
+        <div class="section-head"><div><div class="eyebrow">Somente você</div><h2>Histórico</h2><p class="muted">Seus desabafos ficam separados por tipo para facilitar a consulta.</p></div></div>
+        <div class="tabs vent-type-tabs history-tabs" role="tablist" aria-label="Seu histórico de desabafos">
+          <button class="tab vent-tab active" type="button" data-history-filter="free">Texto livre</button>
+          <button class="tab vent-tab" type="button" data-history-filter="guided">Perguntas guiadas</button>
+          <button class="tab vent-tab" type="button" data-history-filter="feelings">Como eu me sinto</button>
+          <button class="tab vent-tab" type="button" data-history-filter="audio">Áudio</button>
+        </div>
+        <div id="history-list" class="admin-list"></div>
+      </section>
+
+      <section id="help-view" class="view">
+        <div class="section-head"><div><div class="eyebrow">Apoio</div><h2>Ajuda e contatos</h2><p class="muted">Contatos oficiais e canais de emergência. Para atendimento imediato, use diretamente o serviço adequado.</p></div></div>
+        <div class="help-grid help-grid-wide">
+          <article class="help-card help-card-featured"><div class="eyebrow">SÃO JOSÉ DOS PINHAIS · IPÊ</div><h3>Unidade de Saúde Ipê</h3><p class="muted">Atendimento da rede municipal. Segunda a sexta, das 8h às 17h.</p><strong>(41) 3381-6800</strong><div class="help-actions"><a class="btn primary" href="tel:+554133816800">Ligar</a></div></article>
+          <article class="help-card"><div class="eyebrow">SÃO JOSÉ DOS PINHAIS</div><h3>Divisão de Saúde Mental</h3><p class="muted">Contato municipal da rede de saúde mental.</p><strong>(41) 98805-5734</strong><div class="help-actions"><a class="btn primary" href="tel:+5541988055734">Ligar</a></div></article>
+          <article class="help-card"><div class="eyebrow">SÃO JOSÉ DOS PINHAIS</div><h3>CAPS TM</h3><p class="muted">Atenção a pessoas com transtornos mentais. Segunda a sexta, 8h–17h.</p><strong>(41) 3381-5832</strong><div class="help-actions"><a class="btn primary" href="tel:+554133815832">Ligar</a></div></article>
+          <article class="help-card"><div class="eyebrow">SÃO JOSÉ DOS PINHAIS</div><h3>CAPS Infantil</h3><p class="muted">Atendimento especializado para crianças e adolescentes. Segunda a sexta, 8h–17h.</p><strong>(41) 3282-9376</strong><div class="help-actions"><a class="btn primary" href="tel:+554132829376">Ligar</a></div></article>
+          <article class="help-card"><div class="eyebrow">SÃO JOSÉ DOS PINHAIS</div><h3>CAPS AD</h3><p class="muted">Atenção relacionada a álcool e outras drogas. Segunda a sexta, 8h–17h.</p><strong>(41) 3398-2764</strong><div class="help-actions"><a class="btn primary" href="tel:+554133982764">Ligar</a><a class="btn secondary" href="tel:+554133825471">2º telefone</a></div></article>
+          <article class="help-card"><div class="eyebrow">PARANÁ</div><h3>Divisão de Saúde Mental · SESA</h3><p class="muted">Contato estadual para informações sobre a rede de saúde mental.</p><strong>(41) 3330-4526</strong><div class="help-actions"><a class="btn primary" href="tel:+554133304526">Ligar</a><a class="btn secondary" href="mailto:saudemental@sesa.pr.gov.br">E-mail</a></div></article>
+        </div>
+        <div class="card support-card" style="margin-top:18px">
+          <div class="support-card-head"><div><div class="eyebrow">Fale conosco</div><h3>Converse com a equipe do CAE</h3><p class="muted">Use este canal para pedir orientação ou explicar uma situação. A equipe do CAE pode responder por aqui. Você pode apagar suas próprias mensagens.</p></div><button class="btn ghost" type="button" id="support-toggle">Abrir conversa</button></div>
+          <div id="support-area" class="support-area hidden"><div id="support-messages" class="support-messages"></div><form id="support-form" class="chat-form"><textarea id="support-input" maxlength="2000" placeholder="Escreva sua mensagem..."></textarea><button class="btn primary" id="support-send" type="submit">Enviar</button></form><p class="cae-muted">Esta conversa é privada entre você e a equipe. Suas próprias mensagens podem ser apagadas.</p></div>
+        </div>
+        <div class="card" style="margin-top:16px"><div class="notice"><b>Em risco imediato?</b> Use o serviço de emergência adequado e procure uma pessoa de confiança perto de você. O CAE não é um serviço de emergência.</div></div>
+      </section>
+
+      <section id="admin-private-history-view" class="view">
+        <div class="section-head"><div><div class="eyebrow">Acesso restrito</div><h2>Histórico de desabafos privados</h2><p class="muted">Conteúdo confidencial, disponível somente para a equipe de moderação. Os usuários aparecem apenas pelo código público.</p></div><button class="btn secondary" type="button" data-open-view="admin-view">Voltar ao Admin</button></div>
+        <div class="admin-private-page-head"><div class="admin-private-page-stat"><span>Total</span><b id="admin-private-history-count">0</b></div><div class="admin-private-page-stat"><span>Pendentes</span><b id="admin-private-history-pending">0</b></div><div class="admin-private-page-stat"><span>Aprovados</span><b id="admin-private-history-approved">0</b></div><div class="admin-private-page-stat"><span>Recusados</span><b id="admin-private-history-rejected">0</b></div></div>
+        <div class="tabs vent-type-tabs admin-private-tabs" role="tablist" aria-label="Tipos de desabafos privados">
+          <button class="tab vent-tab active" type="button" data-private-filter="free">Texto livre</button>
+          <button class="tab vent-tab" type="button" data-private-filter="guided">Perguntas guiadas</button>
+          <button class="tab vent-tab" type="button" data-private-filter="feelings">Como eu me sinto</button>
+          <button class="tab vent-tab" type="button" data-private-filter="audio">Áudio</button>
+        </div>
+        <div id="admin-private-history-list" class="admin-private-feed"></div>
+      </section>
+
+      <section id="account-view" class="view">
+        <div class="section-head"><div><div class="eyebrow">Sua conta</div><h2>Conta</h2></div></div>
+        <div class="card profile-card">
+          <div id="account-avatar" class="profile-mark">CA</div>
+          <div><h3 id="account-name">Conta anônima</h3><p id="account-public-id" class="cae-muted">Seu código público: —</p><p class="cae-muted">Use esse código nas áreas de moderação do CAE. Ele não revela sua identidade.</p></div>
+        </div>
+        <div class="grid-2" style="margin-top:16px">
+          <div class="card"><div class="eyebrow">Privacidade</div><h3>O que fica privado?</h3><p class="muted">Seu e-mail não é mostrado no Mural, nos Desabafos públicos nem no chat. Desabafos aprovados usam apenas seu ID público.</p></div>
+          <div class="card"><div class="eyebrow">Sessão</div><h3>Quer sair?</h3><p class="muted">Use o botão Sair no topo. Seu acesso pode ser reaberto pelo login.</p><button class="btn secondary" type="button" data-action="logout">Sair da conta</button></div>
+        </div>
+      </section>
+
+      <section id="admin-view" class="view">
+        <div class="section-head">
+          <div><div class="eyebrow">Equipe CAE</div><h2>Central da equipe</h2><p class="muted">Cada tarefa tem sua própria área. Entre na categoria certa e veja somente o que precisa ser feito.</p></div>
+        </div>
+
+        <div class="admin-tabs admin-tabs-expanded" role="tablist" aria-label="Áreas da central da equipe">
+          <button class="tab admin-tab active" type="button" data-admin-tab="vents" role="tab" aria-selected="true"><span class="vent-tab-icon"><i data-lucide="notebook-pen"></i></span><span><b>Desabafos</b><small>Aprovar, recusar, excluir e responder</small></span></button>
+          <button class="tab admin-tab" type="button" data-admin-tab="posts" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="layout-dashboard"></i></span><span><b>Publicações</b><small>Moderar posts do mural</small></span></button>
+          <button class="tab admin-tab" type="button" data-admin-tab="announcements" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="megaphone"></i></span><span><b>Avisos</b><small>Publicar comunicados</small></span></button>
+          <button class="tab admin-tab" type="button" data-admin-tab="events" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="calendar"></i></span><span><b>Eventos</b><small>Publicar datas e atividades</small></span></button>
+          <button class="tab admin-tab" type="button" data-admin-tab="polls" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="bar-chart-3"></i></span><span><b>Enquetes</b><small>Criar e excluir pesquisas</small></span></button>
+          <button class="tab admin-tab" type="button" data-admin-tab="reports" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="flag"></i></span><span><b>Denúncias</b><small>Analisar mensagens sinalizadas</small></span></button>
+          <button class="tab admin-tab" type="button" data-admin-tab="private_chats" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="shield-check"></i></span><span><b>Conversas privadas</b><small>Acesso reservado para segurança</small></span></button>
+          <button class="tab admin-tab" type="button" data-admin-tab="support" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="headphones"></i></span><span><b>Atendimentos</b><small>Responder Fale conosco</small></span></button>
+          <button class="tab admin-tab admin-only" type="button" data-admin-tab="accounts" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="users-round"></i></span><span><b>Contas e equipe</b><small>Cargos, timeout e bloqueios</small></span></button>
+        </div>
+
+        <div id="admin-panel-vents" class="admin-panel active" data-admin-panel="vents">
+          <div class="stats">
+            <div class="stat"><div class="muted">Publicações aprovadas</div><div id="stat-approved" class="stat-value">0</div></div>
+            <div class="stat"><div class="muted">Publicações pendentes</div><div id="stat-pending" class="stat-value">0</div></div>
+            <div class="stat"><div class="muted">Desabafos</div><div id="stat-vents" class="stat-value">0</div></div>
+            <div class="stat"><div class="muted">Denúncias</div><div id="stat-reports" class="stat-value">0</div></div>
+          </div>
+          <div class="card">
+            <div class="admin-panel-heading"><div><div class="eyebrow">Fila de desabafos</div><h3>Moderação e resposta privada</h3><p class="cae-muted">Aprove, recuse ou exclua. Quando fizer sentido, responda diretamente em uma conversa privada com quem enviou.</p></div><button class="btn secondary" type="button" data-open-view="admin-private-history-view"><i data-lucide="lock-keyhole"></i>Histórico privado</button></div>
+            <div class="tabs vent-type-tabs admin-vent-tabs" role="tablist" aria-label="Tipos de desabafos para moderação">
+              <button class="tab vent-tab active" type="button" data-admin-vent-filter="free" role="tab" aria-selected="true"><span class="vent-tab-icon"><i data-lucide="pen-line"></i></span><span><b>Texto livre</b><small>Texto escrito</small></span></button>
+              <button class="tab vent-tab" type="button" data-admin-vent-filter="guided" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="list-checks"></i></span><span><b>Perguntas guiadas</b><small>4 perguntas</small></span></button>
+              <button class="tab vent-tab" type="button" data-admin-vent-filter="feelings" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="heart"></i></span><span><b>Como eu me sinto</b><small>Frase + contexto</small></span></button>
+              <button class="tab vent-tab" type="button" data-admin-vent-filter="audio" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="mic"></i></span><span><b>Áudio</b><small>Gravações</small></span></button>
+            </div>
+            <div id="admin-vent-list" class="admin-list"></div>
+          </div>
+        </div>
+
+        <div id="admin-panel-posts" class="admin-panel hidden" data-admin-panel="posts">
+          <div class="card"><div class="admin-panel-heading"><div><div class="eyebrow">Mural</div><h3>Publicações</h3><p class="cae-muted">Revise o que estudantes enviaram para o mural.</p></div><span class="admin-summary-count" id="admin-post-count-label">0 pendentes</span></div><div id="admin-post-list" class="admin-list"></div></div>
+        </div>
+
+        <div id="admin-panel-announcements" class="admin-panel hidden" data-admin-panel="announcements">
+          <div class="card admin-form-card"><div class="eyebrow">Comunicação</div><h3>Novo aviso</h3><p class="cae-muted">Publique um comunicado que aparecerá na área Avisos do mural.</p><form id="announcement-form"><div class="field"><label for="announcement-title">Título</label><input id="announcement-title" required maxlength="200"></div><div class="field"><label for="announcement-body">Texto</label><textarea id="announcement-body" required maxlength="4000"></textarea></div><button class="btn primary" type="submit"><i data-lucide="megaphone"></i>Publicar aviso</button></form></div>
+          <div class="card"><div class="admin-panel-heading"><div><div class="eyebrow">Gerenciar publicados</div><h3>Avisos existentes</h3><p class="cae-muted">Mesmo depois de publicados, podem ser excluídos pela equipe.</p></div></div><div id="admin-announcement-list" class="admin-list"></div></div>
+        </div>
+
+        <div id="admin-panel-events" class="admin-panel hidden" data-admin-panel="events">
+          <div class="card admin-form-card"><div class="eyebrow">Agenda</div><h3>Novo evento</h3><p class="cae-muted">Cadastre uma atividade para aparecer no Mural → Eventos.</p><form id="event-form"><div class="field"><label for="event-title">Título</label><input id="event-title" required maxlength="200"></div><div class="grid-2"><div class="field"><label for="event-date">Data</label><input id="event-date" type="date" required></div><div class="field"><label for="event-time">Hora</label><input id="event-time" type="time" required></div></div><div class="field"><label for="event-place">Local</label><input id="event-place" required maxlength="200"></div><div class="field"><label for="event-description">Descrição</label><textarea id="event-description" required maxlength="3000"></textarea></div><button class="btn primary" type="submit"><i data-lucide="calendar-plus"></i>Publicar evento</button></form></div>
+          <div class="card"><div class="admin-panel-heading"><div><div class="eyebrow">Gerenciar publicados</div><h3>Eventos existentes</h3><p class="cae-muted">Mesmo depois de publicados, podem ser excluídos pela equipe.</p></div></div><div id="admin-event-list" class="admin-list"></div></div>
+        </div>
+
+        <div id="admin-panel-polls" class="admin-panel hidden" data-admin-panel="polls">
+          <div class="card" id="poll-admin-card-placeholder"><div class="eyebrow">Participação</div><h3>Nova enquete</h3><p class="cae-muted">Crie uma pergunta com pelo menos duas opções para o mural.</p><form id="poll-form"><div class="field"><label for="poll-question">Pergunta</label><input id="poll-question" required maxlength="300" placeholder="O que a escola deveria melhorar?"></div><div class="field"><label>Opções</label><input class="poll-option-input" required maxlength="120" placeholder="Opção 1"><input class="poll-option-input" required maxlength="120" placeholder="Opção 2"><input class="poll-option-input" maxlength="120" placeholder="Opção 3"><input class="poll-option-input" maxlength="120" placeholder="Opção 4"></div><div class="field"><label for="poll-closes">Encerramento (opcional)</label><input id="poll-closes" type="datetime-local"></div><div class="actions"><button class="btn primary" type="submit"><i data-lucide="bar-chart-3"></i>Publicar enquete</button></div></form></div>
+          <div class="card"><div class="admin-panel-heading"><div><div class="eyebrow">Gerenciar publicadas</div><h3>Enquetes existentes</h3><p class="cae-muted">Mesmo depois de publicadas, podem ser excluídas pela equipe.</p></div></div><div id="admin-poll-list" class="admin-list"></div></div>
+        </div>
+
+        <div id="admin-panel-reports" class="admin-panel hidden" data-admin-panel="reports">
+          <div class="card"><div class="admin-panel-heading"><div><div class="eyebrow">Segurança</div><h3>Denúncias pendentes</h3><p class="cae-muted">Mensagens denunciadas ficam escondidas para quem fez a denúncia.</p></div><span id="admin-reports-badge" class="admin-summary-count">0</span></div><div id="admin-report-list" class="admin-list"></div></div>
+        </div>
+
+        <div id="admin-panel-private-chats" class="admin-panel hidden" data-admin-panel="private_chats">
+          <div class="card private-security-card"><div class="admin-panel-heading"><div><div class="eyebrow">Acesso reservado</div><h3>Conversas privadas · segurança</h3><p class="cae-muted">Somente para verificar situações de segurança. Esta área é somente leitura: a equipe não pode enviar mensagens nem participar das conversas.</p></div><span class="security-lock"><i data-lucide="shield-check"></i></span></div><div id="admin-private-chat-list" class="admin-private-chat-list"></div></div>
+        </div>
+
+        <div id="admin-panel-support" class="admin-panel hidden" data-admin-panel="support">
+          <div class="card admin-support-card" id="admin-support-card"><div class="admin-panel-heading"><div><div class="eyebrow">Atendimento</div><h3>Fale conosco</h3><p class="cae-muted">Selecione uma conversa para visualizar e responder as mensagens.</p></div><span id="admin-support-count" class="admin-summary-count">0</span></div><div class="field"><label for="admin-support-conversation">Conversa</label><select id="admin-support-conversation"><option value="">Selecionar conversa</option></select></div><div id="admin-support-thread" class="support-thread"></div></div>
+        </div>
+
+        <div id="admin-panel-accounts" class="admin-panel hidden admin-only" data-admin-panel="accounts">
+          <div class="admin-manage-grid">
+            <div class="card admin-manage-card admin-role-card"><div class="eyebrow">Equipe</div><h3>Alterar cargo</h3><p class="muted">Use o código público. Moderador e administrador têm a mesma permissão de equipe no CAE.</p><div class="field"><label for="admin-role-identifier">Código público</label><input id="admin-role-identifier" type="text" autocomplete="off" placeholder="Ex.: J01" maxlength="20"></div><div id="admin-role-target" class="admin-target-card hidden"></div><div class="grid-2 admin-user-grid"><div class="field"><label for="admin-user-role">Permissão</label><select id="admin-user-role"><option value="student">Estudante</option><option value="admin">Equipe de moderação</option></select></div><div class="field admin-role-action"><label>&nbsp;</label><button class="btn primary" id="admin-role-button" type="button">Salvar cargo</button></div></div><div id="admin-role-status" class="admin-action-status" role="status" aria-live="polite"></div></div>
+            <div class="card admin-manage-card admin-account-moderation-card"><div class="eyebrow">Contas</div><h3>Banir ou aplicar timeout</h3><p class="muted">As ações podem levar uma mensagem de motivo para a pessoa.</p><div class="field"><label for="admin-moderation-identifier">Código público</label><input id="admin-moderation-identifier" type="text" autocomplete="off" placeholder="Ex.: J01" maxlength="20"></div><div id="admin-moderation-target" class="admin-target-card hidden"></div><div class="field"><label for="admin-timeout-duration">Duração do timeout</label><select id="admin-timeout-duration"><option value="10">10 minutos</option><option value="30">30 minutos</option><option value="60">1 hora</option><option value="1440">24 horas</option><option value="10080">7 dias</option></select></div><div class="actions admin-user-actions"><button class="btn secondary" type="button" data-user-moderation="timeout">Dar timeout</button><button class="btn secondary" type="button" data-user-moderation="clear_timeout">Remover timeout</button><button class="btn danger" type="button" data-user-moderation="ban">Bloquear conta</button><button class="btn ghost" type="button" data-user-moderation="unban">Desbloquear conta</button></div><div id="admin-moderation-status" class="admin-action-status" role="status" aria-live="polite"></div></div>
+          </div>
+          <div class="card moderator-info-card"><div class="eyebrow">Organização</div><h3>Como usar esta central</h3><div class="moderator-info-list"><div><span>01</span><p><b>Desabafos</b> é para revisar conteúdo e responder em privado.</p></div><div><span>02</span><p><b>Denúncias</b> é para mensagens sinalizadas no chat.</p></div><div><span>03</span><p><b>Conversas privadas</b> é somente leitura para segurança.</p></div><div><span>04</span><p><b>Contas e equipe</b> concentra ações sobre cargos e acesso.</p></div></div></div>
+        </div>
+      </section>
+
+    </main>
+    <footer class="app-footer"><span>CAE · Centro de Acolhimento Estudantil</span><span>Apoio, informação e orientação.</span></footer>
+  </section>
+
+  <div id="email-confirm-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="email-confirm-title">
+    <div class="modal-card email-confirm-card"><div class="modal-head"><div><div class="eyebrow">Cadastro</div><h3 id="email-confirm-title">E-mail enviado!</h3></div><button class="icon-btn" id="email-confirm-close" type="button" aria-label="Fechar">×</button></div><div class="email-confirm-icon"><i data-lucide="mail-check"></i></div><h2>Confira sua caixa de entrada.</h2><p class="muted">Enviamos um e-mail para confirmar seu cadastro. Se não encontrar, confira também a pasta de <b>spam</b> ou <b>lixo eletrônico</b>.</p><div class="notice"><b>O cadastro deu certo.</b><br>Você só precisa confirmar o endereço de e-mail para entrar.</div><div id="email-confirm-status"></div><div class="actions"><button class="btn primary" id="email-confirm-resend" type="button"><i data-lucide="mail-check"></i>Reenviar confirmação</button><button class="btn secondary" id="email-confirm-ok" type="button">Entendi</button></div></div>
+  </div>
+
+  <div id="private-reply-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="private-reply-title">
+    <div class="modal-card"><div class="modal-head"><div><div class="eyebrow">Resposta privada</div><h3 id="private-reply-title">Responder ao desabafo</h3></div><button class="icon-btn" id="private-reply-close" type="button" aria-label="Fechar">×</button></div><p id="private-reply-help" class="muted">Sua resposta será enviada em uma conversa privada com a pessoa.</p><textarea id="private-reply-input" maxlength="3000" placeholder="Escreva uma resposta acolhedora e objetiva..."></textarea><div id="private-reply-status"></div><div class="actions"><button class="btn secondary" id="private-reply-cancel" type="button">Cancelar</button><button class="btn primary" id="private-reply-send" type="button"><i data-lucide="send"></i>Enviar resposta</button></div></div>
+  </div>
+
+  <div id="chat-rules-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="chat-rules-title">
+    <div class="modal-card">
+      <div class="modal-head"><div><div class="eyebrow">Convivência</div><h3 id="chat-rules-title">Regras do chat</h3></div><button class="icon-btn" id="chat-rules-close" type="button" aria-label="Fechar">×</button></div>
+      <p class="muted">Antes de enviar, confirme que você entendeu estas regras:</p>
+      <div class="rules-list">
+        <div><span>01</span><p>Trate outras pessoas com respeito. Nada de ameaças, perseguição, humilhação ou discriminação.</p></div>
+        <div><span>02</span><p>Não compartilhe senhas, endereço, telefone, documentos ou outros dados pessoais.</p></div>
+        <div><span>03</span><p>Não envie conteúdo sexual, pedidos de nudes, spam ou mensagens feitas para provocar ou atrapalhar o chat.</p></div>
+        <div><span>04</span><p>O CAE pode ocultar ou remover mensagens e aplicar timeout ou bloqueio quando necessário.</p></div>
+        <div><span>05</span><p>Use <b>Denunciar</b> quando uma mensagem precisar da atenção da moderação.</p></div>
+      </div>
+      <label class="check-row"><input id="chat-rules-never" type="checkbox"><span>Não mostrar estas regras novamente neste dispositivo.</span></label>
+      <div id="chat-rules-status"></div>
+      <div class="actions"><button class="btn primary" id="chat-rules-accept" type="button">Li e aceito as regras</button><button class="btn secondary" id="chat-rules-cancel" type="button">Cancelar</button></div>
+    </div>
+  </div>
+
+  <div id="password-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="password-modal-title">
+    <div class="modal-card">
+      <div class="modal-head"><div><div class="eyebrow">Segurança</div><h3 id="password-modal-title">Criar nova senha</h3></div><button class="icon-btn" id="password-modal-close" type="button" aria-label="Fechar">×</button></div>
+      <p class="muted">Escolha uma nova senha com pelo menos 6 caracteres.</p>
+      <form id="password-form">
+        <div class="field"><label for="new-password">Nova senha</label><input id="new-password" type="password" minlength="6" autocomplete="new-password" required></div>
+        <div class="field"><label for="new-password-confirm">Repita a senha</label><input id="new-password-confirm" type="password" minlength="6" autocomplete="new-password" required></div>
+        <div id="password-status"></div>
+        <div class="actions"><button class="btn primary" type="submit">Salvar nova senha</button><button class="btn secondary" id="password-modal-cancel" type="button">Cancelar</button></div>
+      </form>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
