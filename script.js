@@ -1133,7 +1133,7 @@
     if (state.audioSource === 'tts') resetRecordingUI();
     const status = $('tts-generation-status');
     if (status) status.textContent = state.ttsVoiceStyle === 'female'
-      ? 'Voz feminina selecionada. No primeiro uso, o navegador baixa o mecanismo Piper (arquivo principal de 46,7 MB), o modelo Dii (63,5 MB) e arquivos de suporte.'
+      ? ''
       : 'Voz masculina selecionada. A voz atual foi mantida.';
   }
 
