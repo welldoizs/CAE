@@ -3927,3 +3927,24 @@ input:focus,textarea:focus,select:focus {
     grid-template-columns: 1fr;
   }
 }
+
+
+.admin-heading { align-items: flex-start; }
+.admin-notification-shell { position: relative; flex: 0 0 auto; }
+.admin-notification-button { position: relative; white-space: nowrap; }
+.admin-notification-button .notification-badge { position: static; margin-left: 4px; }
+.admin-notification-panel {
+  position: absolute; z-index: 80; top: calc(100% + 10px); right: 0;
+  width: min(420px, calc(100vw - 32px)); max-height: min(65vh, 560px);
+  overflow: auto; border: 1px solid var(--line, #e6dfef); border-radius: 16px;
+  background: var(--surface, #fff); box-shadow: 0 18px 50px rgba(39, 28, 62, .18);
+  padding: 14px;
+}
+.admin-notification-panel .notification-panel-head { position: sticky; top: -14px; z-index: 2; background: var(--surface, #fff); padding: 4px 0 12px; }
+.admin-notification-panel .notifications-list { max-height: 430px; overflow: auto; }
+@media (max-width: 640px) {
+  .admin-heading { flex-direction: column; align-items: stretch; }
+  .admin-notification-shell { width: 100%; }
+  .admin-notification-button { width: 100%; justify-content: center; }
+  .admin-notification-panel { left: 0; right: auto; width: 100%; }
+}
