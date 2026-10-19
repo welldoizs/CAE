@@ -231,3 +231,10 @@ grant select, insert, update, delete on public.cae_mood_entries to authenticated
 grant select, insert, update, delete on public.cae_bookmarks to authenticated;
 grant select, insert, update on public.cae_user_preferences to authenticated;
 grant select, insert, update on public.cae_account_deletion_requests to authenticated;
+
+-- Reuse the same hardened role check for staff-only deletion-request access.
+drop policy if exists "Staff manage deletion requests" on public.cae_account_deletion_requests;
+create policy "Staff manage deletion requests" on public.cae_account_deletion_requests
+  for all to authenticated
+  using (public.cae_is_staff())
+  with check (public.cae_is_staff());
