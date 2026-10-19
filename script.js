@@ -2701,15 +2701,15 @@
   }
 
   async function deleteVent(id,audioPath=''){
-    if(!state.user||!state.supabase)return;
+    if(!state.user||!state.supabase)return false;
     try{
       const {data:vent,error:fetchError}=await state.supabase.from(TABLE.vents).select('id,user_id,visibility,audio_url').eq('id',id).maybeSingle();
       if(fetchError)throw fetchError;
-      if(!vent)return toast('Desabafo não encontrado.','error');
+      if(!vent){toast('Desabafo não encontrado.','error');return false;}
       const owner=vent.user_id===state.user.id;
-      if(!owner&&!isStaff())return toast('Você não tem permissão para excluir este desabafo.','error');
-      if(vent.visibility==='private' && !owner && !isStaff())return toast('Desabafos privados só podem ser excluídos pelo autor ou pela equipe de moderação.','error');
-      if(!window.confirm('Excluir este desabafo permanentemente?'))return;
+      if(!owner&&!isStaff()){toast('Você não tem permissão para excluir este desabafo.','error');return false;}
+      if(vent.visibility==='private' && !owner && !isStaff()){toast('Desabafos privados só podem ser excluídos pelo autor ou pela equipe de moderação.','error');return false;}
+      if(!window.confirm('Excluir este desabafo permanentemente?'))return false;
       if(isStaff()) {
         const {error:rpcError}=await state.supabase.rpc('cae_staff_delete_content',{p_content_id:id,p_content_type:'vent'});
         if(rpcError) throw rpcError;
@@ -2722,7 +2722,8 @@
       if(path){const {error:storageError}=await state.supabase.storage.from(AUDIO_BUCKET).remove([path]);if(storageError)console.warn('VENT AUDIO DELETE',storageError);}
       toast('Desabafo excluído permanentemente.');
       await loadHistory(); if(isStaff())await loadAdmin(); if(isStaff())await loadAdminPrivateHistory(); await loadPublicVents();
-    }catch(error){console.error('DELETE VENT',error);toast(errorMessage(error),'error');}
+      return true;
+    }catch(error){console.error('DELETE VENT',error);toast(errorMessage(error),'error');return false;}
   }
 
   async function moderatePost(id,status) {
@@ -2798,18 +2799,20 @@
     ensurePollAdminForm();
     await Promise.allSettled([loadAdminPrivateVents(),loadAdminSupport(),loadAdminPrivateChats(),loadContentReports(),loadAdminDeletionRequests()]);
     try{
-      const [approved,pending,vents,reports]=await Promise.all([
+      const [approved,pending,vents,reports,contentReports]=await Promise.all([
         state.supabase.from(TABLE.posts).select('id',{count:'exact',head:true}).eq('status','approved'),
         state.supabase.from(TABLE.posts).select('id',{count:'exact',head:true}).eq('status','pending'),
         state.supabase.from(TABLE.vents).select('id',{count:'exact',head:true}),
-        state.supabase.from(TABLE.reports).select('id',{count:'exact',head:true}).eq('status','pending')
+        state.supabase.from(TABLE.reports).select('id',{count:'exact',head:true}).eq('status','pending'),
+        state.supabase.from(TABLE.contentReports).select('id',{count:'exact',head:true}).eq('status','pending')
       ]);
-      [approved,pending,vents,reports].forEach(result=>{if(result.error)throw result.error;});
+      [approved,pending,vents,reports,contentReports].forEach(result=>{if(result.error)throw result.error;});
+      const totalPendingReports=(reports.count||0)+(contentReports.count||0);
       $('stat-approved').textContent=String(approved.count||0);
       $('stat-pending').textContent=String(pending.count||0);
       $('stat-vents').textContent=String(vents.count||0);
-      $('stat-reports').textContent=String(reports.count||0);
-      if($('admin-reports-badge'))$('admin-reports-badge').textContent=String(reports.count||0);
+      $('stat-reports').textContent=String(totalPendingReports);
+      if($('admin-reports-badge'))$('admin-reports-badge').textContent=String(totalPendingReports);
       if($('admin-post-count-label'))$('admin-post-count-label').textContent=`${pending.count||0} pendente${(pending.count||0)===1?'':'s'}`;
 
       const {data:postRows,error:postError}=await state.supabase.from(TABLE.posts).select('*').order('created_at',{ascending:false}).limit(150);if(postError)throw postError;
@@ -3183,7 +3186,9 @@
   }
 
   async function removeReportedContent(reportId, type, contentId) {
-    const ok = await deleteStaffContent(type, contentId, 'este conteúdo denunciado');
+    const ok = type === 'vent'
+      ? await deleteVent(contentId)
+      : await deleteStaffContent(type, contentId, 'este conteúdo denunciado');
     if (ok) await updateContentReportStatus(reportId, 'reviewed');
   }
 
