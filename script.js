@@ -1568,8 +1568,6 @@
   async function generateTextVoice() {
     if (state.ttsGenerating) return;
     state.ttsCancelled = false;
-    const cancelButton = $('tts-cancel');
-    if (cancelButton) cancelButton.classList.toggle('hidden', state.ttsVoiceStyle !== 'female');
     const text = $('tts-transcript')?.value.trim() || '';
     if (!text) {
       toast('Fale para transcrever ou digite o texto que você quer transformar em voz.', 'error');
@@ -1581,6 +1579,8 @@
       return;
     }
     if (!ensureAccountCanInteract()) return;
+    const cancelButton = $('tts-cancel');
+    if (cancelButton) cancelButton.classList.toggle('hidden', state.ttsVoiceStyle !== 'female');
     state.ttsGenerating = true;
     const button = $('tts-generate');
     setBusy(button, true, 'Gerando voz…');
