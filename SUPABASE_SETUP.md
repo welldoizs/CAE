@@ -9,6 +9,7 @@ As migrações abaixo estão aplicadas no banco conectado ao projeto:
 - `20261019_cae_product_features`: tabelas, políticas RLS e funções para os novos recursos.
 - `20261019152309_lock_down_new_rpc_anon_access`: impede que clientes anônimos executem as funções privilegiadas de denúncia, solicitação de exclusão e verificação de equipe.
 - `20261019154122_cae_shared_podcasts_and_history_integration`: recomendações comunitárias de podcasts, políticas RLS, suporte a favoritos e denúncias de podcasts.
+- `cae_admin_only_notifications_20261019`: cria alertas administrativos privados para novos desabafos, publicações, podcasts, denúncias, solicitações de exclusão de conta e mensagens de estudantes em Fale conosco. Os alertas são individuais por membro da equipe e atualizados em tempo real.
 
 O banco confirmou que as cinco tabelas novas existem com RLS habilitado e políticas configuradas. Também foi verificado que as três funções RPC novas são executáveis por usuários autenticados, mas não por `anon`.
 
@@ -20,6 +21,7 @@ O banco confirmou que as cinco tabelas novas existem com RLS habilitado e polít
 - Solicitações de exclusão de conta (`cae_account_deletion_requests`).
 - Denúncias de publicações, desabafos públicos e mensagens privadas (`cae_content_reports`), recebidas por uma função que verifica se a pessoa pode denunciar aquele conteúdo.
 - Recomendações de podcasts da comunidade (`cae_shared_podcasts`), com envio anônimo para outros estudantes, aprovação da equipe, denúncias e possibilidade de salvar.
+- Central de alertas administrativos (`cae_admin_notifications`): visível somente para administradores e moderadores autorizados; não aparece para contas comuns. Os alertas não incluem o texto dos desabafos nem o conteúdo das mensagens, apenas o tipo de atividade e um atalho para a área da equipe.
 
 As migrações são aditivas: criam tabelas, índices, políticas e funções novas. Não apagam tabelas existentes nem eliminam contas automaticamente.
 
