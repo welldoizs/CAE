@@ -626,12 +626,43 @@
     refreshIcons();
   }
 
+  function ensureViewHelpButton(viewId) {
+    const view = $(viewId);
+    if (!view) return;
+    const heading = view.querySelector(':scope > .section-head, :scope > .home-simple-head');
+    if (!heading || heading.querySelector('[data-site-help]')) return;
+    const titles = {
+      'home-view': ['Página inicial', 'Use os atalhos para abrir as áreas principais do CAE. Desabafos é para escrever ou ler relatos; Mural reúne avisos, eventos, publicações, enquetes e podcasts; Histórico guarda seus registros pessoais e itens salvos.'],
+      'chat-view': ['Chat público', 'Converse com outros estudantes usando seu código público. Não compartilhe dados pessoais, senhas ou informações que identifiquem você. Use Denunciar se encontrar uma mensagem inadequada.'],
+      'private-conversations-view': ['Conversas privadas', 'Você pode convidar alguém pelo código público. A conversa só começa depois que a outra pessoa aceitar. As mensagens podem ser verificadas pela equipe em situações de segurança.'],
+      'mural-view': ['Mural', 'Aqui ficam avisos, eventos, publicações, enquetes e podcasts. Use as abas para trocar de assunto. Você pode salvar conteúdos para encontrá-los depois no Histórico.'],
+      'history-view': ['Seu histórico', 'Reúne seus desabafos, registros privados de bem-estar e conteúdos salvos. As abas organizam cada tipo de registro; seus dados pessoais ficam visíveis apenas para sua conta.'],
+      'help-view': ['Ajuda e contatos', 'Encontre serviços de apoio e canais de contato. Em risco imediato, use os telefones de emergência exibidos nesta página.'],
+      'account-view': ['Sua conta', 'Consulte seu código público, opções de privacidade e preferências. O código público ajuda a conversar sem exibir seu e-mail ou nome real.'],
+      'privacy-view': ['Central de privacidade', 'Veja quais dados são usados pelo CAE, como funciona o anonimato e quais controles você pode solicitar.'],
+      'admin-view': ['Central da equipe', 'Área exclusiva de moderação. Cada aba reúne uma tarefa: revisar conteúdos, analisar denúncias, gerenciar recomendações e atender solicitações.'],
+      'admin-private-history-view': ['Histórico privado', 'Área restrita à equipe autorizada para verificar desabafos privados em situações previstas pelas regras de segurança.']
+    };
+    const content = titles[viewId] || ['Sobre esta área', 'Esta seção reúne as ferramentas indicadas pelo título. Leia as instruções próximas a cada botão antes de enviar ou compartilhar informações.'];
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'help-question';
+    button.dataset.siteHelp = '1';
+    button.dataset.helpTitle = content[0];
+    button.dataset.helpText = content[1];
+    button.textContent = '?';
+    const actions = heading.querySelector('.home-simple-actions');
+    if (actions) actions.appendChild(button);
+    else heading.appendChild(button);
+  }
+
   function showView(id) {
     if (!state.user) return showAuth();
     if (id === 'admin-view' && !isStaff()) id = 'home-view';
     if (id === 'admin-private-history-view' && !isStaff()) id = 'home-view';
     $$('.view').forEach(view => view.classList.remove('active'));
     $(id)?.classList.add('active');
+    ensureViewHelpButton(id);
     state.currentView = id;
     $$('[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === id));
 
