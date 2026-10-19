@@ -27,7 +27,8 @@
     bookmarks: 'cae_bookmarks',
     preferences: 'cae_user_preferences',
     deletionRequests: 'cae_account_deletion_requests',
-    contentReports: 'cae_content_reports'
+    contentReports: 'cae_content_reports',
+    sharedPodcasts: 'cae_shared_podcasts'
   });
 
   const AUDIO_BUCKET = 'cae-audios';
@@ -58,6 +59,8 @@
     realtime: null,
     currentView: 'home-view',
     currentPanel: 'announcements',
+    historyFilter: 'vents',
+    ventHistoryFilter: 'free',
     initialized: false,
     hydrating: false,
     guidedIndex: 0,
@@ -605,7 +608,7 @@
 
   function showAdminPanel(panel) {
     if (!isStaff()) return;
-    const allowed = ['vents','posts','announcements','events','polls','reports','private_chats','support','accounts'];
+    const allowed = ['vents','posts','announcements','events','polls','podcasts','reports','private_chats','support','accounts'];
     let value = allowed.includes(panel) ? panel : 'vents';
     if (value === 'accounts' && !isStaff()) value = 'vents';
     $$('[data-admin-tab]').forEach(button => {
@@ -619,6 +622,7 @@
       panelEl.classList.toggle('hidden', !active);
     });
     if (value === 'private_chats') loadAdminPrivateChats();
+    if (value === 'podcasts') loadAdminSharedPodcasts();
     refreshIcons();
   }
 
@@ -634,10 +638,8 @@
     if (id === 'chat-view') { loadChat(); }
     if (id === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId);
     if (id === 'desabafo-view') loadPublicVents();
-    if (id === 'mural-view') loadMural();
-    if (id === 'history-view') loadHistory();
-    if (id === 'wellbeing-view') loadMoodEntries();
-    if (id === 'saved-view') loadSavedContent();
+    if (id === 'mural-view') { loadMural(); loadCommunityPodcasts(); }
+    if (id === 'history-view') loadHistory(state.historyFilter);
     if (id === 'admin-view' && isStaff()) { showAdminPanel('vents'); loadAdmin(); }
     if (id === 'admin-private-history-view' && isStaff()) loadAdminPrivateHistory();
     if (id === 'help-view') loadSupportChat();
@@ -2266,6 +2268,102 @@
     } catch (error) { console.error('VOTE',error); toast(errorMessage(error),'error'); }
   }
 
+  function safePodcastUrl(value) {
+    try { const url = new URL(String(value || '').trim()); return ['http:', 'https:'].includes(url.protocol) ? url.href : ''; }
+    catch (_) { return ''; }
+  }
+
+  function communityPodcastCardHTML(row, staff = false) {
+    const report = row.user_id !== state.user.id && row.status === 'approved'
+      ? `<button class="btn ghost btn-small" type="button" data-report-content="podcast" data-report-id="${escapeHTML(row.id)}">Denunciar</button>` : '';
+    const remove = staff ? `<button class="btn danger btn-small" type="button" data-delete-shared-podcast="${escapeHTML(row.id)}">Excluir</button>` : '';
+    const pending = row.status === 'pending' && row.user_id === state.user.id ? '<span class="cae-status cae-status-pending">Em análise</span>' : '';
+    return `<article class="card community-podcast-card"><div class="eyebrow">${escapeHTML(row.category || 'Geral')} · ${escapeHTML(formatDate(row.created_at))}</div><div class="own-vent-meta"><h3>${escapeHTML(row.title)}</h3>${pending}</div>${row.description ? `<p>${escapeHTML(row.description)}</p>` : ''}<p class="cae-muted">Recomendação anônima da comunidade</p><div class="actions"><a class="btn primary btn-small" href="${escapeHTML(row.url)}" target="_blank" rel="noopener noreferrer">Ouvir podcast</a>${bookmarkButtonHTML('podcast', row.id)}${report}</div>${remove}</article>`;
+  }
+
+  async function loadCommunityPodcasts() {
+    const list = $('community-podcast-list');
+    if (!list || !state.user || !state.supabase) return;
+    try {
+      const { data, error } = await state.supabase.from(TABLE.sharedPodcasts)
+        .select('id,user_id,title,description,category,url,status,created_at')
+        .order('created_at', { ascending: false }).limit(100);
+      if (error) throw error;
+      list.innerHTML = data?.length ? data.map(row => communityPodcastCardHTML(row)).join('') :
+        '<div class="card"><p>Ainda não há recomendações. Você pode ser a primeira pessoa a compartilhar uma!</p></div>';
+      refreshIcons();
+    } catch (error) {
+      console.error('COMMUNITY PODCASTS', error);
+      list.innerHTML = '<div class="card"><p class="cae-danger">Não foi possível carregar as recomendações.</p></div>';
+    }
+  }
+
+  async function submitCommunityPodcast(event) {
+    event.preventDefault();
+    if (!state.user || !state.supabase || !ensureAccountCanInteract()) return;
+    const title = $('podcast-share-title')?.value.trim() || '';
+    const category = $('podcast-share-category')?.value || 'Geral';
+    const description = $('podcast-share-description')?.value.trim() || '';
+    const url = safePodcastUrl($('podcast-share-url')?.value);
+    if (title.length < 2 || !url) return setStatus('podcast-share-status', 'Informe um título e um link válido começando com https://.');
+    const button = $('podcast-share-form')?.querySelector('button[type="submit"]');
+    setBusy(button, true, 'Enviando…');
+    try {
+      const { error } = await state.supabase.from(TABLE.sharedPodcasts).insert({ user_id: state.user.id, title, description, category, url, status: 'pending' });
+      if (error) throw error;
+      $('podcast-share-form').reset();
+      setStatus('podcast-share-status', 'Recomendação enviada! Ela aparecerá para todos depois da aprovação da equipe.', 'ok');
+      await loadCommunityPodcasts();
+      if (isStaff()) await loadAdminSharedPodcasts();
+    } catch (error) {
+      console.error('PODCAST SUBMIT', error);
+      setStatus('podcast-share-status', errorMessage(error));
+    } finally { setBusy(button, false); }
+  }
+
+  async function loadAdminSharedPodcasts() {
+    if (!isStaff() || !state.supabase) return;
+    const pendingList = $('admin-podcast-pending-list'), approvedList = $('admin-podcast-approved-list');
+    if (!pendingList || !approvedList) return;
+    try {
+      const { data, error } = await state.supabase.from(TABLE.sharedPodcasts)
+        .select('id,user_id,title,description,category,url,status,created_at')
+        .order('created_at', { ascending: false }).limit(150);
+      if (error) throw error;
+      const rows = data || [];
+      const pending = rows.filter(row => row.status === 'pending');
+      const approved = rows.filter(row => row.status === 'approved');
+      pendingList.innerHTML = pending.length ? pending.map(row =>
+        `<article class="card"><div class="eyebrow">Enviado em ${escapeHTML(formatDate(row.created_at))} · ${escapeHTML(row.category)}</div><h3>${escapeHTML(row.title)}</h3><p>${escapeHTML(row.description || 'Sem descrição.')}</p><p><a href="${escapeHTML(row.url)}" target="_blank" rel="noopener noreferrer">Ver link enviado</a></p><p class="cae-muted">Conta de origem para moderação: ${escapeHTML(publicName(row.user_id))}</p><div class="actions"><button class="btn primary btn-small" type="button" data-moderate-shared-podcast="approved" data-podcast-id="${escapeHTML(row.id)}">Aprovar</button><button class="btn danger btn-small" type="button" data-moderate-shared-podcast="rejected" data-podcast-id="${escapeHTML(row.id)}">Recusar</button></div></article>`
+      ).join('') : '<div class="card"><p>Nenhuma recomendação pendente.</p></div>';
+      approvedList.innerHTML = approved.length ? approved.map(row => communityPodcastCardHTML(row, true)).join('') : '<div class="card"><p>Nenhuma recomendação publicada.</p></div>';
+      refreshIcons();
+    } catch (error) {
+      console.error('ADMIN PODCASTS', error);
+      pendingList.innerHTML = '<div class="card"><p class="cae-danger">Não foi possível carregar as recomendações.</p></div>';
+    }
+  }
+
+  async function moderateSharedPodcast(id, status) {
+    if (!isStaff() || !['approved', 'rejected'].includes(status)) return;
+    try {
+      const { error } = await state.supabase.from(TABLE.sharedPodcasts).update({ status, moderated_at: new Date().toISOString(), moderated_by: state.user.id }).eq('id', id);
+      if (error) throw error;
+      toast(status === 'approved' ? 'Podcast aprovado e publicado.' : 'Recomendação recusada.');
+      await Promise.all([loadAdminSharedPodcasts(), loadCommunityPodcasts()]);
+    } catch (error) { console.error('PODCAST MODERATION', error); toast(errorMessage(error), 'error'); }
+  }
+
+  async function deleteSharedPodcast(id) {
+    if (!isStaff() || !window.confirm('Excluir esta recomendação permanentemente?')) return;
+    try {
+      const { error } = await state.supabase.from(TABLE.sharedPodcasts).delete().eq('id', id);
+      if (error) throw error;
+      toast('Recomendação excluída.');
+      await Promise.all([loadAdminSharedPodcasts(), loadCommunityPodcasts()]);
+    } catch (error) { console.error('PODCAST DELETE', error); toast(errorMessage(error), 'error'); }
+  }
+
   async function loadMural() {
     if (!state.supabase || !state.user || state.muralLoading) return;
     state.muralLoading = true;
@@ -2373,26 +2471,50 @@
     try { const {data,error}=await state.supabase.storage.from(AUDIO_BUCKET).createSignedUrl(path,600); if(error)throw error; const card=button?.closest('.public-vent-card'); if(!card)return; let audio=card.querySelector('audio[data-public-vent-audio]'); if(!audio){audio=document.createElement('audio');audio.controls=true;audio.dataset.publicVentAudio='1';audio.style.width='100%';audio.style.marginTop='10px';card.querySelector('.public-vent-audio')?.appendChild(audio);} audio.src=data.signedUrl; await audio.play().catch(()=>{}); } catch(error){console.error('PUBLIC VENT AUDIO',error);toast(`Não foi possível abrir este áudio: ${errorMessage(error)}`,'error');}
   }
 
-  async function loadHistory(filter = state.historyFilter) {
-    const list = $('history-list'); if(!list||!state.user||!state.supabase)return;
-    state.historyFilter = ['free','guided','feelings','audio'].includes(filter) ? filter : 'free';
+  async function loadHistory(section = state.historyFilter) {
+    state.historyFilter = ['vents', 'mood', 'saved'].includes(section) ? section : 'vents';
     $$('[data-history-filter]').forEach(button => {
-      const active=button.dataset.historyFilter===state.historyFilter;
-      button.classList.toggle('active',active);
-      button.setAttribute('aria-selected',String(active));
+      const active = button.dataset.historyFilter === state.historyFilter;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
     });
+    $('history-vents-panel')?.classList.toggle('hidden', state.historyFilter !== 'vents');
+    $('history-mood-panel')?.classList.toggle('hidden', state.historyFilter !== 'mood');
+    $('history-saved-panel')?.classList.toggle('hidden', state.historyFilter !== 'saved');
+    if (state.historyFilter === 'mood') return loadMoodEntries();
+    if (state.historyFilter === 'saved') return loadSavedContent();
+    return loadVentHistory(state.ventHistoryFilter);
+  }
+
+  async function loadVentHistory(filter = state.ventHistoryFilter) {
+    const list = $('history-list');
+    if (!list || !state.user || !state.supabase) return;
+    state.ventHistoryFilter = ['free', 'guided', 'feelings', 'audio'].includes(filter) ? filter : 'free';
+    $$('[data-vent-history-filter]').forEach(button => button.classList.toggle('active', button.dataset.ventHistoryFilter === state.ventHistoryFilter));
     try {
-      const {data,error}=await state.supabase.from(TABLE.vents).select('*').eq('user_id',state.user.id).eq('type',state.historyFilter).order('created_at',{ascending:false}).limit(100);
-      if(error)throw error;
-      if(!data?.length){list.innerHTML='<div class="card"><p>Nenhum registro nesta categoria.</p><p class="cae-muted">Quando você enviar um desabafo deste tipo, ele aparecerá aqui.</p></div>';return;}
-      const visibilityLabel = (v)=>v==='private'?'Privado':'Público';
-      list.innerHTML=data.map(vent=>{
-        const body=getField(vent,['body'],''); const feeling=getField(vent,['feeling'],''); const audioPath=getField(vent,['audio_url'],'');
-        const status=privateVentStatus(vent.status); const statusClass=vent.status==='approved'?'cae-status-approved':vent.status==='rejected'?'cae-status-rejected':'cae-status-pending';
-        return `<article class="card own-vent-card"><div class="own-vent-meta"><div><div class="eyebrow">${escapeHTML(visibilityLabel(vent.visibility))} · ${escapeHTML(formatDate(vent.created_at))}</div></div><span class="cae-status ${statusClass}">${escapeHTML(status)}</span></div>${feeling?`<div class="notice" style="margin-top:10px"><b>${escapeHTML(feeling)}</b></div>`:''}${body?renderVentBody(vent.type,body,'own-vent-body'):''}${audioPath?`<div class="actions" style="margin-top:10px"><button class="btn secondary" type="button" data-play-audio="${escapeHTML(audioPath)}"><i data-lucide="play"></i>Ouvir áudio</button></div>`:''}<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-vent="${escapeHTML(vent.id)}" data-audio-path="${escapeHTML(audioPath)}">Excluir</button></div></article>`;
+      const { data, error } = await state.supabase.from(TABLE.vents).select('*')
+        .eq('user_id', state.user.id).eq('type', state.ventHistoryFilter)
+        .order('created_at', { ascending: false }).limit(100);
+      if (error) throw error;
+      if (!data?.length) {
+        list.innerHTML = '<div class="card"><p>Nenhum desabafo nesta categoria.</p><p class="cae-muted">Quando você enviar um desabafo deste tipo, ele aparecerá aqui.</p></div>';
+        return;
+      }
+      const visibilityLabel = v => v === 'private' ? 'Privado' : 'Público';
+      list.innerHTML = data.map(vent => {
+        const body = getField(vent, ['body'], '');
+        const feeling = getField(vent, ['feeling'], '');
+        const audioPath = getField(vent, ['audio_url'], '');
+        const status = privateVentStatus(vent.status);
+        const statusClass = vent.status === 'approved' ? 'cae-status-approved' : vent.status === 'rejected' ? 'cae-status-rejected' : 'cae-status-pending';
+        return `<article class="card own-vent-card"><div class="own-vent-meta"><div><div class="eyebrow">${escapeHTML(visibilityLabel(vent.visibility))} · ${escapeHTML(formatDate(vent.created_at))}</div></div><span class="cae-status ${statusClass}">${escapeHTML(status)}</span></div>${feeling ? `<div class="notice" style="margin-top:10px"><b>${escapeHTML(feeling)}</b></div>` : ''}${body ? renderVentBody(vent.type, body, 'own-vent-body') : ''}${audioPath ? `<div class="actions" style="margin-top:10px"><button class="btn secondary" type="button" data-play-audio="${escapeHTML(audioPath)}"><i data-lucide="play"></i>Ouvir áudio</button></div>` : ''}<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-vent="${escapeHTML(vent.id)}" data-audio-path="${escapeHTML(audioPath)}">Excluir</button></div></article>`;
       }).join('');
+      filterHistoryCards();
       refreshIcons();
-    }catch(error){console.error('HISTORY',error);list.innerHTML=`<div class="card"><p class="cae-danger">${escapeHTML(errorMessage(error))}</p></div>`;}
+    } catch (error) {
+      console.error('HISTORY', error);
+      list.innerHTML = `<div class="card"><p class="cae-danger">${escapeHTML(errorMessage(error))}</p></div>`;
+    }
   }
 
   async function playPrivateAudio(path) {
@@ -2797,7 +2919,7 @@
     state.adminVentFilter=['free','guided','feelings','audio'].includes(ventFilter) ? ventFilter : state.adminVentFilter;
     $$('[data-admin-vent-filter]').forEach(button=>{const active=button.dataset.adminVentFilter===state.adminVentFilter;button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));});
     ensurePollAdminForm();
-    await Promise.allSettled([loadAdminPrivateVents(),loadAdminSupport(),loadAdminPrivateChats(),loadContentReports(),loadAdminDeletionRequests()]);
+    await Promise.allSettled([loadAdminPrivateVents(),loadAdminSupport(),loadAdminPrivateChats(),loadContentReports(),loadAdminDeletionRequests(),loadAdminSharedPodcasts()]);
     try{
       const [approved,pending,vents,reports,contentReports]=await Promise.all([
         state.supabase.from(TABLE.posts).select('id',{count:'exact',head:true}).eq('status','approved'),
@@ -2916,7 +3038,7 @@
         button.setAttribute('aria-pressed', String(saved));
         button.innerHTML = saved ? '<i data-lucide="bookmark-check"></i>Salvo' : '<i data-lucide="bookmark"></i>Salvar';
       });
-      if (state.currentView === 'saved-view') await loadSavedContent();
+      if (state.currentView === 'history-view' && state.historyFilter === 'saved') await loadSavedContent();
       refreshIcons();
     } catch (error) {
       console.error('BOOKMARK TOGGLE', error);
@@ -2934,13 +3056,14 @@
         list.innerHTML = '<div class="card"><p>Você ainda não salvou nenhum conteúdo.</p><p class="cae-muted">Use o botão Salvar nos avisos, eventos, publicações e enquetes.</p></div>';
         return;
       }
-      const types = ['post', 'announcement', 'event', 'poll'];
-      const labels = { post: 'Publicação', announcement: 'Aviso', event: 'Evento', poll: 'Enquete' };
+      const types = ['post', 'announcement', 'event', 'poll', 'podcast'];
+      const labels = { post: 'Publicação', announcement: 'Aviso', event: 'Evento', poll: 'Enquete', podcast: 'Podcast da comunidade' };
       const configs = {
         post: { table: TABLE.posts, fields: 'id,category,body,created_at' },
         announcement: { table: TABLE.announcements, fields: 'id,title,body,created_at' },
         event: { table: TABLE.events, fields: 'id,title,description,place,event_date,event_time,created_at' },
-        poll: { table: TABLE.polls, fields: 'id,question,created_at' }
+        poll: { table: TABLE.polls, fields: 'id,question,created_at' },
+        podcast: { table: TABLE.sharedPodcasts, fields: 'id,title,description,category,url,created_at' }
       };
       const sections = [];
       for (const type of types) {
@@ -2951,7 +3074,8 @@
         (data || []).forEach(row => {
           const title = row.title || row.question || row.category || labels[type];
           const body = row.body || row.description || (row.place ? row.place : '');
-          sections.push('<article class="card saved-content-card"><div class="eyebrow">' + labels[type] + ' · ' + escapeHTML(formatDate(row.created_at || row.event_date)) + '</div><h3>' + escapeHTML(title) + '</h3><p>' + escapeHTML(body) + '</p><div class="actions"><button class="btn ghost btn-small" type="button" data-toggle-bookmark="1" data-bookmark-type="' + type + '" data-bookmark-id="' + escapeHTML(row.id) + '"><i data-lucide="bookmark-check"></i>Remover dos salvos</button></div></article>');
+          const external = type === 'podcast' ? '<p><a href="' + escapeHTML(row.url) + '" target="_blank" rel="noopener noreferrer">Abrir podcast</a></p>' : '';
+          sections.push('<article class="card saved-content-card"><div class="eyebrow">' + labels[type] + ' · ' + escapeHTML(formatDate(row.created_at || row.event_date)) + '</div><h3>' + escapeHTML(title) + '</h3><p>' + escapeHTML(body) + '</p>' + external + '<div class="actions"><button class="btn ghost btn-small" type="button" data-toggle-bookmark="1" data-bookmark-type="' + type + '" data-bookmark-id="' + escapeHTML(row.id) + '"><i data-lucide="bookmark-check"></i>Remover dos salvos</button></div></article>');
         });
       }
       list.innerHTML = sections.length ? sections.join('') : '<div class="card"><p>Os conteúdos salvos não estão mais disponíveis.</p></div>';
@@ -3035,7 +3159,7 @@
 
   function filterHistoryCards() {
     const query = String($('history-search')?.value || '').trim().toLocaleLowerCase('pt-BR');
-    $('#history-list .own-vent-card').forEach(card => {
+    $('#history-view .own-vent-card, #history-view .mood-history-card, #history-view .saved-content-card').forEach(card => {
       card.classList.toggle('hidden', Boolean(query) && !card.textContent.toLocaleLowerCase('pt-BR').includes(query));
     });
   }
@@ -3149,6 +3273,9 @@
         if (report.target_type === 'post') {
           const { data: row } = await state.supabase.from(TABLE.posts).select('body,category').eq('id', report.target_id).maybeSingle();
           if (row) preview = (row.category ? row.category + ' · ' : '') + (row.body || '');
+        } else if (report.target_type === 'podcast') {
+          const { data: row } = await state.supabase.from(TABLE.sharedPodcasts).select('title,description,url').eq('id', report.target_id).maybeSingle();
+          if (row) preview = (row.title || 'Podcast') + (row.description ? ' · ' + row.description : '') + (row.url ? ' · ' + row.url : '');
         } else if (report.target_type === 'vent') {
           const { data: row } = await state.supabase.from(TABLE.vents).select('type,body,feeling').eq('id', report.target_id).maybeSingle();
           if (row) preview = row.feeling || row.body || 'Desabafo em áudio';
@@ -3187,9 +3314,16 @@
   }
 
   async function removeReportedContent(reportId, type, contentId) {
-    const ok = type === 'vent'
-      ? await deleteVent(contentId)
-      : await deleteStaffContent(type, contentId, 'este conteúdo denunciado');
+    let ok = false;
+    if (type === 'vent') ok = await deleteVent(contentId);
+    else if (type === 'podcast') {
+      try {
+        const { error } = await state.supabase.from(TABLE.sharedPodcasts).delete().eq('id', contentId);
+        if (error) throw error;
+        await Promise.all([loadAdminSharedPodcasts(), loadCommunityPodcasts()]);
+        ok = true;
+      } catch (error) { toast(errorMessage(error), 'error'); }
+    } else ok = await deleteStaffContent(type, contentId, 'este conteúdo denunciado');
     if (ok) await updateContentReportStatus(reportId, 'reviewed');
   }
 
@@ -3307,6 +3441,7 @@
   function bindDelegatedEvents(){
     document.addEventListener('submit',async event=>{
       if(event.target.matches('#mood-entry-form')) return saveMoodEntry(event);
+      if(event.target.matches('#podcast-share-form')) return submitCommunityPodcast(event);
       if(event.target.matches('#support-form')) return sendSupportMessage(event);
       if(event.target.matches('#admin-support-form')) return sendAdminSupportMessage(event);
       if(event.target.matches('#private-chat-form')) return sendPrivateMessage(event);
@@ -3327,6 +3462,8 @@
       if(button.matches('#admin-role-button')){await setAccountRole();return;}
       if(button.matches('[data-user-moderation]')){await moderateAccount(button.dataset.userModeration,button);return;}
       if(button.matches('[data-admin-tab]')){showAdminPanel(button.dataset.adminTab);return;}
+      if(button.matches('[data-moderate-shared-podcast]')){await moderateSharedPodcast(button.dataset.podcastId,button.dataset.moderateSharedPodcast);return;}
+      if(button.matches('[data-delete-shared-podcast]')){await deleteSharedPodcast(button.dataset.deleteSharedPodcast);return;}
       if(button.matches('[data-toggle-bookmark]')){await toggleBookmark(button.dataset.bookmarkType,button.dataset.bookmarkId);return;}
       if(button.matches('[data-report-content]')){await submitContentReport(button.dataset.reportContent,button.dataset.reportId);return;}
       if(button.matches('[data-search-open-panel]')){$('mural-search').value='';renderMuralSearch();switchMuralPanel(button.dataset.searchOpenPanel);return;}
@@ -3365,6 +3502,7 @@
       if(button.matches('[data-compose]')){openComposer(button.dataset.compose);return;}
       if(button.matches('[data-public-filter]')){await loadPublicVents(button.dataset.publicFilter);return;}
       if(button.matches('[data-history-filter]')){await loadHistory(button.dataset.historyFilter);return;}
+      if(button.matches('[data-vent-history-filter]')){await loadVentHistory(button.dataset.ventHistoryFilter);return;}
       if(button.matches('[data-private-filter]')){await loadAdminPrivateHistory(button.dataset.privateFilter);return;}
       if(button.matches('[data-panel]')){switchMuralPanel(button.dataset.panel);return;}
       if(button.matches('[data-report-message]')){await reportMessage(button.dataset.reportMessage);return;}
