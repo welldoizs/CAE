@@ -22,7 +22,12 @@
     privateParticipants: 'cae_private_conversation_participants',
     privateRequests: 'cae_private_chat_requests',
     privateMessages: 'cae_private_messages',
-    notifications: 'cae_notifications'
+    notifications: 'cae_notifications',
+    moods: 'cae_mood_entries',
+    bookmarks: 'cae_bookmarks',
+    preferences: 'cae_user_preferences',
+    deletionRequests: 'cae_account_deletion_requests',
+    contentReports: 'cae_content_reports'
   });
 
   const AUDIO_BUCKET = 'cae-audios';
@@ -111,7 +116,14 @@
     ttsFemalePending: null,
     ttsVoiceStyle: 'female',
     ttsGenerating: false,
-    audioSource: null
+    audioSource: null,
+    bookmarks: new Set(),
+    bookmarkRows: [],
+    moodRows: [],
+    eventRows: [],
+    notificationsEnabled: true,
+    reducedMotion: false,
+    ttsCancelled: false
   };
 
   const $ = (id) => document.getElementById(id);
@@ -578,9 +590,9 @@
       showView(state.currentView || 'home-view');
       prepareFeelings();
     openComposer('free');
-      await Promise.allSettled([loadChat(), loadMural(), loadHistory(), loadPublicVents(), loadSupportChat(), loadNotifications()]);
+      await loadUserPreferences();
+      await Promise.allSettled([loadNotifications(), loadBookmarks()]);
       subscribeRealtime();
-      if (isStaff()) await loadAdmin();
       state.lastHydratedAccessToken = session.access_token || null;
       refreshIcons();
     } catch (error) {
@@ -624,6 +636,8 @@
     if (id === 'desabafo-view') loadPublicVents();
     if (id === 'mural-view') loadMural();
     if (id === 'history-view') loadHistory();
+    if (id === 'wellbeing-view') loadMoodEntries();
+    if (id === 'saved-view') loadSavedContent();
     if (id === 'admin-view' && isStaff()) { showAdminPanel('vents'); loadAdmin(); }
     if (id === 'admin-private-history-view' && isStaff()) loadAdminPrivateHistory();
     if (id === 'help-view') loadSupportChat();
@@ -2157,6 +2171,7 @@
     if (!list) return;
     const { data, error } = await state.supabase.from(TABLE.events).select('*').order('event_date', { ascending: true }).limit(20);
     if (error) throw error;
+    state.eventRows = data || [];
     list.innerHTML = data?.length ? data.map(row => {
       const date = getField(row,['event_date'],null); const time = String(getField(row,['event_time'],'')).slice(0,5);
       const staffActions = isStaff() ? `<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-content="1" data-content-type="event" data-content-id="${escapeHTML(row.id)}" data-content-label="este evento">Excluir</button></div>` : '';
@@ -2246,6 +2261,7 @@
     state.muralLoading = true;
     state.muralQueued = false;
     try {
+      await loadBookmarks();
       const tasks = [loadAnnouncements(),loadEvents(),loadPosts(),loadPolls()];
       const results = await Promise.allSettled(tasks);
       const parts=['Avisos','Eventos','Publicações','Enquetes'];
@@ -2383,18 +2399,21 @@
     try {
       const { data, error } = await state.supabase.storage.from(AUDIO_BUCKET).createSignedUrl(path, 600);
       if (error) throw error;
-      const wrapper = button?.closest('[data-private-vent-card]');
-      if (!wrapper) return;
-      let audio = wrapper.querySelector('audio[data-private-admin-audio]');
+      const wrapper = button?.closest('[data-private-vent-card], .admin-vent-review-card');
+      if (!wrapper) throw new Error('Não encontrei o cartão deste áudio na fila de moderação.');
+      const audioHost = wrapper.querySelector('.admin-audio') || wrapper;
+      let audio = audioHost.querySelector('audio[data-private-admin-audio]');
       if (!audio) {
         audio = document.createElement('audio');
         audio.controls = true;
         audio.dataset.privateAdminAudio = '1';
         audio.style.width = '100%';
         audio.style.marginTop = '10px';
-        wrapper.appendChild(audio);
+        audio.preload = 'metadata';
+        audioHost.appendChild(audio);
       }
       audio.src = data.signedUrl;
+      audio.load();
       await audio.play().catch(() => {});
     } catch (error) {
       console.error('ADMIN PRIVATE AUDIO', error);
@@ -2766,7 +2785,7 @@
     state.adminVentFilter=['free','guided','feelings','audio'].includes(ventFilter) ? ventFilter : state.adminVentFilter;
     $$('[data-admin-vent-filter]').forEach(button=>{const active=button.dataset.adminVentFilter===state.adminVentFilter;button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));});
     ensurePollAdminForm();
-    await Promise.allSettled([loadAdminPrivateVents(),loadAdminSupport(),loadAdminPrivateChats()]);
+    await Promise.allSettled([loadAdminPrivateVents(),loadAdminSupport(),loadAdminPrivateChats(),loadContentReports(),loadAdminDeletionRequests()]);
     try{
       const [approved,pending,vents,reports]=await Promise.all([
         state.supabase.from(TABLE.posts).select('id',{count:'exact',head:true}).eq('status','approved'),
