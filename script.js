@@ -2320,7 +2320,8 @@
         .select('id,user_id,title,description,category,url,status,created_at')
         .order('created_at', { ascending: false }).limit(100);
       if (error) throw error;
-      list.innerHTML = data?.length ? data.map(row => communityPodcastCardHTML(row)).join('') :
+      const visibleRows = (data || []).filter(row => row.status === 'approved' || (row.user_id === state.user.id && row.status === 'pending'));
+      list.innerHTML = visibleRows.length ? visibleRows.map(row => communityPodcastCardHTML(row)).join('') :
         '<div class="card"><p>Ainda não há recomendações. Você pode ser a primeira pessoa a compartilhar uma!</p></div>';
       refreshIcons();
     } catch (error) {
