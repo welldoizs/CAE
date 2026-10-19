@@ -2305,11 +2305,17 @@
   }
 
   function communityPodcastCardHTML(row, staff = false) {
-    const report = row.user_id !== state.user.id && row.status === 'approved'
+    const mine = row.user_id === state.user.id;
+    const approved = row.status === 'approved';
+    const report = !mine && approved
       ? `<button class="btn ghost btn-small" type="button" data-report-content="podcast" data-report-id="${escapeHTML(row.id)}">Denunciar</button>` : '';
     const remove = staff ? `<button class="btn danger btn-small" type="button" data-delete-shared-podcast="${escapeHTML(row.id)}">Excluir</button>` : '';
-    const pending = row.status === 'pending' && row.user_id === state.user.id ? '<span class="cae-status cae-status-pending">Em análise</span>' : '';
-    return `<article class="card community-podcast-card"><div class="eyebrow">${escapeHTML(row.category || 'Geral')} · ${escapeHTML(formatDate(row.created_at))}</div><div class="own-vent-meta"><h3>${escapeHTML(row.title)}</h3>${pending}</div>${row.description ? `<p>${escapeHTML(row.description)}</p>` : ''}<p class="cae-muted">Recomendação anônima da comunidade</p><div class="actions"><a class="btn primary btn-small" href="${escapeHTML(row.url)}" target="_blank" rel="noopener noreferrer">Ouvir podcast</a>${bookmarkButtonHTML('podcast', row.id)}${report}</div>${remove}</article>`;
+    const status = mine && row.status === 'pending' ? '<span class="cae-status cae-status-pending">Em análise</span>' :
+      mine && row.status === 'rejected' ? '<span class="cae-status cae-status-rejected">Não publicado</span>' : '';
+    const listen = approved ? `<a class="btn primary btn-small" href="${escapeHTML(row.url)}" target="_blank" rel="noopener noreferrer">Ouvir podcast</a>` :
+      mine && row.status === 'rejected' ? '<p class="cae-muted">Esta recomendação não foi publicada.</p>' : '';
+    const bookmark = approved ? bookmarkButtonHTML('podcast', row.id) : '';
+    return `<article class="card community-podcast-card"><div class="eyebrow">${escapeHTML(row.category || 'Geral')} · ${escapeHTML(formatDate(row.created_at))}</div><div class="own-vent-meta"><h3>${escapeHTML(row.title)}</h3>${status}</div>${row.description ? `<p>${escapeHTML(row.description)}</p>` : ''}${approved ? '<p class="cae-muted">Recomendação anônima da comunidade</p>' : ''}<div class="actions">${listen}${bookmark}${report}</div>${remove}</article>`;
   }
 
   async function loadCommunityPodcasts() {
@@ -2320,7 +2326,7 @@
         .select('id,user_id,title,description,category,url,status,created_at')
         .order('created_at', { ascending: false }).limit(100);
       if (error) throw error;
-      const visibleRows = (data || []).filter(row => row.status === 'approved' || (row.user_id === state.user.id && row.status === 'pending'));
+      const visibleRows = (data || []).filter(row => row.status === 'approved' || row.user_id === state.user.id);
       list.innerHTML = visibleRows.length ? visibleRows.map(row => communityPodcastCardHTML(row)).join('') :
         '<div class="card"><p>Ainda não há recomendações. Você pode ser a primeira pessoa a compartilhar uma!</p></div>';
       refreshIcons();
