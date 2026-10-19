@@ -3624,6 +3624,12 @@
       if(button.matches('[data-history-filter]')){await loadHistory(button.dataset.historyFilter);return;}
       if(button.matches('[data-vent-history-filter]')){await loadVentHistory(button.dataset.ventHistoryFilter);return;}
       if(button.matches('[data-private-filter]')){await loadAdminPrivateHistory(button.dataset.privateFilter);return;}
+      if(button.matches('[data-open-podcast-form]')){
+        if(state.currentView!=='mural-view') showView('mural-view');
+        switchMuralPanel('podcasts');
+        window.setTimeout(()=>$('podcast-share-form')?.scrollIntoView({behavior:state.reducedMotion?'auto':'smooth',block:'start'}),100);
+        return;
+      }
       if(button.matches('[data-panel]')){switchMuralPanel(button.dataset.panel);return;}
       if(button.matches('[data-report-message]')){await reportMessage(button.dataset.reportMessage);return;}
       if(button.matches('[data-hide-message]')){await hideMessage(button.dataset.hideMessage);return;}
