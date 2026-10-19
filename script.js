@@ -1567,6 +1567,9 @@
 
   async function generateTextVoice() {
     if (state.ttsGenerating) return;
+    state.ttsCancelled = false;
+    const cancelButton = $('tts-cancel');
+    if (cancelButton) cancelButton.classList.toggle('hidden', state.ttsVoiceStyle !== 'female');
     const text = $('tts-transcript')?.value.trim() || '';
     if (!text) {
       toast('Fale para transcrever ou digite o texto que você quer transformar em voz.', 'error');
@@ -1625,10 +1628,15 @@
     } catch (error) {
       if (state.ttsVoiceStyle === 'female') destroyFemaleTtsWorker();
       console.error('TEXT TO VOICE', error);
-      if (status) status.textContent = error?.message || 'Não foi possível gerar a voz. Confira a conexão e tente novamente.';
-      toast(error?.message || 'Não foi possível gerar a voz. Tente novamente.', 'error');
+      if (state.ttsCancelled) {
+        if (status) status.textContent = 'Geração cancelada. Você pode tentar novamente quando quiser.';
+      } else {
+        if (status) status.textContent = error?.message || 'Não foi possível gerar a voz. Confira a conexão e tente novamente.';
+        toast(error?.message || 'Não foi possível gerar a voz. Tente novamente.', 'error');
+      }
     } finally {
       state.ttsGenerating = false;
+      if (cancelButton) cancelButton.classList.add('hidden');
       setBusy(button, false);
     }
   }
@@ -1983,7 +1991,8 @@
       state.notifications = data || [];
       const unread = state.notifications.filter(n => !n.read_at).length;
       const badge = $('notifications-badge');
-      if (badge) { badge.textContent = unread > 99 ? '99+' : String(unread); badge.classList.toggle('hidden', unread === 0); }
+      if (badge) { badge.textContent = unread > 99 ? '99+' : String(unread); badge.classList.toggle('hidden', unread === 0 || !state.notificationsEnabled); }
+      document.querySelector('.notification-shell')?.classList.toggle('hidden', !state.notificationsEnabled);
       const list = $('notifications-list');
       if (!list) return;
       list.innerHTML = state.notifications.length ? state.notifications.map(n => `<button type="button" class="notification-item ${n.read_at?'':'unread'}" data-open-notification="${escapeHTML(n.id)}"><span class="notification-icon"><i data-lucide="${n.type==='private_message'?'message-circle':n.type.includes('request')?'user-plus':n.type==='vent_reply'?'message-circle':'bell'}"></i></span><span><strong>${escapeHTML(n.title)}</strong><small>${escapeHTML(n.body)}</small><em>${escapeHTML(formatDate(n.created_at))}</em></span></button>`).join('') : '<div class="notification-empty"><i data-lucide="bell-off"></i><p>Nenhuma notificação ainda.</p></div>';
@@ -2072,7 +2081,7 @@
     }
     const other=otherPrivateParticipant(conversation);
     head.innerHTML=`<div><div class="eyebrow">${conversation.source_type==='vent_reply'?'Resposta da equipe':'Conversa privada'}</div><strong>#${escapeHTML(other?.public_code||'conta')}</strong></div><span class="cae-muted">Somente participantes</span>`;
-    thread.innerHTML=(conversation.messages||[]).map(m=>`<div class="private-message ${m.sender_id===state.user.id?'own':''}"><div class="private-message-label">${m.sender_id===state.user.id?'Você':`#${escapeHTML((conversation.participants||[]).find(p=>p.user_id===m.sender_id)?.public_code||'conta')}`} · ${escapeHTML(formatDate(m.created_at))}</div><div class="private-message-body">${escapeHTML(m.body).replace(/\n/g,'<br>')}</div></div>`).join('') || '<div class="private-chat-empty compact"><p>A conversa está pronta. Mande a primeira mensagem.</p></div>';
+    thread.innerHTML=(conversation.messages||[]).map(m=>`<div class="private-message ${m.sender_id===state.user.id?'own':''}"><div class="private-message-label">${m.sender_id===state.user.id?'Você':`#${escapeHTML((conversation.participants||[]).find(p=>p.user_id===m.sender_id)?.public_code||'conta')}`} · ${escapeHTML(formatDate(m.created_at))}</div><div class="private-message-body">${escapeHTML(m.body).replace(/\n/g,'<br>')}</div>${m.sender_id!==state.user.id?`<div class="private-message-actions"><button class="btn ghost btn-small" type="button" data-report-content="private_message" data-report-id="${escapeHTML(m.id)}">Denunciar</button></div>`:''}</div>`).join('') || '<div class="private-chat-empty compact"><p>A conversa está pronta. Mande a primeira mensagem.</p></div>';
     form.classList.remove('hidden');
     thread.scrollTop=thread.scrollHeight;
     refreshIcons();
@@ -2162,7 +2171,7 @@
     if (error) throw error;
     list.innerHTML = data?.length ? data.map(row => {
       const staffActions = isStaff() ? `<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-content="1" data-content-type="announcement" data-content-id="${escapeHTML(row.id)}" data-content-label="este aviso">Excluir</button></div>` : '';
-      return `<article class="card"><div class="eyebrow">Aviso · ${escapeHTML(formatDate(row.created_at))}</div><h3>${escapeHTML(getField(row,['title'],'Aviso'))}</h3><p>${escapeHTML(getField(row,['body'],'')).replace(/\n/g,'<br>')}</p>${staffActions}</article>`;
+      return `<article class="card mural-searchable"><div class="eyebrow">Aviso · ${escapeHTML(formatDate(row.created_at))}</div><h3>${escapeHTML(getField(row,['title'],'Aviso'))}</h3><p>${escapeHTML(getField(row,['body'],'')).replace(/\n/g,'<br>')}</p><div class="actions">${bookmarkButtonHTML('announcement',row.id)}</div>${staffActions}</article>`;
     }).join('') : '<div class="card"><p>Nenhum aviso publicado ainda.</p></div>';
   }
 
@@ -2175,7 +2184,7 @@
     list.innerHTML = data?.length ? data.map(row => {
       const date = getField(row,['event_date'],null); const time = String(getField(row,['event_time'],'')).slice(0,5);
       const staffActions = isStaff() ? `<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-content="1" data-content-type="event" data-content-id="${escapeHTML(row.id)}" data-content-label="este evento">Excluir</button></div>` : '';
-      return `<article class="card"><div class="eyebrow">${escapeHTML(formatDateOnly(date))}${time ? ` · ${escapeHTML(time)}` : ''}</div><h3>${escapeHTML(getField(row,['title'],'Evento'))}</h3><p>${escapeHTML(getField(row,['description'],'')).replace(/\n/g,'<br>')}</p><p class="cae-muted">${escapeHTML(getField(row,['place'],'')).replace(/\n/g,'<br>')}</p>${staffActions}</article>`;
+      return `<article class="card mural-searchable"><div class="eyebrow">${escapeHTML(formatDateOnly(date))}${time ? ` · ${escapeHTML(time)}` : ''}</div><h3>${escapeHTML(getField(row,['title'],'Evento'))}</h3><p>${escapeHTML(getField(row,['description'],'')).replace(/\n/g,'<br>')}</p><p class="cae-muted">${escapeHTML(getField(row,['place'],'')).replace(/\n/g,'<br>')}</p><div class="actions"><button class="btn secondary btn-small" type="button" data-download-event="${escapeHTML(row.id)}"><i data-lucide="calendar-plus"></i>Adicionar ao calendário</button>${bookmarkButtonHTML('event',row.id)}</div>${staffActions}</article>`;
     }).join('') : '<div class="card"><p>Nenhum evento publicado ainda.</p></div>';
   }
 
@@ -2202,7 +2211,8 @@
         return `<button type="button" class="cae-reaction ${active?'active':''}" data-react-post="${escapeHTML(post.id)}" data-reaction="${escapeHTML(key)}">${emoji} ${count}</button>`;
       }).join('');
       const staffActions = isStaff() ? `<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-content="1" data-content-type="post" data-content-id="${escapeHTML(post.id)}" data-content-label="esta publicação">Excluir</button></div>` : '';
-      return `<article class="card"><div class="cae-post-meta"><span>${escapeHTML(getField(post,['category'],'Geral'))}</span><span>·</span><span>${escapeHTML(formatDate(post.created_at))}</span>${post.user_id===state.user.id?'<span>· sua publicação</span>':''}</div><p>${escapeHTML(getField(post,['body'],'')).replace(/\n/g,'<br>')}</p>${status!=='approved'?`<div class="cae-muted">Status: ${escapeHTML(status==='pending'?'aguardando moderação':status)}</div>`:''}${status==='approved'?`<div class="cae-reactions">${reactionHTML}</div>`:''}${staffActions}</article>`;
+      const reportAction = post.user_id !== state.user.id && status === 'approved' ? `<button class="btn ghost btn-small" type="button" data-report-content="post" data-report-id="${escapeHTML(post.id)}">Denunciar</button>` : '';
+      return `<article class="card mural-searchable"><div class="cae-post-meta"><span>${escapeHTML(getField(post,['category'],'Geral'))}</span><span>·</span><span>${escapeHTML(formatDate(post.created_at))}</span>${post.user_id===state.user.id?'<span>· sua publicação</span>':''}</div><p>${escapeHTML(getField(post,['body'],'')).replace(/\n/g,'<br>')}</p>${status!=='approved'?`<div class="cae-muted">Status: ${escapeHTML(status==='pending'?'aguardando moderação':status)}</div>`:''}${status==='approved'?`<div class="cae-reactions">${reactionHTML}</div>`:''}<div class="actions">${bookmarkButtonHTML('post',post.id)}${reportAction}</div>${staffActions}</article>`;
     }).join('');
   }
 
@@ -2236,7 +2246,7 @@
         return `<div class="cae-result-row"><div class="cae-poll-option"><span>${escapeHTML(option.text ?? option.option_text ?? '')}</span><span class="cae-muted">${count} · ${pct}%</span>${!selected&&!expired?`<button class="btn secondary" type="button" data-vote-option="${escapeHTML(option.id)}" data-vote-poll="${escapeHTML(poll.id)}">Votar</button>`:''}</div><div class="cae-bar"><span style="width:${pct}%"></span></div></div>`;
       }).join('');
       const adminActions = isStaff() ? `<div class="actions" style="margin-top:12px"><button class="btn secondary" type="button" data-delete-poll="${escapeHTML(poll.id)}">Excluir enquete</button></div>` : '';
-      return `<article class="card"><div class="eyebrow">Enquete${closesAt?` · até ${escapeHTML(formatDate(closesAt))}`:''}</div><h3>${escapeHTML(getField(poll,['question'],'Enquete'))}</h3><p class="cae-muted">${selected?'Seu voto foi registrado.':expired?'Enquete encerrada.':'Escolha uma opção.'}</p><div class="cae-results">${optionHTML}</div>${adminActions}</article>`;
+      return `<article class="card mural-searchable"><div class="eyebrow">Enquete${closesAt?` · até ${escapeHTML(formatDate(closesAt))}`:''}</div><h3>${escapeHTML(getField(poll,['question'],'Enquete'))}</h3><p class="cae-muted">${selected?'Seu voto foi registrado.':expired?'Enquete encerrada.':'Escolha uma opção.'}</p><div class="cae-results">${optionHTML}</div><div class="actions">${bookmarkButtonHTML('poll',poll.id)}</div>${adminActions}</article>`;
     }).join('');
   }
 
@@ -2352,7 +2362,8 @@
         const audioPath=getField(vent,['audio_url'],'');
         const typeLabel={free:'Texto livre',guided:'Perguntas guiadas',feelings:'Como eu me sinto',audio:'Áudio'}[state.publicVentFilter]||'Desabafo';
         const staffActions=isStaff()?`<div class="actions public-content-actions"><button class="btn danger btn-small" type="button" data-delete-vent="${escapeHTML(vent.id)}" data-audio-path="${escapeHTML(audioPath)}"><i data-lucide="trash-2"></i>Excluir</button></div>`:'';
-        return `<article class="card public-vent-card"><div class="public-vent-type"><span class="vent-tab-icon"><i data-lucide="${state.publicVentFilter==='guided'?'list-checks':state.publicVentFilter==='feelings'?'heart':state.publicVentFilter==='audio'?'mic':'pen-line'}"></i></span><strong>${escapeHTML(typeLabel)}</strong></div><div class="cae-post-meta">${escapeHTML(publicName(vent.user_id))} · ${escapeHTML(formatDate(vent.created_at))}</div>${feeling?`<div class="public-vent-feeling">${escapeHTML(feeling)}</div>`:''}${renderVentBody(vent.type,body)}${audioPath?`<div class="public-vent-audio"><button class="btn secondary" type="button" data-play-public-audio="${escapeHTML(audioPath)}"><i data-lucide="play"></i>Ouvir áudio</button></div>`:''}${staffActions}</article>`;
+        const reportAction = vent.user_id !== state.user.id ? `<button class="btn ghost btn-small" type="button" data-report-content="vent" data-report-id="${escapeHTML(vent.id)}">Denunciar</button>` : '';
+        return `<article class="card public-vent-card"><div class="public-vent-type"><span class="vent-tab-icon"><i data-lucide="${state.publicVentFilter==='guided'?'list-checks':state.publicVentFilter==='feelings'?'heart':state.publicVentFilter==='audio'?'mic':'pen-line'}"></i></span><strong>${escapeHTML(typeLabel)}</strong></div><div class="cae-post-meta">${escapeHTML(publicName(vent.user_id))} · ${escapeHTML(formatDate(vent.created_at))}</div>${feeling?`<div class="public-vent-feeling">${escapeHTML(feeling)}</div>`:''}${renderVentBody(vent.type,body)}${audioPath?`<div class="public-vent-audio"><button class="btn secondary" type="button" data-play-public-audio="${escapeHTML(audioPath)}"><i data-lucide="play"></i>Ouvir áudio</button></div>`:''}<div class="actions">${reportAction}</div>${staffActions}</article>`;
       }).join('');
       refreshIcons();
     } catch(error){console.error('PUBLIC VENTS',error);list.innerHTML=`<div class="public-vent-empty"><p class="cae-danger">${escapeHTML(errorMessage(error))}</p></div>`;}
@@ -3289,12 +3300,18 @@
 
   function bindDelegatedEvents(){
     document.addEventListener('submit',async event=>{
+      if(event.target.matches('#mood-entry-form')) return saveMoodEntry(event);
       if(event.target.matches('#support-form')) return sendSupportMessage(event);
       if(event.target.matches('#admin-support-form')) return sendAdminSupportMessage(event);
       if(event.target.matches('#private-chat-form')) return sendPrivateMessage(event);
     });
     document.addEventListener('change',event=>{
       if(event.target.matches('#admin-support-conversation')) renderSelectedAdminSupportConversation();
+      if(event.target.matches('#preference-notifications,#preference-reduced-motion')) saveUserPreferences();
+    });
+    document.addEventListener('input',event=>{
+      if(event.target.matches('#history-search')) filterHistoryCards();
+      if(event.target.matches('#mural-search')) renderMuralSearch();
     });
     document.addEventListener('click',async event=>{
       const helpButton = event.target.closest('[data-site-help]');
@@ -3304,6 +3321,18 @@
       if(button.matches('#admin-role-button')){await setAccountRole();return;}
       if(button.matches('[data-user-moderation]')){await moderateAccount(button.dataset.userModeration,button);return;}
       if(button.matches('[data-admin-tab]')){showAdminPanel(button.dataset.adminTab);return;}
+      if(button.matches('[data-toggle-bookmark]')){await toggleBookmark(button.dataset.bookmarkType,button.dataset.bookmarkId);return;}
+      if(button.matches('[data-report-content]')){await submitContentReport(button.dataset.reportContent,button.dataset.reportId);return;}
+      if(button.matches('[data-search-open-panel]')){$('mural-search').value='';renderMuralSearch();switchMuralPanel(button.dataset.searchOpenPanel);return;}
+      if(button.matches('[data-download-event]')){downloadEventCalendar(button.dataset.downloadEvent);return;}
+      if(button.matches('[data-delete-mood]')){await deleteMoodEntry(button.dataset.deleteMood);return;}
+      if(button.matches('[data-resolve-content-report]')){await updateContentReportStatus(button.dataset.resolveContentReport,'reviewed');return;}
+      if(button.matches('[data-dismiss-content-report]')){await updateContentReportStatus(button.dataset.dismissContentReport,'dismissed');return;}
+      if(button.matches('[data-remove-reported-content]')){await removeReportedContent(button.dataset.reportId,button.dataset.contentType,button.dataset.contentId);return;}
+      if(button.matches('[data-complete-deletion-request]')){await completeDeletionRequest(button.dataset.completeDeletionRequest);return;}
+      if(button.matches('#signout-other-sessions')){await signOutOtherSessions();return;}
+      if(button.matches('#request-account-deletion')){await requestAccountDeletion();return;}
+      if(button.matches('#tts-cancel')){cancelTextVoiceGeneration();return;}
       if(button.matches('[data-admin-post-char-filter]')){state.adminPostFilter=button.dataset.adminPostCharFilter;renderAdminPostModerationList();return;}
       if(button.matches('[data-admin-vent-filter]')){showAdminPanel('vents');await loadAdmin(button.dataset.adminVentFilter);return;}
       if(button.matches('[data-direct-timeout]')){await directAccountModeration(button.dataset.directTimeout,'timeout',button);return;}
