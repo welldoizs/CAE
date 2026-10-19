@@ -93,6 +93,8 @@
     privateSelectedConversationId: null,
     notifications: [],
     notificationsOpen: false,
+    adminNotifications: [],
+    adminNotificationsOpen: false,
     privateReplyVentId: null,
     adminPrivateChatData: [] ,
     adminPostRows: [],
@@ -671,7 +673,7 @@
     if (id === 'desabafo-view') loadPublicVents();
     if (id === 'mural-view') { loadMural(); loadCommunityPodcasts(); }
     if (id === 'history-view') loadHistory(state.historyFilter);
-    if (id === 'admin-view' && isStaff()) { showAdminPanel('vents'); loadAdmin(); }
+    if (id === 'admin-view' && isStaff()) { showAdminPanel('vents'); loadAdmin(); loadAdminNotifications(); }
     if (id === 'admin-private-history-view' && isStaff()) loadAdminPrivateHistory();
     if (id === 'help-view') loadSupportChat();
     refreshIcons();
@@ -2007,6 +2009,83 @@
   }
 
 
+  function openAdminNotificationsPanel(force = null) {
+    if (!isStaff()) return;
+    const panel = $('admin-notifications-panel');
+    const button = $('admin-notifications-button');
+    if (!panel || !button) return;
+    state.adminNotificationsOpen = force === null ? !state.adminNotificationsOpen : Boolean(force);
+    panel.classList.toggle('hidden', !state.adminNotificationsOpen);
+    button.setAttribute('aria-expanded', String(state.adminNotificationsOpen));
+  }
+
+  async function loadAdminNotifications() {
+    const shell = $('.admin-notification-shell');
+    if (!isStaff() || !state.user || !state.supabase) {
+      shell?.classList.add('hidden');
+      return;
+    }
+    shell?.classList.remove('hidden');
+    try {
+      const { data, error } = await state.supabase.from('cae_admin_notifications')
+        .select('id,user_id,type,title,body,target_view,target_id,created_at,read_at')
+        .order('created_at', { ascending: false }).limit(60);
+      if (error) throw error;
+      state.adminNotifications = data || [];
+      const unread = state.adminNotifications.filter(item => !item.read_at).length;
+      const badge = $('admin-notifications-badge');
+      if (badge) {
+        badge.textContent = unread > 99 ? '99+' : String(unread);
+        badge.classList.toggle('hidden', unread === 0);
+      }
+      const list = $('admin-notifications-list');
+      if (!list) return;
+      list.innerHTML = state.adminNotifications.length ? state.adminNotifications.map(item =>
+        `<button type="button" class="notification-item ${item.read_at ? '' : 'unread'}" data-open-admin-notification="${escapeHTML(item.id)}"><span class="notification-icon"><i data-lucide="bell-ring"></i></span><span><strong>${escapeHTML(item.title)}</strong><small>${escapeHTML(item.body)}</small><em>${escapeHTML(formatDate(item.created_at))}</em></span></button>`
+      ).join('') : '<div class="notification-empty"><i data-lucide="bell-off"></i><p>Nenhum alerta administrativo ainda.</p></div>';
+      refreshIcons();
+    } catch (error) {
+      console.error('ADMIN NOTIFICATIONS', error);
+      const list = $('admin-notifications-list');
+      if (list) list.innerHTML = '<div class="notification-empty"><p class="cae-danger">Não foi possível carregar os alertas da equipe.</p></div>';
+    }
+  }
+
+  async function markAdminNotificationRead(id) {
+    if (!isStaff() || !id || !state.user) return;
+    const { error } = await state.supabase.from('cae_admin_notifications')
+      .update({ read_at: new Date().toISOString() }).eq('id', id).eq('user_id', state.user.id);
+    if (error) console.warn('ADMIN NOTIFICATION READ', error);
+  }
+
+  async function markAllAdminNotificationsRead() {
+    if (!isStaff() || !state.user) return;
+    const { error } = await state.supabase.from('cae_admin_notifications')
+      .update({ read_at: new Date().toISOString() }).eq('user_id', state.user.id).is('read_at', null);
+    if (error) return toast(errorMessage(error), 'error');
+    await loadAdminNotifications();
+  }
+
+  async function openAdminNotification(id) {
+    if (!isStaff()) return;
+    const item = state.adminNotifications.find(row => String(row.id) === String(id));
+    if (!item) return;
+    await markAdminNotificationRead(id);
+    openAdminNotificationsPanel(false);
+    const tabs = {
+      new_vent: 'vents',
+      new_post: 'posts',
+      new_podcast: 'podcasts',
+      content_report: 'reports',
+      chat_report: 'reports',
+      account_deletion: 'accounts',
+      support_message: 'support'
+    };
+    showView('admin-view');
+    showAdminPanel(tabs[item.type] || 'vents');
+    await loadAdminNotifications();
+  }
+
   function openNotificationsPanel(force = null) {
     const panel = $('notifications-panel');
     const button = $('notifications-button');
@@ -2186,6 +2265,7 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.vents }, () => { loadPublicVents(); if (isStaff()) loadAdmin(); if (isStaff()) loadAdminPrivateHistory(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.support }, () => { loadSupportChat(); if (isStaff()) loadAdminSupport(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.notifications }, () => { loadNotifications(); if (state.currentView === 'private-conversations-view' && state.privateSelectedConversationId) loadPrivateChatData(state.privateSelectedConversationId); })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'cae_admin_notifications', filter: `user_id=eq.${state.user.id}` }, () => { if (isStaff()) loadAdminNotifications(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.privateMessages }, () => { if (state.currentView === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId); })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.privateRequests }, () => { if (state.currentView === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId); loadNotifications(); })
       .subscribe(status => console.debug('CAE Realtime:', status));
@@ -3518,6 +3598,9 @@
       if(button.matches('[data-admin-vent-filter]')){showAdminPanel('vents');await loadAdmin(button.dataset.adminVentFilter);return;}
       if(button.matches('[data-direct-timeout]')){await directAccountModeration(button.dataset.directTimeout,'timeout',button);return;}
       if(button.matches('[data-direct-ban]')){await directAccountModeration(button.dataset.directBan,'ban',button);return;}
+      if(button.matches('#admin-notifications-button')){openAdminNotificationsPanel();return;}
+      if(button.matches('#admin-notifications-mark-read')){await markAllAdminNotificationsRead();return;}
+      if(button.matches('[data-open-admin-notification]')){await openAdminNotification(button.dataset.openAdminNotification);return;}
       if(button.matches('#notifications-button')){openNotificationsPanel();return;}
       if(button.matches('#notifications-mark-read')){await markAllNotificationsRead();return;}
       if(button.matches('[data-open-notification]')){await openNotification(button.dataset.openNotification);return;}
