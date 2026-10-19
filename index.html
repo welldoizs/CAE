@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="style.css?v=35">
+  <link rel="stylesheet" href="style.css?v=36">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   <link rel="preconnect" href="https://challenges.cloudflare.com">
@@ -111,8 +111,6 @@
           <button type="button" data-view="desabafo-view"><i data-lucide="notebook-pen"></i>Desabafos</button>
           <button type="button" data-view="mural-view"><i data-lucide="layout-dashboard"></i>Mural</button>
           <button type="button" data-view="history-view"><i data-lucide="history"></i>Histórico</button>
-          <button type="button" data-view="wellbeing-view"><i data-lucide="heart-pulse"></i>Bem-estar</button>
-          <button type="button" data-view="saved-view"><i data-lucide="bookmark"></i>Salvos</button>
           <button type="button" data-view="help-view"><i data-lucide="life-buoy"></i>Ajuda</button>
           <button type="button" data-view="account-view"><i data-lucide="user-round"></i>Conta</button>
           <button type="button" id="nav-admin" class="hidden" data-view="admin-view"><i data-lucide="shield"></i>Moderação</button>
@@ -264,7 +262,7 @@
 <h2>Desabafos</h2>
 <p class="muted">Leia, escreva ou grave um desabafo. Você escolhe se ele será público ou privado.</p>
 </div>
-          <button class="btn ghost btn-small" type="button" data-open-view="private-conversations-view"><i data-lucide="lock-keyhole"></i>Conversas privadas</button>
+<div class="actions"><button class="btn ghost btn-small" type="button" data-open-view="history-view"><i data-lucide="history"></i>Meu histórico</button><button class="help-question" type="button" data-site-help data-help-title="Área de desabafos" data-help-text="Leia desabafos públicos aprovados ou envie o seu em texto, por perguntas guiadas, escolhendo uma frase ou gravando áudio. Antes de enviar, escolha se será público ou privado. Público só aparece depois da aprovação. Privado não aparece para outros estudantes. No histórico você pode rever o que enviou.">?</button><button class="btn ghost btn-small" type="button" data-open-view="private-conversations-view"><i data-lucide="lock-keyhole"></i>Conversas privadas</button></div>
         </div>
         <section class="public-vent-section public-vent-section-top" aria-labelledby="public-vent-title">
           <div class="section-head">
@@ -476,6 +474,14 @@
 <h3>Podcasts sobre psicologia e saúde mental</h3>
 <p class="muted">Conversas e conteúdos para conhecer melhor a psicologia, emoções, relações e saúde mental. Ouvir um podcast pode informar, mas não substitui uma conversa com um profissional.</p>
 </div>
+          <div class="card podcast-share-card"><div class="field-label-row"><div><div class="eyebrow">Compartilhe interesses</div><h3>Recomende um podcast</h3></div><button class="help-question" type="button" data-site-help data-help-title="Compartilhar podcasts" data-help-text="Recomende podcasts de qualquer assunto: cultura, humor, ciência, histórias, jogos, educação e outros. A equipe revisa antes de publicar. Seu nome não aparece para outros estudantes; a equipe mantém um registro interno para segurança.">?</button></div>
+            <p class="muted">Pode ser sobre qualquer assunto, não só saúde mental. Sua recomendação aparece sem seu nome depois de aprovada.</p>
+            <form id="podcast-share-form"><div class="field"><label for="podcast-share-title">Nome do podcast ou episódio</label><input id="podcast-share-title" maxlength="120" required placeholder="Nome do podcast"></div>
+              <div class="grid-2"><div class="field"><label for="podcast-share-category">Assunto</label><select id="podcast-share-category"><option>Geral</option><option>Cultura</option><option>Ciência</option><option>Educação</option><option>Entretenimento</option><option>Saúde e bem-estar</option></select></div><div class="field"><label for="podcast-share-url">Link para ouvir</label><input id="podcast-share-url" type="url" maxlength="1000" required placeholder="https://..."></div></div>
+              <div class="field"><label for="podcast-share-description">Por que recomenda? (opcional)</label><textarea id="podcast-share-description" maxlength="500" placeholder="O que achou interessante?"></textarea></div><div id="podcast-share-status" role="status" aria-live="polite"></div><button class="btn primary" type="submit"><i data-lucide="send"></i>Enviar recomendação anônima</button>
+            </form></div>
+          <div class="section-head"><div><h3>Recomendações da comunidade</h3><p class="muted">Sugestões compartilhadas por estudantes, sem identificação pública.</p></div></div><div id="community-podcast-list" class="admin-list"></div>
+          <div class="section-head"><div><h3>Podcasts sobre saúde mental</h3></div></div>
           <div class="podcast-grid">
             <article class="card podcast-card"><div class="podcast-mark"><i data-lucide="headphones"></i></div>
 <div class="eyebrow">Conselho Federal de Psicologia</div>
@@ -497,51 +503,32 @@
       </section>
 
       <section id="history-view" class="view">
-        <div class="section-head"><div>
-<div class="eyebrow">Somente você</div>
-<h2>Histórico</h2>
-<p class="muted">Seus desabafos ficam separados por tipo para facilitar a consulta.</p>
-</div></div>
-        <div class="field"><label for="history-search">Pesquisar no seu histórico</label><input id="history-search" type="search" placeholder="Buscar por palavra ou conteúdo..." autocomplete="off"></div>
-        <div class="tabs vent-type-tabs history-tabs" role="tablist" aria-label="Seu histórico de desabafos">
-          <button class="tab vent-tab active" type="button" data-history-filter="free">Texto livre</button>
-          <button class="tab vent-tab" type="button" data-history-filter="guided">Perguntas guiadas</button>
-          <button class="tab vent-tab" type="button" data-history-filter="feelings">Como eu me sinto</button>
-          <button class="tab vent-tab" type="button" data-history-filter="audio">Áudio</button>
+        <div class="section-head"><div><div class="eyebrow">Somente você</div><h2>Seu histórico</h2><p class="muted">Seus desabafos, registros de bem-estar e conteúdos salvos em um só lugar.</p></div><button class="help-question" type="button" data-site-help data-help-title="Seu histórico" data-help-text="Aqui ficam seus desabafos enviados, seu diário privado e os conteúdos que você salvou. Use as abas para alternar entre eles. Só você pode consultar seus registros pessoais.">?</button></div>
+        <div class="tabs vent-type-tabs history-tabs" role="tablist" aria-label="Seções do histórico">
+          <button class="tab vent-tab active" type="button" data-history-filter="vents" role="tab" aria-selected="true">Desabafos</button>
+          <button class="tab vent-tab" type="button" data-history-filter="mood" role="tab" aria-selected="false">Diário de bem-estar</button>
+          <button class="tab vent-tab" type="button" data-history-filter="saved" role="tab" aria-selected="false">Salvos</button>
         </div>
-        <div id="history-list" class="admin-list"></div>
-      </section>
-
-      <section id="wellbeing-view" class="view">
-        <div class="section-head"><div>
-          <div class="eyebrow">Somente você</div>
-          <h2>Meu bem-estar</h2>
-          <p class="muted">Um diário pessoal para registrar como você está se sentindo. Não é diagnóstico nem substitui atendimento profissional.</p>
-        </div></div>
-        <form id="mood-entry-form" class="card mood-entry-form">
-          <div class="eyebrow">Como você está hoje?</div>
-          <div class="mood-choice-grid" role="group" aria-label="Escolha como está se sentindo">
-            <label class="mood-choice"><input type="radio" name="mood-entry" value="great" required><span>😄<b>Muito bem</b></span></label>
-            <label class="mood-choice"><input type="radio" name="mood-entry" value="good"><span>🙂<b>Bem</b></span></label>
-            <label class="mood-choice"><input type="radio" name="mood-entry" value="neutral"><span>😐<b>Mais ou menos</b></span></label>
-            <label class="mood-choice"><input type="radio" name="mood-entry" value="difficult"><span>😟<b>Difícil</b></span></label>
-            <label class="mood-choice"><input type="radio" name="mood-entry" value="very_difficult"><span>😢<b>Muito difícil</b></span></label>
+        <div id="history-vents-panel">
+          <div class="field"><label for="history-search">Pesquisar nos seus desabafos</label><input id="history-search" type="search" placeholder="Buscar por palavra ou conteúdo..." autocomplete="off"></div>
+          <div class="tabs vent-type-tabs history-vent-subtabs" role="tablist" aria-label="Filtrar desabafos">
+            <button class="tab vent-tab active" type="button" data-vent-history-filter="free">Texto livre</button><button class="tab vent-tab" type="button" data-vent-history-filter="guided">Perguntas guiadas</button><button class="tab vent-tab" type="button" data-vent-history-filter="feelings">Como eu me sinto</button><button class="tab vent-tab" type="button" data-vent-history-filter="audio">Áudio</button>
           </div>
-          <div class="field"><label for="mood-entry-note">Quer escrever algo sobre hoje? (opcional)</label><textarea id="mood-entry-note" maxlength="2000" placeholder="Escreva apenas o que se sentir confortável em registrar..."></textarea></div>
-          <div id="mood-entry-status" role="status" aria-live="polite"></div>
-          <button class="btn primary" type="submit" id="mood-entry-save"><i data-lucide="save"></i>Salvar registro privado</button>
-        </form>
-        <div class="section-head mood-history-head"><div><div class="eyebrow">Seus registros</div><h3>Meu histórico emocional</h3><p class="muted">Somente você pode consultar e excluir estes registros.</p></div></div>
-        <div id="mood-entry-list" class="admin-list"></div>
-      </section>
-
-      <section id="saved-view" class="view">
-        <div class="section-head"><div>
-          <div class="eyebrow">Sua biblioteca</div>
-          <h2>Conteúdos salvos</h2>
-          <p class="muted">Avisos, eventos, publicações e enquetes que você guardou para consultar depois.</p>
-        </div></div>
-        <div id="saved-content-list" class="admin-list"></div>
+          <div id="history-list" class="admin-list"></div>
+        </div>
+        <div id="history-mood-panel" class="hidden">
+          <div class="card mood-entry-form"><div class="field-label-row"><div class="eyebrow">Como você está hoje?</div><button class="help-question" type="button" data-site-help data-help-title="Diário de bem-estar" data-help-text="Escolha como está se sentindo e, se quiser, escreva uma anotação. O registro é privado e só você pode consultar ou excluir. Não é diagnóstico nem substitui atendimento profissional.">?</button></div>
+            <form id="mood-entry-form">
+              <div class="mood-choice-grid" role="group" aria-label="Escolha como está se sentindo">
+                <label class="mood-choice"><input type="radio" name="mood-entry" value="great" required><span>😄<b>Muito bem</b></span></label><label class="mood-choice"><input type="radio" name="mood-entry" value="good"><span>🙂<b>Bem</b></span></label><label class="mood-choice"><input type="radio" name="mood-entry" value="neutral"><span>😐<b>Mais ou menos</b></span></label><label class="mood-choice"><input type="radio" name="mood-entry" value="difficult"><span>😟<b>Difícil</b></span></label><label class="mood-choice"><input type="radio" name="mood-entry" value="very_difficult"><span>😢<b>Muito difícil</b></span></label>
+              </div>
+              <div class="field"><label for="mood-entry-note">Quer escrever algo sobre hoje? (opcional)</label><textarea id="mood-entry-note" maxlength="2000" placeholder="Escreva apenas o que se sentir confortável em registrar..."></textarea></div>
+              <div id="mood-entry-status" role="status" aria-live="polite"></div><button class="btn primary" type="submit" id="mood-entry-save"><i data-lucide="save"></i>Salvar registro privado</button>
+            </form>
+          </div>
+          <div class="section-head mood-history-head"><div><div class="eyebrow">Seus registros</div><h3>Registros anteriores</h3><p class="muted">Somente você pode consultar e excluir estes registros.</p></div></div><div id="mood-entry-list" class="admin-list"></div>
+        </div>
+        <div id="history-saved-panel" class="hidden"><div class="card"><div class="field-label-row"><div><h3>Conteúdos salvos</h3><p class="muted">Guarde avisos, eventos, publicações, enquetes e podcasts para consultar depois.</p></div><button class="help-question" type="button" data-site-help data-help-title="Conteúdos salvos" data-help-text="Use Salvar em um conteúdo para guardá-lo aqui. Salvar não publica nada no seu perfil e não avisa quem criou o conteúdo.">?</button></div></div><div id="saved-content-list" class="admin-list"></div></div>
       </section>
 
       <section id="help-view" class="view">
@@ -798,6 +785,7 @@
           <button class="tab admin-tab" type="button" data-admin-tab="announcements" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="megaphone"></i></span><span><b>Avisos</b><small>Publicar comunicados</small></span></button>
           <button class="tab admin-tab" type="button" data-admin-tab="events" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="calendar"></i></span><span><b>Eventos</b><small>Publicar datas e atividades</small></span></button>
           <button class="tab admin-tab" type="button" data-admin-tab="polls" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="bar-chart-3"></i></span><span><b>Enquetes</b><small>Criar e excluir pesquisas</small></span></button>
+          <button class="tab admin-tab" type="button" data-admin-tab="podcasts" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="headphones"></i></span><span><b>Podcasts</b><small>Revisar recomendações</small></span></button>
           <button class="tab admin-tab" type="button" data-admin-tab="reports" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="flag"></i></span><span><b>Denúncias</b><small>Analisar mensagens sinalizadas</small></span></button>
           <button class="tab admin-tab" type="button" data-admin-tab="private_chats" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="shield-check"></i></span><span><b>Conversas privadas</b><small>Acesso reservado para segurança</small></span></button>
           <button class="tab admin-tab" type="button" data-admin-tab="support" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="headphones"></i></span><span><b>Atendimentos</b><small>Responder Fale conosco</small></span></button>
@@ -952,6 +940,7 @@
 </div>
         </div>
 
+        <div id="admin-panel-podcasts" class="admin-panel hidden" data-admin-panel="podcasts"><div class="card"><div class="eyebrow">Comunidade</div><h3>Recomendações pendentes</h3><p class="cae-muted">Confira o link e o conteúdo antes de aprovar.</p><div id="admin-podcast-pending-list" class="admin-list"></div></div><div class="card"><div class="eyebrow">Publicados</div><h3>Recomendações aprovadas</h3><div id="admin-podcast-approved-list" class="admin-list"></div></div></div>
         <div id="admin-panel-reports" class="admin-panel hidden" data-admin-panel="reports">
           <div class="card">
 <div class="admin-panel-heading">
@@ -1180,6 +1169,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=35" defer></script>
+  <script src="script.js?v=36" defer></script>
 </body>
 </html>
