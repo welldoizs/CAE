@@ -58,7 +58,7 @@
     session: null,
     realtime: null,
     currentView: 'home-view',
-    currentPanel: 'announcements',
+    currentPanel: 'posts',
     historyFilter: 'vents',
     ventHistoryFilter: 'free',
     initialized: false,
@@ -684,6 +684,7 @@
     $$('[data-panel]').forEach(button => button.classList.toggle('active', button.dataset.panel === panel));
     $$('.panel').forEach(el => el.classList.remove('active'));
     $(`#panel-${panel}`)?.classList.add('active');
+    if (panel === 'podcasts') loadCommunityPodcasts();
     if (state.user) loadMural();
   }
 
@@ -2261,6 +2262,9 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.posts }, () => queueMuralReload())
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.announcements }, () => queueMuralReload())
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.events }, () => queueMuralReload())
+      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.polls }, () => queueMuralReload())
+      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.pollOptions }, () => queueMuralReload())
+      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.pollVotes }, () => queueMuralReload())
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.vents }, () => { loadPublicVents(); if (isStaff()) loadAdmin(); if (isStaff()) loadAdminPrivateHistory(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.support }, () => { loadSupportChat(); if (isStaff()) loadAdminSupport(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.notifications }, () => { loadNotifications(); if (state.currentView === 'private-conversations-view' && state.privateSelectedConversationId) loadPrivateChatData(state.privateSelectedConversationId); })
@@ -2490,8 +2494,14 @@
       const tasks = [loadAnnouncements(),loadEvents(),loadPosts(),loadPolls()];
       const results = await Promise.allSettled(tasks);
       const parts=['Avisos','Eventos','Publicações','Enquetes'];
-      results.forEach((result,index)=>{if(result.status==='rejected')console.error(`MURAL ${parts[index]}`,result.reason);});
-      if (results.some(r=>r.status==='rejected')) toast('Uma parte do mural não pôde ser carregada. Veja a área correspondente para mais detalhes.','error');
+      const targets=['announcement-list','event-list','post-list','poll-list'];
+      results.forEach((result,index)=>{
+        if (result.status !== 'rejected') return;
+        console.error(`MURAL ${parts[index]}`,result.reason);
+        const target=$(targets[index]);
+        if (target) target.innerHTML = '<div class="card"><p class="cae-danger">Não foi possível carregar ' + parts[index].toLowerCase() + ': ' + escapeHTML(errorMessage(result.reason)) + '</p></div>';
+      });
+      if (results.some(r=>r.status==='rejected')) toast('Uma parte do mural não pôde ser carregada. Veja a mensagem exibida na respectiva aba.','error');
     } finally {
       state.muralLoading = false;
       if (state.muralQueued) queueMuralReload();
@@ -3624,12 +3634,6 @@
       if(button.matches('[data-history-filter]')){await loadHistory(button.dataset.historyFilter);return;}
       if(button.matches('[data-vent-history-filter]')){await loadVentHistory(button.dataset.ventHistoryFilter);return;}
       if(button.matches('[data-private-filter]')){await loadAdminPrivateHistory(button.dataset.privateFilter);return;}
-      if(button.matches('[data-open-podcast-form]')){
-        if(state.currentView!=='mural-view') showView('mural-view');
-        switchMuralPanel('podcasts');
-        window.setTimeout(()=>$('podcast-share-form')?.scrollIntoView({behavior:state.reducedMotion?'auto':'smooth',block:'start'}),100);
-        return;
-      }
       if(button.matches('[data-panel]')){switchMuralPanel(button.dataset.panel);return;}
       if(button.matches('[data-report-message]')){await reportMessage(button.dataset.reportMessage);return;}
       if(button.matches('[data-hide-message]')){await hideMessage(button.dataset.hideMessage);return;}
