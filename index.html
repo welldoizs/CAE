@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="style.css?v=36">
+  <link rel="stylesheet" href="style.css?v=37">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   <link rel="preconnect" href="https://challenges.cloudflare.com">
@@ -771,12 +771,19 @@
       </section>
 
       <section id="admin-view" class="view">
-        <div class="section-head">
+        <div class="section-head admin-heading">
           <div>
 <div class="eyebrow">Equipe CAE</div>
 <h2>Central da equipe</h2>
 <p class="muted">Cada tarefa tem sua própria área. Entre na categoria certa e veja somente o que precisa ser feito.</p>
 </div>
+          <div class="admin-notification-shell">
+            <button class="btn secondary admin-notification-button" id="admin-notifications-button" type="button" aria-expanded="false" aria-controls="admin-notifications-panel"><i data-lucide="bell"></i> Alertas da equipe <span id="admin-notifications-badge" class="notification-badge hidden">0</span></button>
+            <div id="admin-notifications-panel" class="admin-notification-panel hidden" aria-label="Alertas exclusivos da equipe">
+              <div class="notification-panel-head"><div><div class="eyebrow">Somente equipe</div><h3>Alertas administrativos</h3></div><button class="btn ghost btn-small" id="admin-notifications-mark-read" type="button">Marcar todas como lidas</button></div>
+              <div id="admin-notifications-list" class="notifications-list"><div class="notification-empty"><p>Nenhum alerta ainda.</p></div></div>
+            </div>
+          </div>
         </div>
 
         <div class="admin-tabs admin-tabs-expanded" role="tablist" aria-label="Áreas da central da equipe">
@@ -1169,6 +1176,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=36" defer></script>
+  <script src="script.js?v=37" defer></script>
 </body>
 </html>
