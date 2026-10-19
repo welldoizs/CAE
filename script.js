@@ -85,7 +85,6 @@
     supportOpen: false,
     publicDirectory: new Map(),
     publicVentFilter: 'free',
-    historyFilter: 'free',
     adminPrivateFilter: 'free',
     adminVentFilter: 'free',
     reportedMessageIds: new Set(),
