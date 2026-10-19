@@ -2806,8 +2806,9 @@
         state.supabase.from(TABLE.reports).select('id',{count:'exact',head:true}).eq('status','pending'),
         state.supabase.from(TABLE.contentReports).select('id',{count:'exact',head:true}).eq('status','pending')
       ]);
-      [approved,pending,vents,reports,contentReports].forEach(result=>{if(result.error)throw result.error;});
-      const totalPendingReports=(reports.count||0)+(contentReports.count||0);
+      [approved,pending,vents,reports].forEach(result=>{if(result.error)throw result.error;});
+      if(contentReports.error) console.warn('CONTENT REPORT COUNT',contentReports.error);
+      const totalPendingReports=(reports.count||0)+(contentReports.error?0:(contentReports.count||0));
       $('stat-approved').textContent=String(approved.count||0);
       $('stat-pending').textContent=String(pending.count||0);
       $('stat-vents').textContent=String(vents.count||0);
