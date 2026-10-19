@@ -16,6 +16,7 @@
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
 <section id="auth-screen" class="auth-screen">
     <div class="auth-shell">
       <div class="auth-hero">
@@ -110,6 +111,8 @@
           <button type="button" data-view="desabafo-view"><i data-lucide="notebook-pen"></i>Desabafos</button>
           <button type="button" data-view="mural-view"><i data-lucide="layout-dashboard"></i>Mural</button>
           <button type="button" data-view="history-view"><i data-lucide="history"></i>Histórico</button>
+          <button type="button" data-view="wellbeing-view"><i data-lucide="heart-pulse"></i>Bem-estar</button>
+          <button type="button" data-view="saved-view"><i data-lucide="bookmark"></i>Salvos</button>
           <button type="button" data-view="help-view"><i data-lucide="life-buoy"></i>Ajuda</button>
           <button type="button" data-view="account-view"><i data-lucide="user-round"></i>Conta</button>
           <button type="button" id="nav-admin" class="hidden" data-view="admin-view"><i data-lucide="shield"></i>Moderação</button>
@@ -136,7 +139,7 @@
       </div>
     </header>
 
-    <main class="main">
+    <main class="main" id="main-content" tabindex="-1">
       <section id="home-view" class="view active">
         <div class="home-simple-head">
           <div>
@@ -166,7 +169,10 @@
           <button type="button" data-open-view="help-view"><i data-lucide="life-buoy"></i><span><strong>Ajuda</strong><small>Encontre canais de apoio.</small></span></button>
         </div>
 
-        <div id="home-help-note" class="notice home-simple-note">Em uma emergência, procure diretamente o serviço adequado na página Ajuda.</div>
+        <div class="home-help-actions">
+          <div class="notice home-simple-note"><strong>Precisa de apoio agora?</strong><br>O CAE não é um serviço de emergência. Consulte os canais adequados na página Ajuda.</div>
+          <button class="btn primary" type="button" data-open-view="help-view"><i data-lucide="life-buoy"></i>Preciso de ajuda agora</button>
+        </div>
       </section>
 
       <section id="chat-view" class="view">
@@ -416,7 +422,7 @@
               <button class="voice-filter-option text-voice-option active" type="button" data-tts-voice="female" aria-pressed="true"><i data-lucide="mic-vocal"></i><span><b>Feminina</b><small>Voz feminina brasileira</small></span></button>
               <button class="voice-filter-option text-voice-option" type="button" data-tts-voice="male" aria-pressed="false"><i data-lucide="mic"></i><span><b>Masculina</b><small>Voz grave</small></span></button>
             </div>
-            <button class="btn primary text-voice-generate" id="tts-generate" type="button"><i data-lucide="audio-lines"></i>Gerar áudio</button>
+            <div class="actions text-voice-actions"><button class="btn primary text-voice-generate" id="tts-generate" type="button"><i data-lucide="audio-lines"></i>Gerar áudio</button><button class="btn secondary hidden" id="tts-cancel" type="button">Cancelar geração</button></div>
             <p id="tts-generation-status" class="cae-muted text-voice-status" aria-live="polite">Na primeira utilização da voz feminina, o aparelho baixa o mecanismo Piper (arquivo principal de 46,7 MB), o modelo Dii (63,5 MB) e arquivos de suporte. O navegador poderá guardar os arquivos em cache.</p>
           </section>
         </div>
@@ -430,7 +436,9 @@
 <h2>Mural</h2>
 <p class="muted">Veja o que está acontecendo no CAE e participe quando fizer sentido.</p>
 </div></div>
-        <div class="tabs">
+        <div class="field mural-search-field"><label for="mural-search">Buscar no mural</label><input id="mural-search" type="search" placeholder="Avisos, eventos, publicações, enquetes e podcasts..." autocomplete="off"></div>
+        <div id="mural-search-results" class="admin-list mural-search-results hidden" aria-live="polite"></div>
+        <div class="tabs" id="mural-tabs">
           <button class="tab active" data-panel="announcements" type="button">Avisos</button>
           <button class="tab" data-panel="events" type="button">Eventos</button>
           <button class="tab" data-panel="posts" type="button">Publicações</button>
@@ -494,6 +502,7 @@
 <h2>Histórico</h2>
 <p class="muted">Seus desabafos ficam separados por tipo para facilitar a consulta.</p>
 </div></div>
+        <div class="field"><label for="history-search">Pesquisar no seu histórico</label><input id="history-search" type="search" placeholder="Buscar por palavra ou conteúdo..." autocomplete="off"></div>
         <div class="tabs vent-type-tabs history-tabs" role="tablist" aria-label="Seu histórico de desabafos">
           <button class="tab vent-tab active" type="button" data-history-filter="free">Texto livre</button>
           <button class="tab vent-tab" type="button" data-history-filter="guided">Perguntas guiadas</button>
@@ -503,12 +512,48 @@
         <div id="history-list" class="admin-list"></div>
       </section>
 
+      <section id="wellbeing-view" class="view">
+        <div class="section-head"><div>
+          <div class="eyebrow">Somente você</div>
+          <h2>Meu bem-estar</h2>
+          <p class="muted">Um diário pessoal para registrar como você está se sentindo. Não é diagnóstico nem substitui atendimento profissional.</p>
+        </div></div>
+        <form id="mood-entry-form" class="card mood-entry-form">
+          <div class="eyebrow">Como você está hoje?</div>
+          <div class="mood-choice-grid" role="group" aria-label="Escolha como está se sentindo">
+            <label class="mood-choice"><input type="radio" name="mood-entry" value="great" required><span>😄<b>Muito bem</b></span></label>
+            <label class="mood-choice"><input type="radio" name="mood-entry" value="good"><span>🙂<b>Bem</b></span></label>
+            <label class="mood-choice"><input type="radio" name="mood-entry" value="neutral"><span>😐<b>Mais ou menos</b></span></label>
+            <label class="mood-choice"><input type="radio" name="mood-entry" value="difficult"><span>😟<b>Difícil</b></span></label>
+            <label class="mood-choice"><input type="radio" name="mood-entry" value="very_difficult"><span>😢<b>Muito difícil</b></span></label>
+          </div>
+          <div class="field"><label for="mood-entry-note">Quer escrever algo sobre hoje? (opcional)</label><textarea id="mood-entry-note" maxlength="2000" placeholder="Escreva apenas o que se sentir confortável em registrar..."></textarea></div>
+          <div id="mood-entry-status" role="status" aria-live="polite"></div>
+          <button class="btn primary" type="submit" id="mood-entry-save"><i data-lucide="save"></i>Salvar registro privado</button>
+        </form>
+        <div class="section-head mood-history-head"><div><div class="eyebrow">Seus registros</div><h3>Meu histórico emocional</h3><p class="muted">Somente você pode consultar e excluir estes registros.</p></div></div>
+        <div id="mood-entry-list" class="admin-list"></div>
+      </section>
+
+      <section id="saved-view" class="view">
+        <div class="section-head"><div>
+          <div class="eyebrow">Sua biblioteca</div>
+          <h2>Conteúdos salvos</h2>
+          <p class="muted">Avisos, eventos, publicações e enquetes que você guardou para consultar depois.</p>
+        </div></div>
+        <div id="saved-content-list" class="admin-list"></div>
+      </section>
+
       <section id="help-view" class="view">
         <div class="section-head"><div>
 <div class="eyebrow">Apoio</div>
 <h2>Ajuda e contatos</h2>
 <p class="muted">Canais nacionais e contatos do Paraná e de São José dos Pinhais. Não há contatos específicos de outros estados.</p>
 </div></div>
+        <div class="card urgent-help-card">
+          <div><div class="eyebrow">Risco imediato</div><h3>Você ou outra pessoa está em perigo agora?</h3><p class="muted">Em emergência médica, ligue 192. Em risco imediato de violência, ligue 190. Para apoio emocional gratuito e sigiloso, o CVV atende pelo 188.</p></div>
+          <div class="actions"><a class="btn primary" href="tel:192">SAMU 192</a><a class="btn secondary" href="tel:190">Polícia 190</a><a class="btn secondary" href="tel:188">CVV 188</a></div>
+        </div>
         <div class="card help-university-intro" style="margin-bottom:14px">
 <div class="eyebrow">Clínicas-escola e universidades</div>
 <h3>Atendimento psicológico gratuito ou com valor social</h3>
@@ -693,17 +738,49 @@
         </div>
         <div class="grid-2" style="margin-top:16px">
           <div class="card">
-<div class="eyebrow">Privacidade</div>
-<h3>O que fica privado?</h3>
-<p class="muted">Seu e-mail não é mostrado no Mural, nos Desabafos públicos nem no chat. Desabafos aprovados usam apenas seu ID público.</p>
-</div>
+            <div class="eyebrow">Privacidade</div>
+            <h3>O que fica privado?</h3>
+            <p class="muted">Seu e-mail não é mostrado no Mural, nos Desabafos públicos nem no chat. Desabafos aprovados usam apenas seu ID público. Conteúdos privados podem ser verificados pela equipe em situações de segurança, conforme as regras do CAE.</p>
+            <button class="btn secondary" type="button" data-open-view="privacy-view"><i data-lucide="shield-check"></i>Central de privacidade</button>
+          </div>
           <div class="card">
-<div class="eyebrow">Sessão</div>
-<h3>Quer sair?</h3>
-<p class="muted">Use o botão Sair no topo. Seu acesso pode ser reaberto pelo login.</p>
-<button class="btn secondary" type="button" data-action="logout">Sair da conta</button>
-</div>
+            <div class="eyebrow">Sessão</div>
+            <h3>Gerenciar acesso</h3>
+            <p class="muted">Encerre outras sessões abertas da sua conta em outros dispositivos.</p>
+            <button class="btn secondary" type="button" id="signout-other-sessions"><i data-lucide="log-out"></i>Encerrar outras sessões</button>
+            <p id="session-management-status" class="cae-muted" role="status" aria-live="polite"></p>
+          </div>
         </div>
+        <div class="card account-preferences-card" style="margin-top:16px">
+          <div class="eyebrow">Preferências</div><h3>Como o CAE aparece para você</h3>
+          <label class="check-row"><input id="preference-notifications" type="checkbox" checked><span>Mostrar notificações do CAE neste dispositivo</span></label>
+          <label class="check-row"><input id="preference-reduced-motion" type="checkbox"><span>Reduzir animações e movimentos</span></label>
+          <p id="preferences-status" class="cae-muted" role="status" aria-live="polite"></p>
+        </div>
+        <div class="card account-deletion-card" style="margin-top:16px">
+          <div class="eyebrow">Seus dados</div><h3>Solicitar exclusão da conta</h3>
+          <p class="muted">A solicitação será encaminhada à equipe para conferência e processamento seguro. Ela não apaga a conta imediatamente.</p>
+          <button class="btn danger" type="button" id="request-account-deletion">Solicitar exclusão da conta</button>
+          <p id="account-deletion-status" class="cae-muted" role="status" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section id="privacy-view" class="view">
+        <div class="section-head"><div><div class="eyebrow">Transparência</div><h2>Central de privacidade</h2><p class="muted">Entenda quais informações o CAE usa e como o anonimato funciona.</p></div><button class="btn secondary" type="button" data-open-view="account-view">Voltar à conta</button></div>
+        <article class="card privacy-info-card">
+          <h3>O que identifica sua conta?</h3>
+          <p>O e-mail escolar fica associado à autenticação e não é exibido publicamente. Nas áreas comunitárias, o CAE usa um código público em vez de mostrar seu e-mail ou nome real.</p>
+          <h3>O que é público?</h3>
+          <p>Publicações e desabafos enviados como públicos só aparecem na área pública depois da aprovação da moderação. Antes de publicar, confira o texto e evite incluir nome completo, endereço, telefone, escola específica ou outros dados que possam identificar você.</p>
+          <h3>O que é privado?</h3>
+          <p>Registros marcados como privados e mensagens de conversas privadas não são conteúdo público. A equipe pode ter acesso limitado para moderação e verificação de segurança, conforme a estrutura e as permissões do CAE.</p>
+          <h3>Áudios e anonimato</h3>
+          <p>Filtros de voz alteram características do áudio, mas não garantem anonimato completo. Voz, contexto e detalhes mencionados podem identificar alguém. Pense nisso antes de enviar uma gravação.</p>
+          <h3>Seus controles</h3>
+          <p>Você pode consultar seu histórico, excluir seus próprios desabafos e solicitar a exclusão da conta. A solicitação de exclusão precisa ser processada pela equipe; não é instantânea.</p>
+          <h3>Uma observação importante</h3>
+          <p>Esta página é uma explicação funcional do CAE, não substitui a política de privacidade oficial da instituição responsável. A escola ou entidade mantenedora deve revisar e publicar a política completa, incluindo responsável pelo tratamento, finalidades, prazos de retenção, compartilhamentos e canal para exercer direitos previstos na LGPD.</p>
+        </article>
       </section>
 
       <section id="admin-view" class="view">
@@ -886,6 +963,8 @@
 <span id="admin-reports-badge" class="admin-summary-count">0</span>
 </div>
 <div id="admin-report-list" class="admin-list"></div>
+<div class="admin-panel-heading" style="margin-top:24px"><div><div class="eyebrow">Outras áreas</div><h3>Denúncias de publicações, desabafos e conversas privadas</h3><p class="cae-muted">Analise estes relatos separadamente das denúncias do chat público.</p></div></div>
+<div id="admin-content-report-list" class="admin-list"></div>
 </div>
         </div>
 
@@ -962,6 +1041,9 @@
 <div id="admin-moderation-status" class="admin-action-status" role="status" aria-live="polite"></div>
 </div>
           </div>
+          <div class="card admin-manage-card">
+              <div class="eyebrow">Privacidade</div><h3>Solicitações de exclusão de conta</h3><p class="muted">Após a exclusão manual e conferência dos dados no Supabase, marque a solicitação como concluída.</p><div id="admin-deletion-request-list" class="admin-list"></div>
+</div>
           <div class="card moderator-info-card">
 <div class="eyebrow">Organização</div>
 <h3>Como usar esta central</h3>
