@@ -2847,6 +2847,446 @@
     $('site-help-modal')?.classList.add('hidden');
   }
 
+
+  function bookmarkButtonHTML(type, id) {
+    const saved = state.bookmarks.has(String(type) + ':' + String(id));
+    return '<button class="btn ghost btn-small" type="button" data-toggle-bookmark="1" data-bookmark-type="' + escapeHTML(type) + '" data-bookmark-id="' + escapeHTML(id) + '" aria-pressed="' + String(saved) + '">' +
+      (saved ? '<i data-lucide="bookmark-check"></i>Salvo' : '<i data-lucide="bookmark"></i>Salvar') + '</button>';
+  }
+
+  async function loadBookmarks() {
+    if (!state.user || !state.supabase) return;
+    try {
+      const { data, error } = await state.supabase.from(TABLE.bookmarks)
+        .select('id,content_type,content_id,created_at')
+        .eq('user_id', state.user.id)
+        .order('created_at', { ascending: false }).limit(300);
+      if (error) throw error;
+      state.bookmarkRows = data || [];
+      state.bookmarks = new Set(state.bookmarkRows.map(row => String(row.content_type) + ':' + String(row.content_id)));
+      document.querySelectorAll('[data-toggle-bookmark]').forEach(button => {
+        const saved = state.bookmarks.has(button.dataset.bookmarkType + ':' + button.dataset.bookmarkId);
+        button.setAttribute('aria-pressed', String(saved));
+        button.innerHTML = saved ? '<i data-lucide="bookmark-check"></i>Salvo' : '<i data-lucide="bookmark"></i>Salvar';
+      });
+      refreshIcons();
+    } catch (error) {
+      console.warn('BOOKMARKS', error);
+      state.bookmarkRows = [];
+      state.bookmarks = new Set();
+    }
+  }
+
+  async function toggleBookmark(type, id) {
+    if (!state.user || !state.supabase || !type || !id) return;
+    const key = String(type) + ':' + String(id);
+    try {
+      if (state.bookmarks.has(key)) {
+        const { error } = await state.supabase.from(TABLE.bookmarks).delete()
+          .eq('user_id', state.user.id).eq('content_type', type).eq('content_id', String(id));
+        if (error) throw error;
+        state.bookmarks.delete(key);
+        toast('Removido dos conteúdos salvos.');
+      } else {
+        const { error } = await state.supabase.from(TABLE.bookmarks).insert({
+          user_id: state.user.id, content_type: type, content_id: String(id)
+        });
+        if (error) throw error;
+        state.bookmarks.add(key);
+        toast('Conteúdo salvo.');
+      }
+      document.querySelectorAll('[data-toggle-bookmark]').forEach(button => {
+        if (button.dataset.bookmarkType !== String(type) || button.dataset.bookmarkId !== String(id)) return;
+        const saved = state.bookmarks.has(key);
+        button.setAttribute('aria-pressed', String(saved));
+        button.innerHTML = saved ? '<i data-lucide="bookmark-check"></i>Salvo' : '<i data-lucide="bookmark"></i>Salvar';
+      });
+      if (state.currentView === 'saved-view') await loadSavedContent();
+      refreshIcons();
+    } catch (error) {
+      console.error('BOOKMARK TOGGLE', error);
+      toast('Não foi possível salvar este conteúdo. Confira se a migração de recursos do CAE já foi aplicada.', 'error');
+    }
+  }
+
+  async function loadSavedContent() {
+    const list = $('saved-content-list');
+    if (!list || !state.user || !state.supabase) return;
+    list.innerHTML = '<div class="card"><p>Carregando seus conteúdos salvos…</p></div>';
+    try {
+      await loadBookmarks();
+      if (!state.bookmarkRows.length) {
+        list.innerHTML = '<div class="card"><p>Você ainda não salvou nenhum conteúdo.</p><p class="cae-muted">Use o botão Salvar nos avisos, eventos, publicações e enquetes.</p></div>';
+        return;
+      }
+      const types = ['post', 'announcement', 'event', 'poll'];
+      const labels = { post: 'Publicação', announcement: 'Aviso', event: 'Evento', poll: 'Enquete' };
+      const configs = {
+        post: { table: TABLE.posts, fields: 'id,category,body,created_at' },
+        announcement: { table: TABLE.announcements, fields: 'id,title,body,created_at' },
+        event: { table: TABLE.events, fields: 'id,title,description,place,event_date,event_time,created_at' },
+        poll: { table: TABLE.polls, fields: 'id,question,created_at' }
+      };
+      const sections = [];
+      for (const type of types) {
+        const ids = state.bookmarkRows.filter(row => row.content_type === type).map(row => row.content_id);
+        if (!ids.length) continue;
+        const { data, error } = await state.supabase.from(configs[type].table).select(configs[type].fields).in('id', ids);
+        if (error) throw error;
+        (data || []).forEach(row => {
+          const title = row.title || row.question || row.category || labels[type];
+          const body = row.body || row.description || (row.place ? row.place : '');
+          sections.push('<article class="card saved-content-card"><div class="eyebrow">' + labels[type] + ' · ' + escapeHTML(formatDate(row.created_at || row.event_date)) + '</div><h3>' + escapeHTML(title) + '</h3><p>' + escapeHTML(body) + '</p><div class="actions"><button class="btn ghost btn-small" type="button" data-toggle-bookmark="1" data-bookmark-type="' + type + '" data-bookmark-id="' + escapeHTML(row.id) + '"><i data-lucide="bookmark-check"></i>Remover dos salvos</button></div></article>');
+        });
+      }
+      list.innerHTML = sections.length ? sections.join('') : '<div class="card"><p>Os conteúdos salvos não estão mais disponíveis.</p></div>';
+      refreshIcons();
+    } catch (error) {
+      console.error('SAVED CONTENT', error);
+      list.innerHTML = '<div class="card"><p class="cae-danger">Não foi possível carregar os conteúdos salvos. Confira se a migração do CAE foi aplicada.</p></div>';
+    }
+  }
+
+  const MOOD_LABELS = {
+    great: 'Muito bem', good: 'Bem', neutral: 'Mais ou menos',
+    difficult: 'Difícil', very_difficult: 'Muito difícil'
+  };
+  const MOOD_EMOJIS = {
+    great: '😄', good: '🙂', neutral: '😐', difficult: '😟', very_difficult: '😢'
+  };
+
+  async function loadMoodEntries() {
+    const list = $('mood-entry-list');
+    if (!list || !state.user || !state.supabase) return;
+    list.innerHTML = '<div class="card"><p>Carregando registros…</p></div>';
+    try {
+      const { data, error } = await state.supabase.from(TABLE.moods)
+        .select('id,mood,note,created_at').eq('user_id', state.user.id)
+        .order('created_at', { ascending: false }).limit(90);
+      if (error) throw error;
+      state.moodRows = data || [];
+      if (!state.moodRows.length) {
+        list.innerHTML = '<div class="card"><p>Seu diário ainda está vazio.</p><p class="cae-muted">O primeiro registro fica visível apenas para você.</p></div>';
+        return;
+      }
+      list.innerHTML = state.moodRows.map(row =>
+        '<article class="card mood-history-card"><div class="own-vent-meta"><div><strong>' + MOOD_EMOJIS[row.mood] + ' ' + escapeHTML(MOOD_LABELS[row.mood] || 'Registro') + '</strong><div class="eyebrow">' + escapeHTML(formatDate(row.created_at)) + '</div></div><button class="btn ghost btn-small" type="button" data-delete-mood="' + escapeHTML(row.id) + '">Excluir</button></div>' +
+        (row.note ? '<p>' + escapeHTML(row.note).replace(/\n/g, '<br>') + '</p>' : '<p class="cae-muted">Sem anotação.</p>') + '</article>'
+      ).join('');
+    } catch (error) {
+      console.error('MOOD LOAD', error);
+      list.innerHTML = '<div class="card"><p class="cae-danger">O diário não pôde ser carregado. Confira se a migração do CAE foi aplicada.</p></div>';
+    }
+  }
+
+  async function saveMoodEntry(event) {
+    event.preventDefault();
+    if (!state.user || !state.supabase || !ensureAccountCanInteract()) return;
+    const form = $('mood-entry-form');
+    const mood = form?.querySelector('input[name="mood-entry"]:checked')?.value;
+    const note = $('mood-entry-note')?.value.trim() || '';
+    if (!mood || !MOOD_LABELS[mood]) {
+      setStatus('mood-entry-status', 'Escolha como você está se sentindo.');
+      return;
+    }
+    const button = $('mood-entry-save');
+    setBusy(button, true, 'Salvando…');
+    try {
+      const { error } = await state.supabase.from(TABLE.moods).insert({ user_id: state.user.id, mood, note });
+      if (error) throw error;
+      form.reset();
+      setStatus('mood-entry-status', 'Registro salvo. Só você pode consultar este diário.', 'ok');
+      await loadMoodEntries();
+    } catch (error) {
+      console.error('MOOD SAVE', error);
+      setStatus('mood-entry-status', 'Não foi possível salvar. Confira se a migração do CAE foi aplicada.');
+    } finally {
+      setBusy(button, false);
+    }
+  }
+
+  async function deleteMoodEntry(id) {
+    if (!id || !state.user || !window.confirm('Excluir este registro do diário?')) return;
+    try {
+      const { error } = await state.supabase.from(TABLE.moods).delete().eq('id', id).eq('user_id', state.user.id);
+      if (error) throw error;
+      await loadMoodEntries();
+      toast('Registro excluído.');
+    } catch (error) {
+      console.error('MOOD DELETE', error);
+      toast('Não foi possível excluir este registro.', 'error');
+    }
+  }
+
+  function filterHistoryCards() {
+    const query = String($('history-search')?.value || '').trim().toLocaleLowerCase('pt-BR');
+    $('#history-list .own-vent-card').forEach(card => {
+      card.classList.toggle('hidden', Boolean(query) && !card.textContent.toLocaleLowerCase('pt-BR').includes(query));
+    });
+  }
+
+  function renderMuralSearch() {
+    const input = $('mural-search');
+    const results = $('mural-search-results');
+    const tabs = $('mural-tabs');
+    if (!input || !results || !tabs) return;
+    const query = input.value.trim().toLocaleLowerCase('pt-BR');
+    if (!query) {
+      results.classList.add('hidden');
+      results.innerHTML = '';
+      tabs.classList.remove('hidden');
+      $('#mural-view .panel').forEach(panel => panel.classList.remove('hidden'));
+      return;
+    }
+    const cards = $('#mural-view .panel article.card, #mural-view .podcast-grid article.card');
+    const matches = cards.filter(card => card.textContent.toLocaleLowerCase('pt-BR').includes(query));
+    const sections = ['announcements', 'events', 'posts', 'polls', 'podcasts'];
+    const sectionLabels = { announcements: 'Avisos', events: 'Eventos', posts: 'Publicações', polls: 'Enquetes', podcasts: 'Podcasts' };
+    results.innerHTML = matches.length ? matches.map(card => {
+      const panel = card.closest('.panel');
+      const section = panel ? sections.find(key => panel.id === 'panel-' + key) || 'announcements' : 'podcasts';
+      return '<article class="card mural-search-result"><div class="eyebrow">' + sectionLabels[section] + '</div>' + card.outerHTML +
+        '<button class="btn secondary btn-small" type="button" data-search-open-panel="' + section + '">Abrir seção</button></article>';
+    }).join('') : '<div class="card"><p>Nenhum resultado encontrado para “' + escapeHTML(input.value.trim()) + '”.</p></div>';
+    results.classList.remove('hidden');
+    tabs.classList.add('hidden');
+    $('#mural-view .panel').forEach(panel => panel.classList.add('hidden'));
+    refreshIcons();
+  }
+
+  function downloadEventCalendar(id) {
+    const row = state.eventRows.find(event => String(event.id) === String(id));
+    if (!row) return toast('Não encontrei este evento. Atualize o mural e tente novamente.', 'error');
+    const title = String(row.title || 'Evento CAE');
+    const description = String(row.description || '');
+    const location = String(row.place || '');
+    const escapeIcs = value => String(value).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+    const pad = value => String(value).padStart(2, '0');
+    const date = String(row.event_date || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toast('A data deste evento está inválida.', 'error');
+    let start, end, allDay = !row.event_time;
+    if (allDay) {
+      start = date.replace(/-/g, '');
+      const next = new Date(date + 'T12:00:00');
+      next.setDate(next.getDate() + 1);
+      end = next.getFullYear() + pad(next.getMonth() + 1) + pad(next.getDate());
+    } else {
+      const time = String(row.event_time).slice(0, 5);
+      const startDate = new Date(date + 'T' + time + ':00');
+      if (Number.isNaN(startDate.getTime())) return toast('O horário deste evento está inválido.', 'error');
+      const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+      const utc = value => value.getUTCFullYear() + pad(value.getUTCMonth() + 1) + pad(value.getUTCDate()) + 'T' + pad(value.getUTCHours()) + pad(value.getUTCMinutes()) + '00Z';
+      start = utc(startDate);
+      end = utc(endDate);
+    }
+    const dtStart = allDay ? 'DTSTART;VALUE=DATE:' + start : 'DTSTART:' + start;
+    const dtEnd = allDay ? 'DTEND;VALUE=DATE:' + end : 'DTEND:' + end;
+    const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//CAE//Agenda//PT-BR','CALSCALE:GREGORIAN','BEGIN:VEVENT',
+      'UID:' + String(row.id) + '@cae','DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''),
+      dtStart,dtEnd,'SUMMARY:' + escapeIcs(title),'DESCRIPTION:' + escapeIcs(description),'LOCATION:' + escapeIcs(location),
+      'END:VEVENT','END:VCALENDAR'].join('\r\n');
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'cae-evento-' + date + '.ics';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function submitContentReport(type, id) {
+    if (!state.user || !state.supabase) return;
+    const reason = window.prompt('Por que você quer denunciar este conteúdo? Informe um motivo claro (mínimo de 3 caracteres).');
+    if (!reason || reason.trim().length < 3) return;
+    try {
+      const { error } = await state.supabase.rpc('cae_submit_content_report', {
+        p_target_type: type,
+        p_target_id: id,
+        p_reason: reason.trim(),
+        p_details: ''
+      });
+      if (error) throw error;
+      toast('Denúncia encaminhada à equipe de moderação.');
+      if (isStaff()) await loadContentReports();
+    } catch (error) {
+      console.error('CONTENT REPORT', error);
+      toast('Não foi possível enviar a denúncia. A migração de segurança pode ainda não ter sido aplicada.', 'error');
+    }
+  }
+
+  async function loadContentReports() {
+    const list = $('admin-content-report-list');
+    if (!list || !isStaff() || !state.supabase) return;
+    try {
+      const { data, error } = await state.supabase.from(TABLE.contentReports)
+        .select('id,reporter_id,target_type,target_id,reason,details,status,created_at')
+        .eq('status', 'pending').order('created_at', { ascending: true }).limit(100);
+      if (error) throw error;
+      if (!data?.length) {
+        list.innerHTML = '<div class="card"><p>Nenhuma denúncia de outras áreas pendente.</p></div>';
+        return;
+      }
+      const cards = [];
+      for (const report of data) {
+        let preview = 'Conteúdo denunciado';
+        if (report.target_type === 'post') {
+          const { data: row } = await state.supabase.from(TABLE.posts).select('body,category').eq('id', report.target_id).maybeSingle();
+          if (row) preview = (row.category ? row.category + ' · ' : '') + (row.body || '');
+        } else if (report.target_type === 'vent') {
+          const { data: row } = await state.supabase.from(TABLE.vents).select('type,body,feeling').eq('id', report.target_id).maybeSingle();
+          if (row) preview = row.feeling || row.body || 'Desabafo em áudio';
+        } else {
+          preview = 'Mensagem de conversa privada. Abra “Conversas privadas · segurança” para verificar.';
+        }
+        const removeButton = report.target_type === 'private_message' ? '' :
+          '<button class="btn danger btn-small" type="button" data-remove-reported-content="1" data-report-id="' + escapeHTML(report.id) + '" data-content-type="' + escapeHTML(report.target_type) + '" data-content-id="' + escapeHTML(report.target_id) + '">Remover conteúdo</button>';
+        const privateButton = report.target_type === 'private_message' ?
+          '<button class="btn secondary btn-small" type="button" data-admin-tab="private_chats">Abrir conversas privadas</button>' : '';
+        cards.push('<article class="card report-card"><div class="cae-post-meta">' + escapeHTML(report.target_type) + ' · ' + escapeHTML(formatDate(report.created_at)) + '</div><p><b>Motivo:</b> ' + escapeHTML(report.reason) + '</p>' +
+          (report.details ? '<p>' + escapeHTML(report.details) + '</p>' : '') + '<p>' + escapeHTML(preview).slice(0, 1200) + '</p><p class="cae-muted">Denunciado por ' + escapeHTML(publicName(report.reporter_id)) + '</p><div class="actions">' +
+          removeButton + privateButton + '<button class="btn secondary btn-small" type="button" data-resolve-content-report="' + escapeHTML(report.id) + '">Marcar como analisada</button>' +
+          '<button class="btn ghost btn-small" type="button" data-dismiss-content-report="' + escapeHTML(report.id) + '">Descartar denúncia</button></div></article>');
+      }
+      list.innerHTML = cards.join('');
+    } catch (error) {
+      console.warn('CONTENT REPORTS', error);
+      list.innerHTML = '<div class="card"><p class="cae-muted">Fila de denúncias de outras áreas indisponível. Confira se a migração do CAE foi aplicada.</p></div>';
+    }
+  }
+
+  async function updateContentReportStatus(id, status) {
+    if (!isStaff() || !['reviewed', 'dismissed'].includes(status)) return;
+    try {
+      const { error } = await state.supabase.from(TABLE.contentReports).update({
+        status, reviewed_at: new Date().toISOString(), reviewed_by: state.user.id
+      }).eq('id', id);
+      if (error) throw error;
+      await loadContentReports();
+      toast(status === 'reviewed' ? 'Denúncia marcada como analisada.' : 'Denúncia descartada.');
+    } catch (error) {
+      console.error('CONTENT REPORT STATUS', error);
+      toast('Não foi possível atualizar a denúncia.', 'error');
+    }
+  }
+
+  async function removeReportedContent(reportId, type, contentId) {
+    const ok = await deleteStaffContent(type, contentId, 'este conteúdo denunciado');
+    if (ok) await updateContentReportStatus(reportId, 'reviewed');
+  }
+
+  async function loadUserPreferences() {
+    if (!state.user || !state.supabase) return;
+    try {
+      const { data, error } = await state.supabase.from(TABLE.preferences).select('notifications_enabled,reduced_motion')
+        .eq('user_id', state.user.id).maybeSingle();
+      if (error) throw error;
+      state.notificationsEnabled = data?.notifications_enabled !== false;
+      state.reducedMotion = data?.reduced_motion === true;
+      if ($('preference-notifications')) $('preference-notifications').checked = state.notificationsEnabled;
+      if ($('preference-reduced-motion')) $('preference-reduced-motion').checked = state.reducedMotion;
+      document.documentElement.classList.toggle('cae-reduced-motion', state.reducedMotion);
+      document.querySelector('.notification-shell')?.classList.toggle('hidden', !state.notificationsEnabled);
+    } catch (error) {
+      console.warn('USER PREFERENCES', error);
+    }
+  }
+
+  async function saveUserPreferences() {
+    if (!state.user || !state.supabase) return;
+    const notificationsEnabled = $('preference-notifications')?.checked !== false;
+    const reducedMotion = $('preference-reduced-motion')?.checked === true;
+    try {
+      const { error } = await state.supabase.from(TABLE.preferences).upsert({
+        user_id: state.user.id,
+        notifications_enabled: notificationsEnabled,
+        reduced_motion: reducedMotion,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+      if (error) throw error;
+      state.notificationsEnabled = notificationsEnabled;
+      state.reducedMotion = reducedMotion;
+      document.documentElement.classList.toggle('cae-reduced-motion', reducedMotion);
+      document.querySelector('.notification-shell')?.classList.toggle('hidden', !notificationsEnabled);
+      setStatus('preferences-status', 'Preferências salvas.', 'ok');
+      await loadNotifications();
+    } catch (error) {
+      console.error('PREFERENCES SAVE', error);
+      setStatus('preferences-status', 'Não foi possível salvar. Confira se a migração do CAE foi aplicada.');
+    }
+  }
+
+  async function signOutOtherSessions() {
+    if (!state.supabase || !window.confirm('Encerrar as outras sessões da sua conta? Esta sessão continuará aberta.')) return;
+    const status = $('session-management-status');
+    try {
+      const { error } = await state.supabase.auth.signOut({ scope: 'others' });
+      if (error) throw error;
+      if (status) status.textContent = 'As outras sessões foram encerradas.';
+      toast('Outras sessões encerradas.');
+    } catch (error) {
+      console.error('SIGN OUT OTHER SESSIONS', error);
+      if (status) status.textContent = 'Não foi possível encerrar as outras sessões. Confira a configuração de sessão do Supabase.';
+    }
+  }
+
+  async function requestAccountDeletion() {
+    if (!state.user || !state.supabase) return;
+    if (!window.confirm('Enviar uma solicitação de exclusão da conta? A equipe precisará processá-la; a conta não será apagada imediatamente.')) return;
+    const button = $('request-account-deletion');
+    setBusy(button, true, 'Enviando solicitação…');
+    try {
+      const { error } = await state.supabase.rpc('cae_request_account_deletion');
+      if (error) throw error;
+      setStatus('account-deletion-status', 'Solicitação registrada. A equipe precisa processar a exclusão manualmente.');
+      toast('Solicitação de exclusão enviada.');
+    } catch (error) {
+      console.error('ACCOUNT DELETION REQUEST', error);
+      setStatus('account-deletion-status', 'Não foi possível registrar a solicitação. Confira se a migração do CAE foi aplicada.');
+    } finally {
+      setBusy(button, false);
+    }
+  }
+
+  async function loadAdminDeletionRequests() {
+    const list = $('admin-deletion-request-list');
+    if (!list || !isStaff() || !state.supabase) return;
+    try {
+      const { data, error } = await state.supabase.from(TABLE.deletionRequests)
+        .select('id,user_id,status,requested_at').in('status', ['pending', 'processing'])
+        .order('requested_at', { ascending: true }).limit(100);
+      if (error) throw error;
+      list.innerHTML = data?.length ? data.map(row =>
+        '<article class="card"><div class="cae-post-meta">' + escapeHTML(publicName(row.user_id)) + ' · ' + escapeHTML(formatDate(row.requested_at)) + '</div><p>Status: ' + escapeHTML(row.status) + '</p><p class="cae-muted">Após revisar e excluir os dados/usuário manualmente no Supabase, marque como concluída.</p><button class="btn secondary btn-small" type="button" data-complete-deletion-request="' + escapeHTML(row.id) + '">Marcar como concluída</button></article>'
+      ).join('') : '<div class="card"><p>Nenhuma solicitação pendente.</p></div>';
+    } catch (error) {
+      console.warn('DELETION REQUESTS', error);
+      list.innerHTML = '<div class="card"><p class="cae-muted">Solicitações indisponíveis. Confira se a migração do CAE foi aplicada.</p></div>';
+    }
+  }
+
+  async function completeDeletionRequest(id) {
+    if (!isStaff() || !window.confirm('Confirma que a solicitação já foi processada e que a exclusão foi realizada no Supabase?')) return;
+    try {
+      const { error } = await state.supabase.from(TABLE.deletionRequests).update({
+        status: 'completed', completed_at: new Date().toISOString()
+      }).eq('id', id);
+      if (error) throw error;
+      await loadAdminDeletionRequests();
+      toast('Solicitação marcada como concluída.');
+    } catch (error) {
+      console.error('COMPLETE DELETION REQUEST', error);
+      toast('Não foi possível atualizar a solicitação.', 'error');
+    }
+  }
+
+  function cancelTextVoiceGeneration() {
+    if (!state.ttsGenerating || state.ttsVoiceStyle !== 'female') return;
+    state.ttsCancelled = true;
+    destroyFemaleTtsWorker();
+  }
+
   function bindDelegatedEvents(){
     document.addEventListener('submit',async event=>{
       if(event.target.matches('#support-form')) return sendSupportMessage(event);
