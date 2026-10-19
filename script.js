@@ -683,7 +683,7 @@
     state.currentPanel = panel;
     $$('[data-panel]').forEach(button => button.classList.toggle('active', button.dataset.panel === panel));
     $$('.panel').forEach(el => el.classList.remove('active'));
-    $(`panel-${panel}`)?.classList.add('active');
+    $(`#panel-${panel}`)?.classList.add('active');
     if (state.user) loadMural();
   }
 
