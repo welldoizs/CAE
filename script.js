@@ -98,6 +98,8 @@
     adminPrivateChatData: [] ,
     adminPostRows: [],
     adminPostFilter: 'all',
+    adminReportFilter: 'all',
+    adminReportCounts: { chat: 0, content: 0 },
     recordingStream: null,
     recordingContext: null,
     voiceTestRecorder: null,
@@ -679,6 +681,7 @@
     });
     if (value === 'private_chats') loadAdminPrivateChats();
     if (value === 'podcasts') loadAdminSharedPodcasts();
+    if (value === 'reports') { loadChatReports(); loadContentReports(); }
     refreshIcons();
   }
 
@@ -3244,8 +3247,8 @@
       const publishedHtml=publishedVents.length?`<div class="eyebrow" style="margin:24px 0 12px">Já publicados · também podem receber resposta privada</div>${publishedVents.map(v=>renderModerationVentCard(v,true)).join('')}`:`<div class="admin-private-empty"><p>Nenhum desabafo publicado nesta categoria.</p></div>`;
       $('admin-vent-list').innerHTML=pendingHtml+publishedHtml;refreshIcons();
 
-      const {data:reportRows,error:reportError}=await state.supabase.from(TABLE.reports).select('*').eq('status','pending').order('created_at',{ascending:true}).limit(100);if(reportError)throw reportError;
-      $('admin-report-list').innerHTML=reportRows?.length?reportRows.map(report=>`<article class="card report-card"><div class="cae-post-meta">Denúncia · ${escapeHTML(formatDate(report.created_at))}</div><p><b>Motivo:</b> ${escapeHTML(report.reason)}</p><p class="cae-muted">Denunciada por: ${escapeHTML(publicName(report.reporter_id))} · código da mensagem <code>${escapeHTML(String(report.message_id).slice(0,8))}…</code></p><div class="actions"><button class="btn danger" type="button" data-hide-reported="${escapeHTML(report.message_id)}" data-report-id="${escapeHTML(report.id)}">Ocultar mensagem</button><button class="btn secondary" type="button" data-resolve-report="${escapeHTML(report.id)}">Resolver sem ocultar</button></div></article>`).join(''):'<div class="card"><p>Nenhuma denúncia pendente.</p></div>';
+      await loadChatReports();
+      applyAdminReportFilter();
     }catch(error){console.error('ADMIN',error);toast(`Painel da equipe: ${errorMessage(error)}`,'error');}
   }
 
@@ -3533,6 +3536,96 @@
     }
   }
 
+  function updateAdminReportCount(type, count) {
+    if (!['chat', 'content'].includes(type)) return;
+    state.adminReportCounts[type] = Math.max(0, Number(count) || 0);
+    const chat = state.adminReportCounts.chat;
+    const content = state.adminReportCounts.content;
+    const total = chat + content;
+    const values = {
+      'report-filter-count-all': total,
+      'report-filter-count-chat': chat,
+      'report-filter-count-content': content,
+      'admin-reports-badge': total
+    };
+    Object.entries(values).forEach(([id, value]) => {
+      const node = $(id);
+      if (node) node.textContent = String(value);
+    });
+    const summary = $('stat-reports');
+    if (summary) summary.textContent = String(total);
+  }
+
+  function applyAdminReportFilter(filter = state.adminReportFilter) {
+    state.adminReportFilter = ['all', 'chat', 'content'].includes(filter) ? filter : 'all';
+    const showChat = state.adminReportFilter !== 'content';
+    const showContent = state.adminReportFilter !== 'chat';
+    $('admin-chat-report-section')?.classList.toggle('hidden', !showChat);
+    $('admin-content-report-section')?.classList.toggle('hidden', !showContent);
+    $('[data-report-filter]').forEach(button => {
+      const active = button.dataset.reportFilter === state.adminReportFilter;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+  }
+
+  async function loadChatReports() {
+    const list = $('admin-report-list');
+    if (!list || !isStaff() || !state.supabase) return;
+    try {
+      const { data: reports, error } = await state.supabase.from(TABLE.reports)
+        .select('id,message_id,reporter_id,reason,created_at')
+        .eq('status', 'pending').order('created_at', { ascending: true }).limit(100);
+      if (error) throw error;
+      updateAdminReportCount('chat', reports?.length || 0);
+      if (!reports?.length) {
+        list.innerHTML = '<div class="report-empty"><i data-lucide="check-circle-2"></i><div><strong>Nenhuma denúncia de chat pendente</strong><p>Quando alguém denunciar uma mensagem, ela aparecerá aqui.</p></div></div>';
+        refreshIcons();
+        return;
+      }
+
+      const messageIds = [...new Set(reports.map(report => report.message_id).filter(Boolean))];
+      let messages = [];
+      if (messageIds.length) {
+        const result = await state.supabase.from(TABLE.chat)
+          .select('id,user_id,body,created_at,deleted_at').in('id', messageIds);
+        if (result.error) throw result.error;
+        messages = result.data || [];
+      }
+      const byId = new Map(messages.map(message => [String(message.id), message]));
+      list.innerHTML = reports.map(report => {
+        const message = byId.get(String(report.message_id));
+        const preview = !message ? 'A mensagem original não está mais disponível.'
+          : message.deleted_at ? 'Esta mensagem já foi ocultada.'
+          : String(message.body || '').trim() || 'Mensagem sem texto.';
+        const author = message?.user_id ? publicName(message.user_id) : 'Conta não identificada';
+        return `<article class="card report-card report-detail-card">
+          <div class="report-card-head">
+            <span class="report-type-label"><i data-lucide="message-square-warning"></i> Chat público</span>
+            <time>${escapeHTML(formatDate(report.created_at))}</time>
+          </div>
+          <div class="report-reason-block"><span>Motivo informado</span><p>${escapeHTML(report.reason || 'Não informado')}</p></div>
+          <div class="report-message-block">
+            <span>Mensagem denunciada · ${escapeHTML(author)}</span>
+            <p>${escapeHTML(preview)}</p>
+          </div>
+          <div class="report-byline">Denunciada por <strong>${escapeHTML(publicName(report.reporter_id))}</strong></div>
+          <div class="report-actions">
+            ${message && !message.deleted_at
+              ? `<button class="btn danger btn-small" type="button" data-hide-reported="${escapeHTML(report.message_id)}" data-report-id="${escapeHTML(report.id)}"><i data-lucide="eye-off"></i> Ocultar e resolver</button>`
+              : `<button class="btn danger btn-small" type="button" disabled><i data-lucide="eye-off"></i> Mensagem já oculta</button>`}
+            <button class="btn secondary btn-small" type="button" data-resolve-report="${escapeHTML(report.id)}">Manter mensagem e resolver</button>
+          </div>
+        </article>`;
+      }).join('');
+      refreshIcons();
+    } catch (error) {
+      console.error('CHAT REPORTS', error);
+      list.innerHTML = '<div class="report-empty report-error"><i data-lucide="alert-circle"></i><div><strong>Não foi possível carregar as denúncias do chat</strong><p>Tente abrir esta aba novamente. Se continuar, confira a conexão do banco.</p></div></div>';
+      refreshIcons();
+    }
+  }
+
   async function loadContentReports() {
     const list = $('admin-content-report-list');
     if (!list || !isStaff() || !state.supabase) return;
@@ -3541,8 +3634,10 @@
         .select('id,reporter_id,target_type,target_id,reason,details,status,created_at')
         .eq('status', 'pending').order('created_at', { ascending: true }).limit(100);
       if (error) throw error;
+      updateAdminReportCount('content', data?.length || 0);
       if (!data?.length) {
-        list.innerHTML = '<div class="card"><p>Nenhuma denúncia de outras áreas pendente.</p></div>';
+        list.innerHTML = '<div class="report-empty"><i data-lucide="check-circle-2"></i><div><strong>Nenhuma denúncia de outros conteúdos pendente</strong><p>Publicações, desabafos, podcasts e conversas privadas denunciados aparecerão aqui.</p></div></div>';
+        refreshIcons();
         return;
       }
       const cards = [];
@@ -3560,19 +3655,29 @@
         } else {
           preview = 'Mensagem de conversa privada. Abra “Conversas privadas · segurança” para verificar.';
         }
+        const typeLabels = { post: 'Publicação', podcast: 'Podcast', vent: 'Desabafo', private_message: 'Conversa privada' };
+        const typeIcons = { post: 'file-text', podcast: 'headphones', vent: 'notebook-pen', private_message: 'message-circle' };
         const removeButton = report.target_type === 'private_message' ? '' :
-          '<button class="btn danger btn-small" type="button" data-remove-reported-content="1" data-report-id="' + escapeHTML(report.id) + '" data-content-type="' + escapeHTML(report.target_type) + '" data-content-id="' + escapeHTML(report.target_id) + '">Remover conteúdo</button>';
+          '<button class="btn danger btn-small" type="button" data-remove-reported-content="1" data-report-id="' + escapeHTML(report.id) + '" data-content-type="' + escapeHTML(report.target_type) + '" data-content-id="' + escapeHTML(report.target_id) + '"><i data-lucide="trash-2"></i> Excluir conteúdo</button>';
         const privateButton = report.target_type === 'private_message' ?
-          '<button class="btn secondary btn-small" type="button" data-admin-tab="private_chats">Abrir conversas privadas</button>' : '';
-        cards.push('<article class="card report-card"><div class="cae-post-meta">' + escapeHTML(report.target_type) + ' · ' + escapeHTML(formatDate(report.created_at)) + '</div><p><b>Motivo:</b> ' + escapeHTML(report.reason) + '</p>' +
-          (report.details ? '<p>' + escapeHTML(report.details) + '</p>' : '') + '<p>' + escapeHTML(preview).slice(0, 1200) + '</p><p class="cae-muted">Denunciado por ' + escapeHTML(publicName(report.reporter_id)) + '</p><div class="actions">' +
-          removeButton + privateButton + '<button class="btn secondary btn-small" type="button" data-resolve-content-report="' + escapeHTML(report.id) + '">Marcar como analisada</button>' +
+          '<button class="btn secondary btn-small" type="button" data-admin-tab="private_chats"><i data-lucide="shield-check"></i> Ver conversa</button>' : '';
+        cards.push('<article class="card report-card report-detail-card">' +
+          '<div class="report-card-head"><span class="report-type-label"><i data-lucide="' + (typeIcons[report.target_type] || 'flag') + '"></i> ' + escapeHTML(typeLabels[report.target_type] || 'Outro conteúdo') + '</span><time>' + escapeHTML(formatDate(report.created_at)) + '</time></div>' +
+          '<div class="report-reason-block"><span>Motivo informado</span><p>' + escapeHTML(report.reason || 'Não informado') + '</p></div>' +
+          (report.details ? '<div class="report-details-block"><span>Detalhes adicionais</span><p>' + escapeHTML(report.details) + '</p></div>' : '') +
+          '<div class="report-message-block"><span>Conteúdo denunciado</span><p>' + escapeHTML(preview).slice(0, 1200) + '</p></div>' +
+          '<div class="report-byline">Denunciada por <strong>' + escapeHTML(publicName(report.reporter_id)) + '</strong></div>' +
+          '<div class="report-actions">' + removeButton + privateButton +
+          '<button class="btn secondary btn-small" type="button" data-resolve-content-report="' + escapeHTML(report.id) + '">Marcar como analisada</button>' +
           '<button class="btn ghost btn-small" type="button" data-dismiss-content-report="' + escapeHTML(report.id) + '">Descartar denúncia</button></div></article>');
       }
       list.innerHTML = cards.join('');
+      refreshIcons();
     } catch (error) {
       console.warn('CONTENT REPORTS', error);
-      list.innerHTML = '<div class="card"><p class="cae-muted">Fila de denúncias de outras áreas indisponível. Confira se a migração do CAE foi aplicada.</p></div>';
+      list.innerHTML = '<div class="report-empty report-error"><i data-lucide="alert-circle"></i><div><strong>Não foi possível carregar estas denúncias</strong><p>Tente abrir esta aba novamente. Se continuar, confira a conexão do banco.</p></div></div>';
+      updateAdminReportCount('content', 0);
+      refreshIcons();
     }
   }
 
@@ -3739,6 +3844,7 @@
       const button=event.target.closest('button');if(!button)return;
       if(button.matches('#admin-role-button')){await setAccountRole();return;}
       if(button.matches('[data-user-moderation]')){await moderateAccount(button.dataset.userModeration,button);return;}
+      if(button.matches('[data-report-filter]')){applyAdminReportFilter(button.dataset.reportFilter);return;}
       if(button.matches('[data-admin-tab]')){showAdminPanel(button.dataset.adminTab);return;}
       if(button.matches('[data-moderate-shared-podcast]')){await moderateSharedPodcast(button.dataset.podcastId,button.dataset.moderateSharedPodcast);return;}
       if(button.matches('[data-delete-shared-podcast]')){await deleteSharedPodcast(button.dataset.deleteSharedPodcast);return;}
