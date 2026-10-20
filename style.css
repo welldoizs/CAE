@@ -4110,3 +4110,223 @@ input:focus,textarea:focus,select:focus {
 @media (max-width:360px) {
   #desabafo-view .vent-type-tabs { grid-template-columns:1fr; }
 }
+
+
+/* Central de denúncias: leitura rápida e ações bem separadas */
+.report-workspace {
+  display: grid;
+  gap: 20px;
+}
+.report-queue-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+.report-queue-head h3 {
+  margin: 3px 0 6px;
+}
+.report-queue-head p {
+  margin: 0;
+}
+.report-total {
+  min-width: 78px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface, #fff);
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+.report-total strong {
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+.report-total span {
+  color: var(--muted);
+  font-size: .75rem;
+}
+.report-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--surface-soft, rgba(120,120,120,.06));
+}
+.report-filter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 13px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.report-filter span {
+  min-width: 22px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(120,120,120,.12);
+  font-size: .76rem;
+  text-align: center;
+}
+.report-filter.active {
+  border-color: var(--line);
+  background: var(--surface, #fff);
+  box-shadow: 0 2px 8px rgba(20,30,40,.06);
+}
+.report-queue-section {
+  display: grid;
+  gap: 12px;
+}
+.report-section-heading {
+  padding-top: 4px;
+}
+.report-section-heading h4 {
+  margin: 0 0 3px;
+  font-size: 1.02rem;
+}
+.report-section-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .86rem;
+}
+.report-detail-card {
+  display: grid;
+  gap: 13px;
+  padding: 17px;
+  border-left-width: 4px;
+}
+.report-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.report-card-head time {
+  color: var(--muted);
+  font-size: .78rem;
+}
+.report-type-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 800;
+  font-size: .88rem;
+}
+.report-type-label svg {
+  width: 17px;
+  height: 17px;
+}
+.report-reason-block,
+.report-details-block,
+.report-message-block {
+  padding: 11px 13px;
+  border-radius: 11px;
+  background: var(--surface-soft, rgba(120,120,120,.06));
+}
+.report-reason-block > span,
+.report-details-block > span,
+.report-message-block > span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: .73rem;
+  font-weight: 800;
+  letter-spacing: .025em;
+  text-transform: uppercase;
+}
+.report-reason-block p,
+.report-details-block p,
+.report-message-block p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.report-reason-block {
+  border-left: 3px solid var(--pink);
+}
+.report-message-block {
+  background: var(--surface, #fff);
+  border: 1px solid var(--line);
+}
+.report-byline {
+  color: var(--muted);
+  font-size: .8rem;
+}
+.report-byline strong {
+  color: var(--text);
+}
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 2px;
+}
+.report-actions .btn {
+  min-height: 38px;
+}
+.report-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px;
+  border: 1px dashed var(--line);
+  border-radius: 13px;
+  color: var(--muted);
+}
+.report-empty > svg {
+  flex: 0 0 auto;
+  width: 21px;
+  height: 21px;
+}
+.report-empty strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--text);
+}
+.report-empty p {
+  margin: 0;
+  font-size: .86rem;
+}
+.report-error {
+  border-style: solid;
+}
+@media (max-width:620px) {
+  .report-queue-head {
+    flex-direction: row;
+    align-items: center;
+  }
+  .report-total {
+    min-width: 68px;
+    padding: 8px 10px;
+  }
+  .report-filter-bar {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .report-filter {
+    justify-content: space-between;
+  }
+  .report-card-head {
+    align-items: flex-start;
+  }
+  .report-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .report-actions .btn {
+    width: 100%;
+  }
+}
