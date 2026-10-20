@@ -3750,8 +3750,8 @@
       list.innerHTML = reports.map(report => {
         const message = byId.get(String(report.message_id));
         const preview = !message ? 'A mensagem original não está mais disponível.'
-          : message.deleted_at ? 'Esta mensagem já foi ocultada.'
-          : String(message.body || '').trim() || 'Mensagem sem texto.';
+          : String(message.body || '').trim() || (message.deleted_at ? 'Mensagem já ocultada, sem texto.' : 'Mensagem sem texto.');
+        const hiddenLabel = message?.deleted_at ? '<span class="report-message-hidden">Já estava oculta pela equipe</span>' : '';
         const author = message?.user_id ? publicName(message.user_id) : 'Conta não identificada';
         const hasAuthor = Boolean(message?.user_id);
         return `<article class="card report-card report-detail-card" data-report-id="${escapeHTML(report.id)}" ${hasAuthor ? `data-report-target-user="${escapeHTML(message.user_id)}"` : ''}>
@@ -3761,7 +3761,7 @@
           </div>
           <div class="report-reason-block"><span>Motivo informado</span><p>${escapeHTML(report.reason || 'Não informado')}</p></div>
           <div class="report-message-block">
-            <span>Mensagem denunciada · ${escapeHTML(author)}</span>
+            <span>Mensagem denunciada · ${escapeHTML(author)} ${hiddenLabel}</span>
             <p>${escapeHTML(preview)}</p>
           </div>
           <div class="report-byline">Denunciada por <strong>${escapeHTML(publicName(report.reporter_id))}</strong></div>
