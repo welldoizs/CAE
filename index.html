@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="style.css?v=40">
+  <link rel="stylesheet" href="style.css?v=41">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   <link rel="preconnect" href="https://challenges.cloudflare.com">
@@ -144,13 +144,30 @@
           <div>
             <div class="eyebrow">Centro de Acolhimento Estudantil</div>
             <h2>Um espaço para você.</h2>
-            <p class="muted">As áreas do CAE estão organizadas no menu de navegação. Escolha por lá o que precisa acessar.</p>
+            <p class="muted">Desabafe, converse, acompanhe o mural ou encontre ajuda quando precisar.</p>
+          </div>
+          <div class="actions home-simple-actions">
+            <button class="btn primary" type="button" data-open-view="desabafo-view"><i data-lucide="pen-line"></i>Desabafar</button>
+            <button class="btn secondary" type="button" data-open-view="mural-view"><i data-lucide="layout-dashboard"></i>Ver mural</button>
           </div>
         </div>
-
-        <div class="notice home-simple-note">
-          <strong>Precisa de apoio agora?</strong><br>
-          O CAE não é um serviço de emergência. Acesse a seção <strong>Ajuda</strong> no menu para encontrar os canais adequados.
+        <section class="tutorial-video-card" aria-labelledby="tutorial-video-title">
+          <div class="tutorial-video-screen">
+            <div class="tutorial-video-placeholder">
+              <span class="tutorial-play"><i data-lucide="play"></i></span>
+              <strong id="tutorial-video-title">Tutorial do CAE</strong>
+              <span>O vídeo de apresentação será colocado aqui.</span>
+            </div>
+          </div>
+        </section>
+        <div class="home-shortcuts">
+          <button type="button" data-open-view="chat-view"><i data-lucide="messages-square"></i><span><strong>Chat</strong><small>Converse com outros estudantes.</small></span></button>
+          <button type="button" data-open-view="history-view"><i data-lucide="history"></i><span><strong>Histórico</strong><small>Desabafos, diário e conteúdos salvos.</small></span></button>
+          <button type="button" data-open-view="private-conversations-view"><i data-lucide="lock-keyhole"></i><span><strong>Conversas privadas</strong><small>Converse depois de aceitar um convite.</small></span></button>
+        </div>
+        <div class="home-help-actions">
+          <div class="notice home-simple-note"><strong>Precisa de apoio agora?</strong><br>O CAE não é um serviço de emergência. Consulte os canais adequados na página Ajuda.</div>
+          <button class="btn primary" type="button" data-open-view="help-view"><i data-lucide="life-buoy"></i>Preciso de ajuda agora</button>
         </div>
       </section>
 
@@ -237,32 +254,14 @@
       </section>
 
       <section id="desabafo-view" class="view">
-        <div class="section-head">
+        <div class="section-head desabafo-page-head">
           <div>
-<div class="eyebrow">Seu espaço</div>
-<h2>Desabafos</h2>
-<p class="muted">Leia, escreva ou grave um desabafo. Você escolhe se ele será público ou privado.</p>
-</div>
-<div class="actions"><button class="btn ghost btn-small" type="button" data-open-view="history-view"><i data-lucide="history"></i>Meu histórico</button><button class="help-question" type="button" data-site-help data-help-title="Área de desabafos" data-help-text="Leia desabafos públicos aprovados ou envie o seu em texto, por perguntas guiadas, escolhendo uma frase ou gravando áudio. Antes de enviar, escolha se será público ou privado. Público só aparece depois da aprovação. Privado não aparece para outros estudantes. No histórico você pode rever o que enviou.">?</button><button class="btn ghost btn-small" type="button" data-open-view="private-conversations-view"><i data-lucide="lock-keyhole"></i>Conversas privadas</button></div>
-        </div>
-        <section class="public-vent-section public-vent-section-top" aria-labelledby="public-vent-title">
-          <div class="section-head">
-            <div>
-              <div class="eyebrow">Comunidade</div>
-              <h3 id="public-vent-title">Desabafos públicos</h3>
-              <p class="muted">Conteúdos aprovados pela moderação, separados por tipo.</p>
-            </div>
+            <div class="eyebrow">Seu espaço</div>
+            <h2>Desabafos</h2>
+            <p class="muted">Leia, escreva ou grave um desabafo. Você escolhe se ele será público ou privado.</p>
           </div>
-          <div class="tabs vent-type-tabs public-vent-tabs" role="tablist" aria-label="Tipos de desabafos públicos">
-            <button class="tab vent-tab active" type="button" data-public-filter="free" role="tab" aria-selected="true"><span class="vent-tab-icon"><i data-lucide="pen-line"></i></span><span><b>Texto livre</b><small>Escreva do seu jeito</small></span></button>
-            <button class="tab vent-tab" type="button" data-public-filter="guided" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="list-checks"></i></span><span><b>Perguntas guiadas</b><small>Responda passo a passo</small></span></button>
-            <button class="tab vent-tab" type="button" data-public-filter="feelings" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="heart"></i></span><span><b>Como eu me sinto</b><small>Comece por uma frase</small></span></button>
-            <button class="tab vent-tab" type="button" data-public-filter="audio" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="mic"></i></span><span><b>Áudio</b><small>Fale em vez de escrever</small></span></button>
-          </div>
-          <div id="public-vent-list" class="public-vent-feed" role="tabpanel"></div>
-        </section>
-
-        <section class="vent-compose-section" aria-labelledby="vent-compose-title">
+          <button class="help-question" type="button" data-site-help data-help-title="Área de desabafos" data-help-text="Leia desabafos públicos aprovados ou envie o seu em texto, por perguntas guiadas, escolhendo uma frase ou gravando áudio. Antes de enviar, escolha se será público ou privado. Público só aparece depois da aprovação. Privado não aparece para outros estudantes. No histórico você pode rever o que enviou.">?</button>
+        </div><section class="vent-compose-section desabafo-compose-panel" aria-labelledby="vent-compose-title">
           <div class="section-head vent-compose-section-head">
             <div>
 <div class="eyebrow">Seu espaço</div>
@@ -270,6 +269,12 @@
 <p class="muted">Aqui você cria e envia o seu conteúdo. Escolha o formato e depois defina quem poderá acessá-lo.</p>
 </div>
           </div>
+          <div class="tabs vent-type-tabs vent-compose-tabs" role="tablist" aria-label="Tipos de desabafo">
+          <button class="tab vent-tab active" type="button" data-compose="free"><span class="vent-tab-icon"><i data-lucide="pen-line"></i></span><span><b>Texto livre</b><small>Escreva do seu jeito</small></span></button>
+          <button class="tab vent-tab" type="button" data-compose="guided"><span class="vent-tab-icon"><i data-lucide="list-checks"></i></span><span><b>Perguntas guiadas</b><small>Uma pergunta de cada vez</small></span></button>
+          <button class="tab vent-tab" type="button" data-compose="feelings"><span class="vent-tab-icon"><i data-lucide="heart"></i></span><span><b>Como eu me sinto</b><small>Escolha o que combina</small></span></button>
+          <button class="tab vent-tab" type="button" data-compose="audio"><span class="vent-tab-icon"><i data-lucide="mic"></i></span><span><b>Áudio</b><small>Grave sem digitar</small></span></button>
+        </div>
           <div class="card vent-privacy-selector">
           <div class="field-label-row">
 <div class="eyebrow">Privacidade</div>
@@ -285,13 +290,6 @@
             </button>
           </div>
           <p id="vent-visibility-help" class="cae-muted vent-visibility-help">Depois de aprovado, fica disponível para todos na área Desabafos.</p>
-        </div>
-
-        <div class="tabs vent-type-tabs vent-compose-tabs" role="tablist" aria-label="Tipos de desabafo">
-          <button class="tab vent-tab active" type="button" data-compose="free"><span class="vent-tab-icon"><i data-lucide="pen-line"></i></span><span><b>Texto livre</b><small>Escreva do seu jeito</small></span></button>
-          <button class="tab vent-tab" type="button" data-compose="guided"><span class="vent-tab-icon"><i data-lucide="list-checks"></i></span><span><b>Perguntas guiadas</b><small>Uma pergunta de cada vez</small></span></button>
-          <button class="tab vent-tab" type="button" data-compose="feelings"><span class="vent-tab-icon"><i data-lucide="heart"></i></span><span><b>Como eu me sinto</b><small>Escolha o que combina</small></span></button>
-          <button class="tab vent-tab" type="button" data-compose="audio"><span class="vent-tab-icon"><i data-lucide="mic"></i></span><span><b>Áudio</b><small>Grave sem digitar</small></span></button>
         </div>
 
         <div id="compose-free" class="compose card hidden">
@@ -406,6 +404,23 @@
           </section>
         </div>
 
+        </section>
+
+        <section class="public-vent-section public-vent-section-top desabafo-community-panel" aria-labelledby="public-vent-title">
+          <div class="section-head">
+            <div>
+              <div class="eyebrow">Comunidade</div>
+              <h3 id="public-vent-title">Desabafos públicos</h3>
+              <p class="muted">Conteúdos aprovados pela moderação, separados por tipo.</p>
+            </div>
+          </div>
+          <div class="tabs vent-type-tabs public-vent-tabs" role="tablist" aria-label="Tipos de desabafos públicos">
+            <button class="tab vent-tab active" type="button" data-public-filter="free" role="tab" aria-selected="true"><span class="vent-tab-icon"><i data-lucide="pen-line"></i></span><span><b>Texto livre</b><small>Escreva do seu jeito</small></span></button>
+            <button class="tab vent-tab" type="button" data-public-filter="guided" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="list-checks"></i></span><span><b>Perguntas guiadas</b><small>Responda passo a passo</small></span></button>
+            <button class="tab vent-tab" type="button" data-public-filter="feelings" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="heart"></i></span><span><b>Como eu me sinto</b><small>Comece por uma frase</small></span></button>
+            <button class="tab vent-tab" type="button" data-public-filter="audio" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="mic"></i></span><span><b>Áudio</b><small>Fale em vez de escrever</small></span></button>
+          </div>
+          <div id="public-vent-list" class="public-vent-feed" role="tabpanel"></div>
         </section>
       </section>
 
