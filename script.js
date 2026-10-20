@@ -2201,7 +2201,7 @@
       document.querySelector('.notification-shell')?.classList.toggle('hidden', !state.notificationsEnabled);
       const list = $('notifications-list');
       if (!list) return;
-      list.innerHTML = state.notifications.length ? state.notifications.map(n => `<button type="button" class="notification-item ${n.read_at?'':'unread'}" data-open-notification="${escapeHTML(n.id)}"><span class="notification-icon"><i data-lucide="${n.type==='private_message'?'message-circle':n.type.includes('request')?'user-plus':n.type==='vent_reply'?'message-circle':'bell'}"></i></span><span><strong>${escapeHTML(n.title)}</strong><small>${escapeHTML(n.body)}</small><em>${escapeHTML(formatDate(n.created_at))}</em></span></button>`).join('') : '<div class="notification-empty"><i data-lucide="bell-off"></i><p>Nenhuma notificação ainda.</p></div>';
+      list.innerHTML = state.notifications.length ? state.notifications.map(n => `<button type="button" class="notification-item ${n.read_at?'':'unread'}" data-open-notification="${escapeHTML(n.id)}"><span class="notification-icon"><i data-lucide="${n.type==='private_message'||n.type==='staff_reply'||n.type==='vent_reply'?'message-circle':n.type==='content_rejected'?'shield-alert':n.type.includes('request')?'user-plus':'bell'}"></i></span><span><strong>${escapeHTML(n.title)}</strong><small>${escapeHTML(n.body)}</small><em>${escapeHTML(formatDate(n.created_at))}</em></span></button>`).join('') : '<div class="notification-empty"><i data-lucide="bell-off"></i><p>Nenhuma notificação ainda.</p></div>';
       refreshIcons();
     } catch (error) { console.warn('NOTIFICATIONS', error); }
   }
