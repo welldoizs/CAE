@@ -2221,7 +2221,7 @@
       document.querySelector('.notification-shell')?.classList.toggle('hidden', !state.notificationsEnabled);
       const list = $('notifications-list');
       if (!list) return;
-      list.innerHTML = state.notifications.length ? state.notifications.map(n => `<button type="button" class="notification-item ${n.read_at?'':'unread'}" data-open-notification="${escapeHTML(n.id)}" data-notification-source="${n.notification_source}"><span class="notification-icon"><i data-lucide="${n.notification_source==='admin'?'bell-ring':n.type==='private_message'||n.type==='staff_reply'||n.type==='vent_reply'?'message-circle':n.type==='content_rejected'?'shield-alert':n.type.includes('request')?'user-plus':'bell'}"></i></span><span><strong>${escapeHTML(n.title)}</strong><small>${escapeHTML(n.body)}</small><em>${escapeHTML(formatDate(n.created_at))}</em></span></button>`).join('') : '<div class="notification-empty"><i data-lucide="bell-off"></i><p>Nenhuma notificação ainda.</p></div>';
+      list.innerHTML = state.notifications.length ? state.notifications.map(n => `<button type="button" class="notification-item ${n.read_at?'':'unread'}" data-open-notification="${escapeHTML(n.id)}" data-notification-source="${n.notification_source}"><span class="notification-icon"><i data-lucide="${n.notification_source==='admin'?'bell-ring':n.type==='private_message'||n.type==='staff_reply'||n.type==='vent_reply'?'message-circle':n.type==='content_rejected'?'shield-alert':n.type==='report_update'?'flag':n.type.includes('request')?'user-plus':'bell'}"></i></span><span><strong>${escapeHTML(n.title)}</strong><small>${escapeHTML(n.body)}</small><em>${escapeHTML(formatDate(n.created_at))}</em></span></button>`).join('') : '<div class="notification-empty"><i data-lucide="bell-off"></i><p>Nenhuma notificação ainda.</p></div>';
       refreshIcons();
     } catch (error) { console.warn('NOTIFICATIONS', error); }
   }
@@ -3619,6 +3619,110 @@
     });
   }
 
+  async function loadReportedUserHistory(button) {
+    if (!isStaff()) return;
+    const card = button.closest('.report-detail-card');
+    const panel = card?.querySelector('[data-report-user-history-panel]');
+    const userId = card?.dataset.reportTargetUser;
+    if (!card || !panel || !userId) return;
+
+    if (!panel.classList.contains('hidden')) {
+      panel.classList.add('hidden');
+      button.setAttribute('aria-expanded', 'false');
+      button.innerHTML = '<i data-lucide="history"></i> Ver histórico recente';
+      refreshIcons();
+      return;
+    }
+
+    panel.classList.remove('hidden');
+    button.setAttribute('aria-expanded', 'true');
+    button.innerHTML = '<i data-lucide="loader-circle"></i> Carregando histórico…';
+    panel.innerHTML = '<div class="report-history-loading">Buscando as últimas mensagens desta conta…</div>';
+    refreshIcons();
+
+    try {
+      const { data, error } = await state.supabase.from(TABLE.chat)
+        .select('id,body,created_at,deleted_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      const rows = data || [];
+      panel.innerHTML = rows.length
+        ? '<div class="report-history-heading">Últimas ' + rows.length + ' mensagens desta conta</div>' +
+          rows.map(row => `<article class="report-history-message ${row.deleted_at ? 'is-deleted' : ''}">
+            <time>${escapeHTML(formatDate(row.created_at))}</time>
+            <p>${escapeHTML(row.body || '')}</p>
+            ${row.deleted_at ? '<span>Mensagem já ocultada pela equipe</span>' : ''}
+          </article>`).join('')
+        : '<div class="report-empty"><strong>Esta conta ainda não tem mensagens no chat.</strong></div>';
+      button.innerHTML = '<i data-lucide="chevron-up"></i> Fechar histórico';
+      refreshIcons();
+    } catch (error) {
+      console.error('REPORTED USER HISTORY', error);
+      panel.innerHTML = '<div class="report-history-error">Não foi possível consultar o histórico desta conta.</div>';
+      button.innerHTML = '<i data-lucide="refresh-cw"></i> Tentar novamente';
+      button.setAttribute('aria-expanded', 'false');
+      panel.classList.add('hidden');
+      refreshIcons();
+    }
+  }
+
+  async function resolveChatReportWithAction(reportId, action, button) {
+    if (!isStaff() || !reportId || !['keep', 'hide', 'timeout', 'ban'].includes(action)) return;
+    const card = button.closest('.report-detail-card');
+    const targetUserId = card?.dataset.reportTargetUser;
+    if (!targetUserId) return toast('Não foi possível identificar a conta responsável pela mensagem.', 'error');
+
+    let reason = null;
+    let timeoutMinutes = null;
+    if (action === 'timeout') {
+      timeoutMinutes = Number(card.querySelector('[data-report-timeout-duration]')?.value || 10);
+      reason = await askModerationReason('timeout', publicName(targetUserId));
+      if (!reason) return;
+    } else if (action === 'ban') {
+      reason = await askModerationReason('ban', publicName(targetUserId));
+      if (!reason) return;
+    }
+
+    const confirmations = {
+      keep: 'Encerrar esta denúncia mantendo a mensagem e sem aplicar punição?',
+      hide: 'Ocultar a mensagem e encerrar a denúncia, sem punir a conta?',
+      timeout: `Ocultar a mensagem e aplicar timeout de ${timeoutMinutes} minuto(s) em ${publicName(targetUserId)}?`,
+      ban: `Ocultar a mensagem e bloquear ${publicName(targetUserId)}?`
+    };
+    if (!window.confirm(confirmations[action])) return;
+
+    setBusy(button, true, 'Salvando…');
+    try {
+      const { data, error } = await state.supabase.rpc('cae_staff_resolve_chat_report', {
+        p_report_id: reportId,
+        p_action: action,
+        p_reason: reason,
+        p_timeout_minutes: timeoutMinutes
+      });
+      if (error) throw error;
+      await logAdmin('resolve_chat_report_' + action, 'chat_report', reportId, {
+        target_user_id: targetUserId,
+        timeout_minutes: timeoutMinutes,
+        reason
+      });
+      const messages = {
+        keep: 'Denúncia encerrada. A mensagem foi mantida.',
+        hide: 'Mensagem ocultada. Nenhuma punição foi aplicada.',
+        timeout: 'Mensagem ocultada e timeout aplicado. A pessoa recebeu o motivo informado.',
+        ban: 'Mensagem ocultada e conta bloqueada. A pessoa recebeu o motivo informado.'
+      };
+      toast(messages[action] || data?.resolution_summary || 'Denúncia resolvida.');
+      await Promise.allSettled([loadAdmin(), loadNotifications(), loadChat()]);
+    } catch (error) {
+      console.error('CHAT REPORT RESOLUTION', error);
+      toast(errorMessage(error), 'error');
+    } finally {
+      setBusy(button, false);
+    }
+  }
+
   async function loadChatReports() {
     const list = $('admin-report-list');
     if (!list || !isStaff() || !state.supabase) return;
@@ -3649,7 +3753,8 @@
           : message.deleted_at ? 'Esta mensagem já foi ocultada.'
           : String(message.body || '').trim() || 'Mensagem sem texto.';
         const author = message?.user_id ? publicName(message.user_id) : 'Conta não identificada';
-        return `<article class="card report-card report-detail-card">
+        const hasAuthor = Boolean(message?.user_id);
+        return `<article class="card report-card report-detail-card" data-report-id="${escapeHTML(report.id)}" ${hasAuthor ? `data-report-target-user="${escapeHTML(message.user_id)}"` : ''}>
           <div class="report-card-head">
             <span class="report-type-label"><i data-lucide="message-square-warning"></i> Chat público</span>
             <time>${escapeHTML(formatDate(report.created_at))}</time>
@@ -3660,12 +3765,34 @@
             <p>${escapeHTML(preview)}</p>
           </div>
           <div class="report-byline">Denunciada por <strong>${escapeHTML(publicName(report.reporter_id))}</strong></div>
-          <div class="report-actions">
-            ${message && !message.deleted_at
-              ? `<button class="btn danger btn-small" type="button" data-hide-reported="${escapeHTML(report.message_id)}" data-report-id="${escapeHTML(report.id)}"><i data-lucide="eye-off"></i> Ocultar e resolver</button>`
-              : `<button class="btn danger btn-small" type="button" disabled><i data-lucide="eye-off"></i> Mensagem já oculta</button>`}
-            <button class="btn secondary btn-small" type="button" data-resolve-report="${escapeHTML(report.id)}">Manter mensagem e resolver</button>
-          </div>
+          ${hasAuthor ? `
+            <div class="report-actions">
+              <button class="btn secondary btn-small" type="button" data-report-user-history aria-expanded="false"><i data-lucide="history"></i> Ver histórico recente</button>
+            </div>
+            <div class="report-history-panel hidden" data-report-user-history-panel></div>
+            <div class="report-moderation-tools">
+              <div class="report-timeout-control">
+                <label>Duração do timeout</label>
+                <select data-report-timeout-duration>
+                  <option value="10">10 minutos</option>
+                  <option value="60">1 hora</option>
+                  <option value="1440">24 horas</option>
+                  <option value="10080">7 dias</option>
+                </select>
+              </div>
+              <div class="report-actions">
+                <button class="btn primary btn-small" type="button" data-chat-report-action="timeout"><i data-lucide="clock-3"></i> Aplicar timeout e ocultar</button>
+                <button class="btn danger btn-small" type="button" data-chat-report-action="ban"><i data-lucide="ban"></i> Bloquear conta e ocultar</button>
+                <button class="btn secondary btn-small" type="button" data-chat-report-action="hide"><i data-lucide="eye-off"></i> Só ocultar mensagem</button>
+                <button class="btn ghost btn-small" type="button" data-chat-report-action="keep"><i data-lucide="check"></i> Manter mensagem e encerrar</button>
+              </div>
+              <p class="report-moderation-note">Timeout e bloqueio exigem um motivo, que será enviado à pessoa moderada. Quem fez a denúncia receberá o resultado da análise.</p>
+            </div>` : `
+              <div class="report-actions">
+                <button class="btn secondary btn-small" type="button" data-chat-report-action="keep">Encerrar denúncia</button>
+              </div>
+              <p class="report-moderation-note">A mensagem original não está mais disponível para identificar a conta responsável.</p>
+          `}
         </article>`;
       }).join('');
       refreshIcons();
@@ -3718,8 +3845,8 @@
           '<div class="report-message-block"><span>Conteúdo denunciado</span><p>' + escapeHTML(preview).slice(0, 1200) + '</p></div>' +
           '<div class="report-byline">Denunciada por <strong>' + escapeHTML(publicName(report.reporter_id)) + '</strong></div>' +
           '<div class="report-actions">' + removeButton + privateButton +
-          '<button class="btn secondary btn-small" type="button" data-resolve-content-report="' + escapeHTML(report.id) + '">Manter conteúdo e resolver</button>' +
-          '<button class="btn ghost btn-small" type="button" data-dismiss-content-report="' + escapeHTML(report.id) + '">Descartar denúncia</button></div></article>');
+          '<button class="btn secondary btn-small" type="button" data-resolve-content-report="' + escapeHTML(report.id) + '">Manter conteúdo e encerrar</button>' +
+          '<button class="btn ghost btn-small" type="button" data-dismiss-content-report="' + escapeHTML(report.id) + '">Encerrar sem medida</button></div></article>');
       }
       list.innerHTML = cards.join('');
       refreshIcons();
@@ -3731,11 +3858,12 @@
     }
   }
 
-  async function updateContentReportStatus(id, status) {
+  async function updateContentReportStatus(id, status, resolutionSummary = '') {
     if (!isStaff() || !['reviewed', 'dismissed'].includes(status)) return;
     try {
       const { error } = await state.supabase.from(TABLE.contentReports).update({
-        status, reviewed_at: new Date().toISOString(), reviewed_by: state.user.id
+        status, reviewed_at: new Date().toISOString(), reviewed_by: state.user.id,
+        resolution_summary: resolutionSummary || (status === 'reviewed' ? 'A equipe analisou sua denúncia e decidiu manter o conteúdo. Nenhuma medida de remoção foi aplicada.' : 'A equipe analisou sua denúncia e decidiu encerrá-la sem aplicar uma medida ao conteúdo.')
       }).eq('id', id);
       if (error) throw error;
       await loadContentReports();
@@ -3757,7 +3885,7 @@
         ok = true;
       } catch (error) { toast(errorMessage(error), 'error'); }
     } else ok = await deleteStaffContent(type, contentId, 'este conteúdo denunciado');
-    if (ok) await updateContentReportStatus(reportId, 'reviewed');
+    if (ok) await updateContentReportStatus(reportId, 'reviewed', 'A equipe analisou sua denúncia e removeu o conteúdo sinalizado. Obrigado por ajudar a manter o CAE seguro.');
   }
 
   async function loadUserPreferences() {
@@ -3894,6 +4022,8 @@
       const button=event.target.closest('button');if(!button)return;
       if(button.matches('#admin-role-button')){await setAccountRole();return;}
       if(button.matches('[data-user-moderation]')){await moderateAccount(button.dataset.userModeration,button);return;}
+      if(button.matches('[data-report-user-history]')){await loadReportedUserHistory(button);return;}
+      if(button.matches('[data-chat-report-action]')){const card=button.closest('.report-detail-card');await resolveChatReportWithAction(card?.dataset.reportId,button.dataset.chatReportAction,button);return;}
       if(button.matches('[data-report-filter]')){applyAdminReportFilter(button.dataset.reportFilter);return;}
       if(button.matches('[data-admin-tab]')){showAdminPanel(button.dataset.adminTab);return;}
       if(button.matches('[data-moderate-shared-podcast]')){await moderateSharedPodcast(button.dataset.podcastId,button.dataset.moderateSharedPodcast);return;}
