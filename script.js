@@ -2621,7 +2621,7 @@
       setStatus('post-status','Enviado para moderação.','ok');
       toast('Sua publicação foi enviada para moderação.');
       await loadPosts();
-      if (isStaff()) await loadAdmin();
+      if (isStaff()) await Promise.allSettled([loadAdmin(), loadAdminNotifications()]);
     } catch (error) { console.error('POST',error); setStatus('post-status',errorMessage(error)); }
     finally { setBusy(button,false); }
   }
