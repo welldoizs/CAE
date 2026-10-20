@@ -4330,3 +4330,81 @@ input:focus,textarea:focus,select:focus {
     width: 100%;
   }
 }
+
+
+/* Publicações aguardando decisão ficam em uma área particular do autor. */
+.post-private-section {
+  display: grid;
+  gap: 11px;
+  margin-bottom: 22px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: var(--lilac-ice);
+}
+.post-private-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.post-private-heading h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+.post-private-heading p {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.4;
+}
+.post-private-heading p svg {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  margin-top: 2px;
+}
+.post-private-heading > span {
+  min-width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--lilac-dark);
+  font-size: .8rem;
+  font-weight: 800;
+}
+.post-private-card {
+  background: var(--white);
+  box-shadow: none;
+}
+.post-private-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 10px 0;
+  color: var(--lilac-dark);
+  font-size: .82rem;
+  font-weight: 800;
+}
+.post-private-status svg {
+  width: 15px;
+  height: 15px;
+}
+.post-private-reason {
+  margin: 8px 0;
+  padding: 9px 11px;
+  border-left: 3px solid var(--red);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink-2);
+  font-size: .84rem;
+  line-height: 1.45;
+}
+@media (max-width:620px) {
+  .post-private-section { padding: 11px; }
+}
