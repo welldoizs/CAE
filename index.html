@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="style.css?v=41">
+  <link rel="stylesheet" href="style.css?v=42">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   <link rel="preconnect" href="https://challenges.cloudflare.com">
@@ -938,19 +938,39 @@
 
         <div id="admin-panel-podcasts" class="admin-panel hidden" data-admin-panel="podcasts"><div class="card"><div class="eyebrow">Comunidade</div><h3>Recomendações pendentes</h3><p class="cae-muted">Confira o link e o conteúdo antes de aprovar.</p><div id="admin-podcast-pending-list" class="admin-list"></div></div><div class="card"><div class="eyebrow">Publicados</div><h3>Recomendações aprovadas</h3><div id="admin-podcast-approved-list" class="admin-list"></div></div></div>
         <div id="admin-panel-reports" class="admin-panel hidden" data-admin-panel="reports">
-          <div class="card">
-<div class="admin-panel-heading">
-<div>
-<div class="eyebrow">Segurança</div>
-<h3>Denúncias pendentes</h3>
-<p class="cae-muted">Mensagens denunciadas ficam escondidas para quem fez a denúncia.</p>
-</div>
-<span id="admin-reports-badge" class="admin-summary-count">0</span>
-</div>
-<div id="admin-report-list" class="admin-list"></div>
-<div class="admin-panel-heading" style="margin-top:24px"><div><div class="eyebrow">Outras áreas</div><h3>Denúncias de publicações, desabafos e conversas privadas</h3><p class="cae-muted">Analise estes relatos separadamente das denúncias do chat público.</p></div></div>
-<div id="admin-content-report-list" class="admin-list"></div>
-</div>
+          <div class="card report-workspace">
+            <div class="report-queue-head">
+              <div>
+                <div class="eyebrow">Segurança da comunidade</div>
+                <h3>Central de denúncias</h3>
+                <p class="cae-muted">Veja o que foi sinalizado, confira o contexto e escolha como resolver.</p>
+              </div>
+              <div class="report-total">
+                <strong id="admin-reports-badge">0</strong>
+                <span>pendentes</span>
+              </div>
+            </div>
+
+            <div class="report-filter-bar" role="group" aria-label="Filtrar denúncias">
+              <button class="report-filter active" type="button" data-report-filter="all" aria-pressed="true">Todas <span id="report-filter-count-all">0</span></button>
+              <button class="report-filter" type="button" data-report-filter="chat" aria-pressed="false">Chat público <span id="report-filter-count-chat">0</span></button>
+              <button class="report-filter" type="button" data-report-filter="content" aria-pressed="false">Outros conteúdos <span id="report-filter-count-content">0</span></button>
+            </div>
+
+            <section id="admin-chat-report-section" class="report-queue-section">
+              <div class="report-section-heading">
+                <div><h4>Chat público</h4><p>Denúncias de mensagens enviadas no chat.</p></div>
+              </div>
+              <div id="admin-report-list" class="admin-list"></div>
+            </section>
+
+            <section id="admin-content-report-section" class="report-queue-section">
+              <div class="report-section-heading">
+                <div><h4>Outros conteúdos</h4><p>Publicações, desabafos, podcasts e conversas privadas.</p></div>
+              </div>
+              <div id="admin-content-report-list" class="admin-list"></div>
+            </section>
+          </div>
         </div>
 
         <div id="admin-panel-private-chats" class="admin-panel hidden" data-admin-panel="private_chats">
@@ -1165,6 +1185,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=42" defer></script>
+  <script src="script.js?v=43" defer></script>
 </body>
 </html>
