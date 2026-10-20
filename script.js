@@ -2192,38 +2192,69 @@
   async function loadNotifications() {
     if (!state.user || !state.supabase) return;
     try {
-      const { data, error } = await state.supabase.from(TABLE.notifications).select('id,user_id,type,title,body,target_view,target_id,created_at,read_at').order('created_at',{ascending:false}).limit(60);
+      const { data, error } = await state.supabase.from(TABLE.notifications)
+        .select('id,user_id,type,title,body,target_view,target_id,created_at,read_at')
+        .order('created_at',{ascending:false}).limit(60);
       if (error) throw error;
-      state.notifications = data || [];
+
+      // Alertas administrativos entram no mesmo sininho, mas só são consultados
+      // e exibidos quando a conta pertence à equipe.
+      let adminRows = [];
+      if (isStaff()) {
+        const adminResult = await state.supabase.from('cae_admin_notifications')
+          .select('id,user_id,type,title,body,target_view,target_id,created_at,read_at')
+          .order('created_at',{ascending:false}).limit(60);
+        if (adminResult.error) throw adminResult.error;
+        adminRows = (adminResult.data || []).map(item => ({ ...item, notification_source: 'admin' }));
+      }
+      state.notifications = [
+        ...(data || []).map(item => ({ ...item, notification_source: 'user' })),
+        ...adminRows
+      ].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0,60);
+
       const unread = state.notifications.filter(n => !n.read_at).length;
       const badge = $('notifications-badge');
       if (badge) { badge.textContent = unread > 99 ? '99+' : String(unread); badge.classList.toggle('hidden', unread === 0 || !state.notificationsEnabled); }
       document.querySelector('.notification-shell')?.classList.toggle('hidden', !state.notificationsEnabled);
       const list = $('notifications-list');
       if (!list) return;
-      list.innerHTML = state.notifications.length ? state.notifications.map(n => `<button type="button" class="notification-item ${n.read_at?'':'unread'}" data-open-notification="${escapeHTML(n.id)}"><span class="notification-icon"><i data-lucide="${n.type==='private_message'||n.type==='staff_reply'||n.type==='vent_reply'?'message-circle':n.type==='content_rejected'?'shield-alert':n.type.includes('request')?'user-plus':'bell'}"></i></span><span><strong>${escapeHTML(n.title)}</strong><small>${escapeHTML(n.body)}</small><em>${escapeHTML(formatDate(n.created_at))}</em></span></button>`).join('') : '<div class="notification-empty"><i data-lucide="bell-off"></i><p>Nenhuma notificação ainda.</p></div>';
+      list.innerHTML = state.notifications.length ? state.notifications.map(n => `<button type="button" class="notification-item ${n.read_at?'':'unread'}" data-open-notification="${escapeHTML(n.id)}" data-notification-source="${n.notification_source}"><span class="notification-icon"><i data-lucide="${n.notification_source==='admin'?'bell-ring':n.type==='private_message'||n.type==='staff_reply'||n.type==='vent_reply'?'message-circle':n.type==='content_rejected'?'shield-alert':n.type.includes('request')?'user-plus':'bell'}"></i></span><span><strong>${escapeHTML(n.title)}</strong><small>${escapeHTML(n.body)}</small><em>${escapeHTML(formatDate(n.created_at))}</em></span></button>`).join('') : '<div class="notification-empty"><i data-lucide="bell-off"></i><p>Nenhuma notificação ainda.</p></div>';
       refreshIcons();
     } catch (error) { console.warn('NOTIFICATIONS', error); }
   }
 
-  async function markNotificationRead(id) {
+  async function markNotificationRead(id, source = 'user') {
     if (!id || !state.user) return;
-    const { error } = await state.supabase.from(TABLE.notifications).update({read_at:new Date().toISOString()}).eq('id',id).eq('user_id',state.user.id);
+    const table = source === 'admin' && isStaff() ? 'cae_admin_notifications' : TABLE.notifications;
+    const { error } = await state.supabase.from(table).update({read_at:new Date().toISOString()}).eq('id',id).eq('user_id',state.user.id);
     if (error) console.warn('NOTIFICATION READ', error);
   }
 
   async function markAllNotificationsRead() {
     if (!state.user) return;
-    const { error } = await state.supabase.from(TABLE.notifications).update({read_at:new Date().toISOString()}).eq('user_id',state.user.id).is('read_at',null);
+    const readAt = new Date().toISOString();
+    const { error } = await state.supabase.from(TABLE.notifications).update({read_at:readAt}).eq('user_id',state.user.id).is('read_at',null);
     if (error) return toast(errorMessage(error),'error');
+    if (isStaff()) {
+      const adminResult = await state.supabase.from('cae_admin_notifications').update({read_at:readAt}).eq('user_id',state.user.id).is('read_at',null);
+      if (adminResult.error) return toast(errorMessage(adminResult.error),'error');
+    }
     await loadNotifications();
   }
 
   async function openNotification(id) {
     const notification = state.notifications.find(n => String(n.id) === String(id));
     if (!notification) return;
-    await markNotificationRead(id);
+    if (notification.notification_source === 'admin' && !isStaff()) return;
+    await markNotificationRead(id, notification.notification_source);
     openNotificationsPanel(false);
+    if (notification.notification_source === 'admin') {
+      const tabs = { new_vent:'vents', new_post:'posts', new_podcast:'podcasts', content_report:'reports', chat_report:'reports', account_deletion:'accounts', support_message:'support' };
+      showView('admin-view');
+      showAdminPanel(tabs[notification.type] || 'vents');
+      await loadNotifications();
+      return;
+    }
     const target = notification.target_view || 'private-conversations-view';
     showView(target);
     if (target === 'private-conversations-view' && notification.target_id) await loadPrivateChatData(notification.target_id);
@@ -2362,7 +2393,7 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.vents }, () => { loadPublicVents(); if (isStaff()) loadAdmin(); if (isStaff()) loadAdminPrivateHistory(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.support }, () => { loadSupportChat(); if (isStaff()) loadAdminSupport(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.notifications }, () => { loadNotifications(); if (state.currentView === 'private-conversations-view' && state.privateSelectedConversationId) loadPrivateChatData(state.privateSelectedConversationId); })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'cae_admin_notifications', filter: `user_id=eq.${state.user.id}` }, () => { if (isStaff()) loadAdminNotifications(); })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'cae_admin_notifications', filter: `user_id=eq.${state.user.id}` }, () => { if (isStaff()) loadNotifications(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.privateMessages }, () => { if (state.currentView === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId); })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.privateRequests }, () => { if (state.currentView === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId); loadNotifications(); })
       .subscribe(status => console.debug('CAE Realtime:', status));
