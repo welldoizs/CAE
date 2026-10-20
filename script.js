@@ -2437,9 +2437,12 @@
   async function loadPosts() {
     const list = $('post-list');
     if (!list) return;
-    const { data, error } = await state.supabase.from(TABLE.posts).select('*').order('created_at',{ascending:false}).limit(50);
+    let postsQuery = state.supabase.from(TABLE.posts).select('*');
+    if (!isStaff()) postsQuery = postsQuery.or(`status.eq.approved,user_id.eq.${state.user.id}`);
+    const { data, error } = await postsQuery.order('created_at',{ascending:false}).limit(50);
     if (error) throw error;
-    const posts = (data || []).filter(post => ['approved'].includes(String(post.status || 'approved')) || post.user_id === state.user.id || isStaff());
+    // Fail closed: qualquer status ausente/desconhecido fica privado, nunca é tratado como aprovado.
+    const posts = (data || []).filter(post => String(post.status || 'pending') === 'approved' || post.user_id === state.user.id || isStaff());
     updateMuralActivityBadge('posts', posts);
     const postIds = posts.map(post => post.id);
 
@@ -2454,7 +2457,7 @@
       return;
     }
     list.innerHTML = posts.map(post => {
-      const status = String(post.status || 'approved');
+      const status = String(post.status || 'pending');
       const reactionHTML = REACTIONS.map(([emoji,key]) => {
         const count = reactions.filter(r => r.post_id === post.id && String(r.reaction) === key).length;
         const active = reactions.some(r => r.post_id === post.id && r.user_id === state.user.id && String(r.reaction) === key);
