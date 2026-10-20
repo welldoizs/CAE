@@ -133,6 +133,61 @@
   const $ = (id) => document.getElementById(id);
   const $$ = (selector) => [...document.querySelectorAll(selector)];
 
+  const MURAL_ACTIVITY_LABELS = Object.freeze({
+    announcements: 'avisos',
+    events: 'eventos',
+    posts: 'publicações',
+    polls: 'enquetes',
+    podcasts: 'recomendações de podcasts'
+  });
+
+  function muralActivityStorageKey(panel) {
+    return state.user ? `cae:mural:last-seen:${state.user.id}:${panel}` : '';
+  }
+
+  function markMuralPanelSeen(panel) {
+    if (!state.user || !MURAL_ACTIVITY_LABELS[panel]) return;
+    try {
+      window.localStorage.setItem(muralActivityStorageKey(panel), String(Date.now()));
+    } catch (error) {
+      console.warn('MURAL ACTIVITY STORAGE', error);
+    }
+    const badge = $(`mural-unread-${panel}`);
+    if (badge) {
+      badge.textContent = '0';
+      badge.classList.add('hidden');
+      badge.setAttribute('aria-label', `Nenhuma nova entrada: ${MURAL_ACTIVITY_LABELS[panel]}.`);
+    }
+  }
+
+  function updateMuralActivityBadge(panel, rows) {
+    const badge = $(`mural-unread-${panel}`);
+    if (!badge || !state.user) return;
+    if (state.currentView === 'mural-view' && state.currentPanel === panel) {
+      markMuralPanelSeen(panel);
+      return;
+    }
+    try {
+      const key = muralActivityStorageKey(panel);
+      const stored = window.localStorage.getItem(key);
+      let lastSeen = Number(stored);
+      if (!stored || !Number.isFinite(lastSeen) || lastSeen <= 0) {
+        lastSeen = Date.now();
+        window.localStorage.setItem(key, String(lastSeen));
+      }
+      const unread = (rows || []).filter(row => {
+        const createdAt = Date.parse(row?.created_at || '');
+        return Number.isFinite(createdAt) && createdAt > lastSeen;
+      }).length;
+      badge.textContent = unread > 99 ? '99+' : String(unread);
+      badge.classList.toggle('hidden', unread === 0);
+      badge.setAttribute('aria-label', `${unread} novos: ${MURAL_ACTIVITY_LABELS[panel]}.`);
+    } catch (error) {
+      badge.classList.add('hidden');
+      console.warn('MURAL ACTIVITY STORAGE', error);
+    }
+  }
+
   // No CAE, moderador e administrador possuem a mesma permissão de equipe.
   // Mantemos os dois valores antigos no banco por compatibilidade.
   const isStaff = () => ['admin', 'moderator'].includes(state.profile?.role);
@@ -665,7 +720,12 @@
     $(id)?.classList.add('active');
     ensureViewHelpButton(id);
     state.currentView = id;
-    $$('[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === id));
+    $$('.nav [data-view]').forEach(button => {
+      const active = button.dataset.view === id;
+      button.classList.toggle('active', active);
+      if (active) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
 
     if (id === 'chat-view') { loadChat(); }
     if (id === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId);
@@ -680,12 +740,39 @@
   }
 
   function switchMuralPanel(panel) {
+    if (!MURAL_ACTIVITY_LABELS[panel]) return;
     state.currentPanel = panel;
-    $$('[data-panel]').forEach(button => button.classList.toggle('active', button.dataset.panel === panel));
-    $$('.panel').forEach(el => el.classList.remove('active'));
-    $(`#panel-${panel}`)?.classList.add('active');
+    $$('[data-panel]').forEach(button => {
+      const active = button.dataset.panel === panel;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', String(active));
+      button.tabIndex = active ? 0 : -1;
+    });
+    $$('.panel').forEach(el => {
+      const active = el.id === `panel-${panel}`;
+      el.classList.toggle('active', active);
+      el.setAttribute('aria-hidden', String(!active));
+    });
+    markMuralPanelSeen(panel);
     if (panel === 'podcasts') loadCommunityPodcasts();
     if (state.user) loadMural();
+  }
+
+  function bindTabArrowNavigation(container, selector, activate) {
+    if (!container) return;
+    container.addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      const tabs = $$(selector);
+      const current = event.target.closest('[role="tab"]');
+      const index = tabs.indexOf(current);
+      if (index < 0 || !tabs.length) return;
+      event.preventDefault();
+      const nextIndex = event.key === 'Home' ? 0
+        : event.key === 'End' ? tabs.length - 1
+        : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+      tabs[nextIndex].focus();
+      activate(tabs[nextIndex]);
+    });
   }
 
   function prepareFeelings() {
@@ -2285,10 +2372,11 @@
     if (!list) return;
     const { data, error } = await state.supabase.from(TABLE.announcements).select('*').order('created_at', { ascending: false }).limit(20);
     if (error) throw error;
+    updateMuralActivityBadge('announcements', data || []);
     list.innerHTML = data?.length ? data.map(row => {
       const staffActions = isStaff() ? `<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-content="1" data-content-type="announcement" data-content-id="${escapeHTML(row.id)}" data-content-label="este aviso">Excluir</button></div>` : '';
       return `<article class="card mural-searchable"><div class="eyebrow">Aviso · ${escapeHTML(formatDate(row.created_at))}</div><h3>${escapeHTML(getField(row,['title'],'Aviso'))}</h3><p>${escapeHTML(getField(row,['body'],'')).replace(/\n/g,'<br>')}</p><div class="actions">${bookmarkButtonHTML('announcement',row.id)}</div>${staffActions}</article>`;
-    }).join('') : '<div class="card"><p>Nenhum aviso publicado ainda.</p></div>';
+    }).join('') : '<div class="card mural-empty-state"><span class="mural-empty-icon"><i data-lucide="megaphone"></i></span><h3>Nenhum aviso por enquanto</h3><p class="muted">Quando a equipe compartilhar um aviso, ele aparecerá aqui.</p></div>';
   }
 
   async function loadEvents() {
@@ -2297,11 +2385,12 @@
     const { data, error } = await state.supabase.from(TABLE.events).select('*').order('event_date', { ascending: true }).limit(20);
     if (error) throw error;
     state.eventRows = data || [];
+    updateMuralActivityBadge('events', data || []);
     list.innerHTML = data?.length ? data.map(row => {
       const date = getField(row,['event_date'],null); const time = String(getField(row,['event_time'],'')).slice(0,5);
       const staffActions = isStaff() ? `<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-content="1" data-content-type="event" data-content-id="${escapeHTML(row.id)}" data-content-label="este evento">Excluir</button></div>` : '';
       return `<article class="card mural-searchable"><div class="eyebrow">${escapeHTML(formatDateOnly(date))}${time ? ` · ${escapeHTML(time)}` : ''}</div><h3>${escapeHTML(getField(row,['title'],'Evento'))}</h3><p>${escapeHTML(getField(row,['description'],'')).replace(/\n/g,'<br>')}</p><p class="cae-muted">${escapeHTML(getField(row,['place'],'')).replace(/\n/g,'<br>')}</p><div class="actions"><button class="btn secondary btn-small" type="button" data-download-event="${escapeHTML(row.id)}"><i data-lucide="calendar-plus"></i>Adicionar ao calendário</button>${bookmarkButtonHTML('event',row.id)}</div>${staffActions}</article>`;
-    }).join('') : '<div class="card"><p>Nenhum evento publicado ainda.</p></div>';
+    }).join('') : '<div class="card mural-empty-state"><span class="mural-empty-icon"><i data-lucide="calendar-days"></i></span><h3>Nenhum evento por enquanto</h3><p class="muted">Os próximos encontros e atividades da comunidade serão anunciados aqui.</p></div>';
   }
 
   async function loadPosts() {
@@ -2310,6 +2399,7 @@
     const { data, error } = await state.supabase.from(TABLE.posts).select('*').order('created_at',{ascending:false}).limit(50);
     if (error) throw error;
     const posts = (data || []).filter(post => ['approved'].includes(String(post.status || 'approved')) || post.user_id === state.user.id || isStaff());
+    updateMuralActivityBadge('posts', posts);
     const postIds = posts.map(post => post.id);
 
     let reactions = [];
@@ -2318,7 +2408,10 @@
       if (!result.error) reactions = result.data || [];
     }
 
-    if (!posts.length) { list.innerHTML = '<div class="card"><p>Ainda não há publicações aprovadas.</p></div>'; return; }
+    if (!posts.length) {
+      list.innerHTML = '<div class="card mural-empty-state"><span class="mural-empty-icon"><i data-lucide="message-square-text"></i></span><h3>O mural começa com uma conversa</h3><p class="muted">Ainda não há publicações aprovadas. As novas mensagens aparecem aqui depois da revisão da equipe; você já pode enviar a primeira pelo formulário acima.</p></div>';
+      return;
+    }
     list.innerHTML = posts.map(post => {
       const status = String(post.status || 'approved');
       const reactionHTML = REACTIONS.map(([emoji,key]) => {
@@ -2337,7 +2430,11 @@
     if (!list) return;
     const { data: polls, error } = await state.supabase.from(TABLE.polls).select('*').order('created_at',{ascending:false}).limit(20);
     if (error) throw error;
-    if (!polls?.length) { list.innerHTML='<div class="card"><p>Nenhuma enquete publicada ainda.</p></div>'; return; }
+    updateMuralActivityBadge('polls', polls || []);
+    if (!polls?.length) {
+      list.innerHTML = '<div class="card mural-empty-state"><span class="mural-empty-icon"><i data-lucide="vote"></i></span><h3>Nenhuma enquete por enquanto</h3><p class="muted">Quando houver uma votação, ela aparecerá aqui para você participar.</p></div>';
+      return;
+    }
     const ids = polls.map(p=>p.id);
     const [optionsResult, votesResult, resultsResult] = await Promise.all([
       state.supabase.from(TABLE.pollOptions).select('id,poll_id,text,option_text').in('poll_id',ids),
@@ -2410,6 +2507,7 @@
         .order('created_at', { ascending: false }).limit(100);
       if (error) throw error;
       const visibleRows = (data || []).filter(row => row.status === 'approved' || row.user_id === state.user.id);
+      updateMuralActivityBadge('podcasts', visibleRows);
       list.innerHTML = visibleRows.length ? visibleRows.map(row => communityPodcastCardHTML(row)).join('') :
         '<div class="card"><p>Ainda não há recomendações. Você pode ser a primeira pessoa a compartilhar uma!</p></div>';
       refreshIcons();
@@ -2604,6 +2702,7 @@
       const active = button.dataset.historyFilter === state.historyFilter;
       button.classList.toggle('active', active);
       button.setAttribute('aria-selected', String(active));
+      button.tabIndex = active ? 0 : -1;
     });
     $('history-vents-panel')?.classList.toggle('hidden', state.historyFilter !== 'vents');
     $('history-mood-panel')?.classList.toggle('hidden', state.historyFilter !== 'mood');
@@ -2617,7 +2716,11 @@
     const list = $('history-list');
     if (!list || !state.user || !state.supabase) return;
     state.ventHistoryFilter = ['free', 'guided', 'feelings', 'audio'].includes(filter) ? filter : 'free';
-    $$('[data-vent-history-filter]').forEach(button => button.classList.toggle('active', button.dataset.ventHistoryFilter === state.ventHistoryFilter));
+    $$('[data-vent-history-filter]').forEach(button => {
+      const active = button.dataset.ventHistoryFilter === state.ventHistoryFilter;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
     try {
       const { data, error } = await state.supabase.from(TABLE.vents).select('*')
         .eq('user_id', state.user.id).eq('type', state.ventHistoryFilter)
@@ -3657,6 +3760,8 @@
   }
 
   function bindEvents(){
+    bindTabArrowNavigation($('mural-tabs'), '#mural-tabs [role="tab"]', button => switchMuralPanel(button.dataset.panel));
+    bindTabArrowNavigation(document.querySelector('.history-tabs'), '.history-tabs [role="tab"]', button => loadHistory(button.dataset.historyFilter));
     $('auth-tab-login')?.addEventListener('click',()=>setAuthMode('login'));
     $('auth-tab-signup')?.addEventListener('click',()=>setAuthMode('signup'));
     $('login-form')?.addEventListener('submit',login);

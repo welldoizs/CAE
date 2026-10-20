@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="style.css?v=39">
+  <link rel="stylesheet" href="style.css?v=40">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   <link rel="preconnect" href="https://challenges.cloudflare.com">
@@ -108,7 +108,8 @@
         <nav class="nav" aria-label="Navegação principal">
           <button type="button" data-view="home-view"><i data-lucide="house"></i>Início</button>
           <button type="button" data-view="chat-view"><i data-lucide="messages-square"></i>Chat</button>
-          <button type="button" data-view="desabafo-view"><i data-lucide="notebook-pen"></i>Desabafos</button>
+          <button type="button" data-view="private-conversations-view"><i data-lucide="lock-keyhole"></i>Privadas</button>
+          <button type="button" data-view="desabafo-view><i data-lucide="notebook-pen"></i>Desabafos</button>
           <button type="button" data-view="mural-view"><i data-lucide="layout-dashboard"></i>Mural</button>
           <button type="button" data-view="history-view"><i data-lucide="history"></i>Histórico</button>
           <button type="button" data-view="help-view"><i data-lucide="life-buoy"></i>Ajuda</button>
@@ -151,20 +152,11 @@
           </div>
         </div>
 
-        <section class="tutorial-video-card" aria-labelledby="tutorial-video-title">
-          <div class="tutorial-video-screen">
-            <div class="tutorial-video-placeholder">
-              <span class="tutorial-play"><i data-lucide="play"></i></span>
-              <strong id="tutorial-video-title">Tutorial do CAE</strong>
-              <span>O vídeo de apresentação será colocado aqui.</span>
-            </div>
-          </div>
-        </section>
 
         <div class="home-shortcuts">
           <button type="button" data-open-view="chat-view"><i data-lucide="messages-square"></i><span><strong>Chat</strong><small>Converse com outros estudantes.</small></span></button>
           <button type="button" data-open-view="history-view"><i data-lucide="history"></i><span><strong>Histórico</strong><small>Desabafos, diário e conteúdos salvos.</small></span></button>
-          <button type="button" data-open-view="help-view"><i data-lucide="life-buoy"></i><span><strong>Ajuda</strong><small>Encontre canais de apoio.</small></span></button>
+          <button type="button" data-open-view="private-conversations-view"><i data-lucide="lock-keyhole"></i><span><strong>Conversas privadas</strong><small>Converse depois de aceitar um convite.</small></span></button>
         </div>
 
         <div class="home-help-actions">
@@ -436,20 +428,20 @@
 </div></div>
         <div class="field mural-search-field"><label for="mural-search">Buscar no mural</label><input id="mural-search" type="search" placeholder="Avisos, eventos, publicações, enquetes e podcasts..." autocomplete="off"></div>
         <div id="mural-search-results" class="admin-list mural-search-results hidden" aria-live="polite"></div>
-        <div class="tabs" id="mural-tabs">
-          <button class="tab" data-panel="announcements" type="button">Avisos</button>
-          <button class="tab" data-panel="events" type="button">Eventos</button>
-          <button class="tab active" data-panel="posts" type="button">Publicações</button>
-          <button class="tab" data-panel="polls" type="button">Enquetes</button>
-          <button class="tab" data-panel="podcasts" type="button">Podcasts</button>
+        <div class="tabs" id="mural-tabs" role="tablist" aria-label="Seções do mural">
+          <button class="tab" id="mural-tab-announcements" data-panel="announcements" type="button" role="tab" aria-controls="panel-announcements" aria-selected="false" tabindex="-1">Avisos <span id="mural-unread-announcements" class="mural-tab-badge hidden" aria-live="polite">0</span></button>
+          <button class="tab" id="mural-tab-events" data-panel="events" type="button" role="tab" aria-controls="panel-events" aria-selected="false" tabindex="-1">Eventos <span id="mural-unread-events" class="mural-tab-badge hidden" aria-live="polite">0</span></button>
+          <button class="tab active" id="mural-tab-posts" data-panel="posts" type="button" role="tab" aria-controls="panel-posts" aria-selected="true" tabindex="0">Publicações <span id="mural-unread-posts" class="mural-tab-badge hidden" aria-live="polite">0</span></button>
+          <button class="tab" id="mural-tab-polls" data-panel="polls" type="button" role="tab" aria-controls="panel-polls" aria-selected="false" tabindex="-1">Enquetes <span id="mural-unread-polls" class="mural-tab-badge hidden" aria-live="polite">0</span></button>
+          <button class="tab" id="mural-tab-podcasts" data-panel="podcasts" type="button" role="tab" aria-controls="panel-podcasts" aria-selected="false" tabindex="-1">Podcasts <span id="mural-unread-podcasts" class="mural-tab-badge hidden" aria-live="polite">0</span></button>
         </div>
-        <div id="panel-announcements" class="panel"><div id="announcement-list" class="admin-list"></div></div>
-        <div id="panel-events" class="panel"><div id="event-list" class="admin-list"></div></div>
-        <div id="panel-posts" class="panel active">
+        <div id="panel-announcements" class="panel" role="tabpanel" aria-labelledby="mural-tab-announcements" tabindex="0"><div id="announcement-list" class="admin-list"></div></div>
+        <div id="panel-events" class="panel" role="tabpanel" aria-labelledby="mural-tab-events" tabindex="0"><div id="event-list" class="admin-list"></div></div>
+        <div id="panel-posts" class="panel active" role="tabpanel" aria-labelledby="mural-tab-posts" tabindex="0">
           <div class="card" style="margin-bottom:14px">
             <div class="eyebrow">Compartilhe</div>
 <h3>Crie uma publicação.</h3>
-            <div class="grid-2">
+            <div class="post-compose-fields">
               <div class="field">
 <label for="post-category">Categoria</label><select id="post-category"><option>Geral</option>
 <option>Escola</option>
@@ -467,8 +459,8 @@
           </div>
           <div id="post-list" class="admin-list"></div>
         </div>
-        <div id="panel-polls" class="panel"><div id="poll-list" class="admin-list"></div></div>
-        <div id="panel-podcasts" class="panel">
+        <div id="panel-polls" class="panel" role="tabpanel" aria-labelledby="mural-tab-polls" tabindex="0"><div id="poll-list" class="admin-list"></div></div>
+        <div id="panel-podcasts" class="panel" role="tabpanel" aria-labelledby="mural-tab-podcasts" tabindex="0">
           <div class="card podcast-intro">
 <div class="eyebrow">Escuta e informação</div>
 <h3>Podcasts sobre psicologia e saúde mental</h3>
@@ -505,18 +497,18 @@
       <section id="history-view" class="view">
         <div class="section-head"><div><div class="eyebrow">Somente você</div><h2>Seu histórico</h2><p class="muted">Seus desabafos, registros de bem-estar e conteúdos salvos em um só lugar.</p></div><button class="help-question" type="button" data-site-help data-help-title="Seu histórico" data-help-text="Aqui ficam seus desabafos enviados, seu diário privado e os conteúdos que você salvou. Use as abas para alternar entre eles. Só você pode consultar seus registros pessoais.">?</button></div>
         <div class="tabs vent-type-tabs history-tabs" role="tablist" aria-label="Seções do histórico">
-          <button class="tab vent-tab active" type="button" data-history-filter="vents" role="tab" aria-selected="true">Desabafos</button>
-          <button class="tab vent-tab" type="button" data-history-filter="mood" role="tab" aria-selected="false">Diário de bem-estar</button>
-          <button class="tab vent-tab" type="button" data-history-filter="saved" role="tab" aria-selected="false">Salvos</button>
+          <button class="tab vent-tab active" id="history-tab-vents" type="button" data-history-filter="vents" role="tab" aria-controls="history-vents-panel" aria-selected="true" tabindex="0">Desabafos</button>
+          <button class="tab vent-tab" id="history-tab-mood" type="button" data-history-filter="mood" role="tab" aria-controls="history-mood-panel" aria-selected="false" tabindex="-1">Diário de bem-estar</button>
+          <button class="tab vent-tab" id="history-tab-saved" type="button" data-history-filter="saved" role="tab" aria-controls="history-saved-panel" aria-selected="false" tabindex="-1">Salvos</button>
         </div>
-        <div id="history-vents-panel">
+        <div id="history-vents-panel" role="tabpanel" aria-labelledby="history-tab-vents" tabindex="0">
           <div class="field"><label for="history-search">Pesquisar nos seus desabafos</label><input id="history-search" type="search" placeholder="Buscar por palavra ou conteúdo..." autocomplete="off"></div>
-          <div class="tabs vent-type-tabs history-vent-subtabs" role="tablist" aria-label="Filtrar desabafos">
-            <button class="tab vent-tab active" type="button" data-vent-history-filter="free">Texto livre</button><button class="tab vent-tab" type="button" data-vent-history-filter="guided">Perguntas guiadas</button><button class="tab vent-tab" type="button" data-vent-history-filter="feelings">Como eu me sinto</button><button class="tab vent-tab" type="button" data-vent-history-filter="audio">Áudio</button>
+          <div class="tabs vent-type-tabs history-vent-subtabs" role="group" aria-label="Filtrar desabafos">
+            <button class="tab vent-tab active" type="button" data-vent-history-filter="free" aria-pressed="true">Texto livre</button><button class="tab vent-tab" type="button" data-vent-history-filter="guided" aria-pressed="false">Perguntas guiadas</button><button class="tab vent-tab" type="button" data-vent-history-filter="feelings" aria-pressed="false">Como eu me sinto</button><button class="tab vent-tab" type="button" data-vent-history-filter="audio" aria-pressed="false">Áudio</button>
           </div>
           <div id="history-list" class="admin-list"></div>
         </div>
-        <div id="history-mood-panel" class="hidden">
+        <div id="history-mood-panel" class="hidden" role="tabpanel" aria-labelledby="history-tab-mood" tabindex="0">
           <div class="card mood-entry-form"><div class="field-label-row"><div class="eyebrow">Como você está hoje?</div><button class="help-question" type="button" data-site-help data-help-title="Diário de bem-estar" data-help-text="Escolha como está se sentindo e, se quiser, escreva uma anotação. O registro é privado e só você pode consultar ou excluir. Não é diagnóstico nem substitui atendimento profissional.">?</button></div>
             <form id="mood-entry-form">
               <div class="mood-choice-grid" role="group" aria-label="Escolha como está se sentindo">
@@ -528,7 +520,7 @@
           </div>
           <div class="section-head mood-history-head"><div><div class="eyebrow">Seus registros</div><h3>Registros anteriores</h3><p class="muted">Somente você pode consultar e excluir estes registros.</p></div></div><div id="mood-entry-list" class="admin-list"></div>
         </div>
-        <div id="history-saved-panel" class="hidden"><div class="card"><div class="field-label-row"><div><h3>Conteúdos salvos</h3><p class="muted">Guarde avisos, eventos, publicações, enquetes e podcasts para consultar depois.</p></div><button class="help-question" type="button" data-site-help data-help-title="Conteúdos salvos" data-help-text="Use Salvar em um conteúdo para guardá-lo aqui. Salvar não publica nada no seu perfil e não avisa quem criou o conteúdo.">?</button></div></div><div id="saved-content-list" class="admin-list"></div></div>
+        <div id="history-saved-panel" class="hidden" role="tabpanel" aria-labelledby="history-tab-saved" tabindex="0"><div class="card"><div class="field-label-row"><div><h3>Conteúdos salvos</h3><p class="muted">Guarde avisos, eventos, publicações, enquetes e podcasts para consultar depois.</p></div><button class="help-question" type="button" data-site-help data-help-title="Conteúdos salvos" data-help-text="Use Salvar em um conteúdo para guardá-lo aqui. Salvar não publica nada no seu perfil e não avisa quem criou o conteúdo.">?</button></div></div><div id="saved-content-list" class="admin-list"></div></div>
       </section>
 
       <section id="help-view" class="view">
@@ -1176,6 +1168,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=40" defer></script>
+  <script src="script.js?v=41" defer></script>
 </body>
 </html>

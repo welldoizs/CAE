@@ -3948,3 +3948,95 @@ input:focus,textarea:focus,select:focus {
   .admin-notification-button { width: 100%; justify-content: center; }
   .admin-notification-panel { left: 0; right: auto; width: 100%; }
 }
+
+
+/* Organização e acabamento do CAE: paleta e identidade visual originais preservadas. */
+.mural-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  margin-left: 4px;
+  padding: 0 .32rem;
+  border-radius: 999px;
+  background: var(--lilac-light);
+  color: var(--lilac-dark);
+  font-size: .68rem;
+  font-weight: 900;
+  line-height: 1;
+  vertical-align: middle;
+}
+.tab.active .mural-tab-badge {
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.35);
+  color: #fff;
+}
+.mural-empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  padding: 30px 22px;
+  text-align: center;
+}
+.mural-empty-state h3,
+.mural-empty-state p {
+  margin: 0;
+}
+.mural-empty-state p {
+  max-width: 570px;
+  line-height: 1.55;
+}
+.mural-empty-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 3px;
+  border-radius: 14px;
+  background: var(--lilac-light);
+  color: var(--lilac-dark);
+}
+.post-compose-fields {
+  display: grid;
+  grid-template-columns: minmax(180px,.62fr) minmax(0,1.38fr);
+  gap: 12px;
+  align-items: start;
+}
+.post-compose-fields .field {
+  min-width: 0;
+}
+.post-compose-fields textarea {
+  min-height: 122px;
+}
+.nav button[aria-current="page"] {
+  background: var(--lilac-light);
+  color: var(--lilac-dark);
+}
+@media (max-width: 980px) {
+  .post-compose-fields {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 720px) {
+  .home-simple-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding-top: 18px;
+  }
+  .home-simple-actions {
+    justify-content: flex-start;
+  }
+  .home-shortcuts {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+@media (max-width: 420px) {
+  .home-shortcuts {
+    grid-template-columns: 1fr;
+  }
+  #mural-tabs .tab {
+    padding-inline: 10px;
+  }
+}
