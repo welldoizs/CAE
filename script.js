@@ -2448,7 +2448,7 @@
 
     const rows = data || [];
     const isApproved = post => String(post.status || 'pending') === 'approved';
-    const publicPosts = isStaff() ? rows.filter(isApproved) : rows.filter(isApproved);
+    const publicPosts = rows.filter(isApproved);
     const privatePosts = isStaff()
       ? []
       : rows.filter(post => post.user_id === state.user.id && !isApproved(post));
