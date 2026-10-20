@@ -4500,3 +4500,12 @@ input:focus,textarea:focus,select:focus {
     width: 100%;
   }
 }
+
+
+.report-message-hidden {
+  display: inline-block;
+  margin-left: 6px;
+  color: var(--red);
+  font-size: .72rem;
+  font-weight: 800;
+}
