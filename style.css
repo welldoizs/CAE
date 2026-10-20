@@ -4166,7 +4166,7 @@ input:focus,textarea:focus,select:focus {
   border: 1px solid transparent;
   border-radius: 10px;
   background: transparent;
-  color: var(--text);
+  color: var(--ink);
   font: inherit;
   font-size: .9rem;
   font-weight: 700;
@@ -4266,7 +4266,7 @@ input:focus,textarea:focus,select:focus {
   font-size: .8rem;
 }
 .report-byline strong {
-  color: var(--text);
+  color: var(--ink);
 }
 .report-actions {
   display: flex;
@@ -4294,7 +4294,7 @@ input:focus,textarea:focus,select:focus {
 .report-empty strong {
   display: block;
   margin-bottom: 3px;
-  color: var(--text);
+  color: var(--ink);
 }
 .report-empty p {
   margin: 0;
