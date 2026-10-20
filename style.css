@@ -4408,3 +4408,95 @@ input:focus,textarea:focus,select:focus {
 @media (max-width:620px) {
   .post-private-section { padding: 11px; }
 }
+
+
+/* Ações reais de análise de denúncias */
+.report-moderation-tools {
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--paper);
+}
+.report-timeout-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.report-timeout-control label {
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 800;
+}
+.report-timeout-control select {
+  min-width: 150px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+}
+.report-moderation-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: .77rem;
+  line-height: 1.45;
+}
+.report-history-panel {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--white);
+}
+.report-history-heading {
+  margin-bottom: 2px;
+  font-size: .82rem;
+  font-weight: 800;
+}
+.report-history-message {
+  padding: 10px 11px;
+  border-radius: 9px;
+  background: var(--paper);
+}
+.report-history-message time {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: .72rem;
+}
+.report-history-message p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: .85rem;
+  line-height: 1.45;
+}
+.report-history-message > span {
+  display: inline-block;
+  margin-top: 5px;
+  color: var(--red);
+  font-size: .72rem;
+  font-weight: 700;
+}
+.report-history-message.is-deleted {
+  border-left: 3px solid var(--red);
+}
+.report-history-loading,
+.report-history-error {
+  color: var(--muted);
+  font-size: .83rem;
+}
+@media (max-width:620px) {
+  .report-timeout-control {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .report-timeout-control select {
+    width: 100%;
+  }
+}
