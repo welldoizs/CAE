@@ -3668,7 +3668,7 @@
           '<div class="report-message-block"><span>Conteúdo denunciado</span><p>' + escapeHTML(preview).slice(0, 1200) + '</p></div>' +
           '<div class="report-byline">Denunciada por <strong>' + escapeHTML(publicName(report.reporter_id)) + '</strong></div>' +
           '<div class="report-actions">' + removeButton + privateButton +
-          '<button class="btn secondary btn-small" type="button" data-resolve-content-report="' + escapeHTML(report.id) + '">Marcar como analisada</button>' +
+          '<button class="btn secondary btn-small" type="button" data-resolve-content-report="' + escapeHTML(report.id) + '">Manter conteúdo e resolver</button>' +
           '<button class="btn ghost btn-small" type="button" data-dismiss-content-report="' + escapeHTML(report.id) + '">Descartar denúncia</button></div></article>');
       }
       list.innerHTML = cards.join('');
