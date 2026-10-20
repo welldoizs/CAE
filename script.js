@@ -2437,36 +2437,83 @@
   async function loadPosts() {
     const list = $('post-list');
     if (!list) return;
-    let postsQuery = state.supabase.from(TABLE.posts).select('*');
-    if (!isStaff()) postsQuery = postsQuery.or(`status.eq.approved,user_id.eq.${state.user.id}`);
-    const { data, error } = await postsQuery.order('created_at',{ascending:false}).limit(50);
-    if (error) throw error;
-    // Fail closed: qualquer status ausente/desconhecido fica privado, nunca é tratado como aprovado.
-    const posts = (data || []).filter(post => String(post.status || 'pending') === 'approved' || post.user_id === state.user.id || isStaff());
-    updateMuralActivityBadge('posts', posts);
-    const postIds = posts.map(post => post.id);
 
+    let postsQuery = state.supabase.from(TABLE.posts).select('*');
+    // Estudantes só consultam conteúdo aprovado e as próprias publicações privadas.
+    // O RLS do banco aplica a mesma regra, mesmo em chamadas diretas à API.
+    if (!isStaff()) postsQuery = postsQuery.or(`status.eq.approved,user_id.eq.${state.user.id}`);
+
+    const { data, error } = await postsQuery.order('created_at', { ascending: false }).limit(50);
+    if (error) throw error;
+
+    const rows = data || [];
+    const isApproved = post => String(post.status || 'pending') === 'approved';
+    const publicPosts = isStaff() ? rows.filter(isApproved) : rows.filter(isApproved);
+    const privatePosts = isStaff()
+      ? []
+      : rows.filter(post => post.user_id === state.user.id && !isApproved(post));
+
+    // O contador público do mural não inclui itens privados do próprio autor.
+    updateMuralActivityBadge('posts', isStaff() ? rows : publicPosts);
+
+    const publicPostIds = publicPosts.map(post => post.id);
     let reactions = [];
-    if (postIds.length) {
-      const result = await state.supabase.from(TABLE.reactions).select('id,post_id,user_id,reaction').in('post_id', postIds);
+    if (publicPostIds.length) {
+      const result = await state.supabase.from(TABLE.reactions)
+        .select('id,post_id,user_id,reaction').in('post_id', publicPostIds);
       if (!result.error) reactions = result.data || [];
     }
 
-    if (!posts.length) {
-      list.innerHTML = '<div class="card mural-empty-state"><span class="mural-empty-icon"><i data-lucide="message-square-text"></i></span><h3>O mural começa com uma conversa</h3><p class="muted">Ainda não há publicações aprovadas. As novas mensagens aparecem aqui depois da revisão da equipe; você já pode enviar a primeira pelo formulário acima.</p></div>';
+    const renderPostCard = (post, privateOnly = false) => {
+      const status = String(post.status || 'pending');
+      const reactionHTML = REACTIONS.map(([emoji, key]) => {
+        const count = reactions.filter(row => row.post_id === post.id && String(row.reaction) === key).length;
+        const active = reactions.some(row => row.post_id === post.id && row.user_id === state.user.id && String(row.reaction) === key);
+        return `<button type="button" class="cae-reaction ${active ? 'active' : ''}" data-react-post="${escapeHTML(post.id)}" data-reaction="${escapeHTML(key)}">${emoji} ${count}</button>`;
+      }).join('');
+      const staffActions = isStaff()
+        ? `<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-content="1" data-content-type="post" data-content-id="${escapeHTML(post.id)}" data-content-label="esta publicação">Excluir</button></div>`
+        : '';
+      const reportAction = !privateOnly && post.user_id !== state.user.id && status === 'approved'
+        ? `<button class="btn ghost btn-small" type="button" data-report-content="post" data-report-id="${escapeHTML(post.id)}">Denunciar</button>`
+        : '';
+      const privateStatus = privateOnly
+        ? `<div class="post-private-status"><i data-lucide="lock"></i><span>${status === 'rejected' ? 'Recusada pela moderação' : 'Aguardando aprovação da equipe'}</span></div>`
+        : status !== 'approved'
+          ? `<div class="cae-muted">Status: ${escapeHTML(status === 'pending' ? 'aguardando moderação' : status)}</div>`
+          : '';
+      const moderationReason = privateOnly && status === 'rejected' && post.moderation_reason
+        ? `<div class="post-private-reason"><strong>Motivo da recusa:</strong> ${escapeHTML(post.moderation_reason)}</div>`
+        : '';
+      return `<article class="card mural-searchable ${privateOnly ? 'post-private-card' : ''}">
+        <div class="cae-post-meta"><span>${escapeHTML(getField(post, ['category'], 'Geral'))}</span><span>·</span><span>${escapeHTML(formatDate(post.created_at))}</span>${post.user_id === state.user.id ? '<span>· sua publicação</span>' : ''}</div>
+        <p>${escapeHTML(getField(post, ['body'], '')).replace(/\n/g, '<br>')}</p>
+        ${privateStatus}${moderationReason}
+        ${!privateOnly && status === 'approved' ? `<div class="cae-reactions">${reactionHTML}</div>` : ''}
+        <div class="actions">${!privateOnly ? bookmarkButtonHTML('post', post.id) : ''}${reportAction}</div>
+        ${staffActions}
+      </article>`;
+    };
+
+    if (isStaff()) {
+      list.innerHTML = rows.length
+        ? rows.map(post => renderPostCard(post)).join('')
+        : '<div class="card mural-empty-state"><h3>Nenhuma publicação encontrada</h3></div>';
       return;
     }
-    list.innerHTML = posts.map(post => {
-      const status = String(post.status || 'pending');
-      const reactionHTML = REACTIONS.map(([emoji,key]) => {
-        const count = reactions.filter(r => r.post_id === post.id && String(r.reaction) === key).length;
-        const active = reactions.some(r => r.post_id === post.id && r.user_id === state.user.id && String(r.reaction) === key);
-        return `<button type="button" class="cae-reaction ${active?'active':''}" data-react-post="${escapeHTML(post.id)}" data-reaction="${escapeHTML(key)}">${emoji} ${count}</button>`;
-      }).join('');
-      const staffActions = isStaff() ? `<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-content="1" data-content-type="post" data-content-id="${escapeHTML(post.id)}" data-content-label="esta publicação">Excluir</button></div>` : '';
-      const reportAction = post.user_id !== state.user.id && status === 'approved' ? `<button class="btn ghost btn-small" type="button" data-report-content="post" data-report-id="${escapeHTML(post.id)}">Denunciar</button>` : '';
-      return `<article class="card mural-searchable"><div class="cae-post-meta"><span>${escapeHTML(getField(post,['category'],'Geral'))}</span><span>·</span><span>${escapeHTML(formatDate(post.created_at))}</span>${post.user_id===state.user.id?'<span>· sua publicação</span>':''}</div><p>${escapeHTML(getField(post,['body'],'')).replace(/\n/g,'<br>')}</p>${status!=='approved'?`<div class="cae-muted">Status: ${escapeHTML(status==='pending'?'aguardando moderação':status)}</div>`:''}${status==='approved'?`<div class="cae-reactions">${reactionHTML}</div>`:''}<div class="actions">${bookmarkButtonHTML('post',post.id)}${reportAction}</div>${staffActions}</article>`;
-    }).join('');
+
+    const privateSection = privatePosts.length
+      ? `<section class="post-private-section" aria-label="Suas publicações privadas">
+          <div class="post-private-heading"><div><h3>Suas publicações</h3><p><i data-lucide="lock"></i> Só você vê esta área. Publicações só entram no mural depois de aprovadas.</p></div><span>${privatePosts.length}</span></div>
+          ${privatePosts.map(post => renderPostCard(post, true)).join('')}
+        </section>`
+      : '';
+    const publicSection = publicPosts.length
+      ? publicPosts.map(post => renderPostCard(post)).join('')
+      : '<div class="card mural-empty-state"><span class="mural-empty-icon"><i data-lucide="message-square-text"></i></span><h3>Ainda não há publicações aprovadas</h3><p class="muted">As mensagens enviadas só aparecem no mural público depois que a equipe aprova.</p></div>';
+
+    list.innerHTML = privateSection + publicSection;
+    refreshIcons();
   }
 
   async function loadPolls() {
