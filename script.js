@@ -181,7 +181,7 @@
       }).length;
       badge.textContent = unread > 99 ? '99+' : String(unread);
       badge.classList.toggle('hidden', unread === 0);
-      badge.setAttribute('aria-label', `${unread} novos: ${MURAL_ACTIVITY_LABELS[panel]}.`);
+      badge.setAttribute('aria-label', `${unread} ${unread === 1 ? "nova entrada" : "novas entradas"} em ${MURAL_ACTIVITY_LABELS[panel]}.`);
     } catch (error) {
       badge.classList.add('hidden');
       console.warn('MURAL ACTIVITY STORAGE', error);
