@@ -3672,7 +3672,7 @@
     if (!isStaff() || !reportId || !['keep', 'hide', 'timeout', 'ban'].includes(action)) return;
     const card = button.closest('.report-detail-card');
     const targetUserId = card?.dataset.reportTargetUser;
-    if (!targetUserId) return toast('Não foi possível identificar a conta responsável pela mensagem.', 'error');
+    if (!targetUserId && action !== 'keep') return toast('Não foi possível identificar a conta responsável pela mensagem. Só é possível encerrar esta denúncia sem aplicar medidas.', 'error');
 
     let reason = null;
     let timeoutMinutes = null;
