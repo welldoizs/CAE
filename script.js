@@ -1958,14 +1958,21 @@
   function askModerationReason(action, label) {
     return new Promise(resolve => {
       const modal = ensureReasonModal();
-      const actionLabel = action === 'ban' ? 'banir' : 'dar timeout';
+      const actionLabels = {
+        ban: 'banir',
+        timeout: 'dar timeout em',
+        reject_content: 'recusar'
+      };
+      const actionLabel = actionLabels[action] || 'moderar';
       const title = $('cae-moderation-reason-title');
       const help = $('cae-moderation-reason-help');
       const input = $('cae-moderation-reason-input');
       const confirmButton = $('cae-moderation-reason-confirm');
       const cancelButton = $('cae-moderation-reason-cancel');
       if (title) title.textContent = `Motivo para ${actionLabel} ${label}`;
-      if (help) help.textContent = 'Esse motivo será mostrado à pessoa punida.';
+      if (help) help.textContent = action === 'reject_content'
+        ? 'Explique de forma clara por que o conteúdo não foi aprovado. O estudante receberá esse motivo em uma notificação.'
+        : 'Esse motivo será mostrado à pessoa punida.';
       if (input) input.value = '';
       modal.style.display = 'grid';
       modal.setAttribute('aria-hidden', 'false');
@@ -1985,7 +1992,7 @@
       };
       const onConfirm = () => {
         const value = String(input?.value || '').trim();
-        if (!value) return toast('É necessário informar um motivo para aplicar a punição.', 'error');
+        if (!value) return toast(action === 'reject_content' ? 'É necessário explicar por que o conteúdo foi recusado.' : 'É necessário informar um motivo para aplicar a punição.', 'error');
         if (value.length > 1000) return toast('O motivo pode ter no máximo 1000 caracteres.', 'error');
         finish(value);
       };
@@ -2565,10 +2572,13 @@
 
   async function moderateSharedPodcast(id, status) {
     if (!isStaff() || !['approved', 'rejected'].includes(status)) return;
+    const reason = status === 'rejected' ? await askModerationReason('reject_content','esta recomendação de podcast') : null;
+    if (status === 'rejected' && !reason) return;
+    if (!window.confirm(status === 'approved' ? 'Aprovar e publicar esta recomendação?' : `Recusar esta recomendação?\\n\\nMotivo: ${reason}`)) return;
     try {
-      const { error } = await state.supabase.from(TABLE.sharedPodcasts).update({ status, moderated_at: new Date().toISOString(), moderated_by: state.user.id }).eq('id', id);
+      const { error } = await state.supabase.from(TABLE.sharedPodcasts).update({ status, moderation_reason: reason, moderated_at: new Date().toISOString(), moderated_by: state.user.id }).eq('id', id);
       if (error) throw error;
-      toast(status === 'approved' ? 'Podcast aprovado e publicado.' : 'Recomendação recusada.');
+      toast(status === 'approved' ? 'Podcast aprovado e publicado.' : 'Recomendação recusada. O estudante foi notificado com o motivo.');
       await Promise.all([loadAdminSharedPodcasts(), loadCommunityPodcasts()]);
     } catch (error) { console.error('PODCAST MODERATION', error); toast(errorMessage(error), 'error'); }
   }
@@ -3038,16 +3048,20 @@
 
   async function moderateVent(id,status){
     if(!isStaff())return toast('Você não tem permissão para moderar desabafos.','error');
+    if(!['approved','rejected'].includes(status))return;
     try{
       const {data:vent,error:fetchError}=await state.supabase.from(TABLE.vents).select('id,user_id,type,visibility,audio_url').eq('id',id).maybeSingle();
       if(fetchError)throw fetchError;
       if(!vent)return toast('Desabafo não encontrado.','error');
       if(vent.visibility==='private' && !isStaff())return toast('Este desabafo privado não pode ser moderado por esta conta.','error');
-      if(!window.confirm(status==='approved'?'Aprovar este desabafo?':'Recusar este desabafo?'))return;
-      const {error}=await state.supabase.from(TABLE.vents).update({status,moderated_at:new Date().toISOString(),moderated_by:state.user.id}).eq('id',id);
+      const label = vent.type === 'audio' ? 'este áudio' : 'este desabafo';
+      const reason = status === 'rejected' ? await askModerationReason('reject_content', label) : null;
+      if(status === 'rejected' && !reason)return;
+      if(!window.confirm(status==='approved'?'Aprovar este conteúdo?':`Recusar este conteúdo?\\n\\nMotivo: ${reason}`))return;
+      const {error}=await state.supabase.from(TABLE.vents).update({status,moderation_reason:reason,moderated_at:new Date().toISOString(),moderated_by:state.user.id}).eq('id',id);
       if(error)throw error;
       await logAdmin(status==='approved'?'approve_vent':'reject_vent','vent',id);
-      toast(status==='approved'?'Desabafo aprovado.':'Desabafo recusado.');
+      toast(status==='approved'?'Conteúdo aprovado.':'Conteúdo recusado. O estudante foi notificado com o motivo.');
       await loadPublicVents(); await loadAdmin(); if(isStaff())await loadAdminPrivateHistory();
     }catch(error){console.error('MODERATE VENT',error);toast(errorMessage(error),'error');}
   }
@@ -3079,11 +3093,14 @@
   }
 
   async function moderatePost(id,status) {
-    if(!isStaff())return;
-    if(!window.confirm(status==='approved'?'Aprovar esta publicação?':'Recusar esta publicação?'))return;
+    if(!isStaff()||!['approved','rejected'].includes(status))return;
+    const post = state.adminPostRows.find(row => String(row.id) === String(id));
+    const reason = status === 'rejected' ? await askModerationReason('reject_content','esta publicação') : null;
+    if(status === 'rejected' && !reason)return;
+    if(!window.confirm(status==='approved'?'Aprovar esta publicação?':`Recusar esta publicação?\\n\\nMotivo: ${reason}`))return;
     try{
-      const {error}=await state.supabase.from(TABLE.posts).update({status,moderated_at:new Date().toISOString(),moderated_by:state.user.id}).eq('id',id); if(error)throw error;
-      await logAdmin(status==='approved'?'approve_post':'reject_post','post',id); toast(status==='approved'?'Publicação aprovada.':'Publicação recusada.'); await loadAdmin(); await loadPosts();
+      const {error}=await state.supabase.from(TABLE.posts).update({status,moderation_reason:reason,moderated_at:new Date().toISOString(),moderated_by:state.user.id}).eq('id',id); if(error)throw error;
+      await logAdmin(status==='approved'?'approve_post':'reject_post','post',id); toast(status==='approved'?'Publicação aprovada.':'Publicação recusada. O estudante foi notificado com o motivo.'); await loadAdmin(); await loadPosts();
     }catch(error){console.error('MODERATE POST',error);toast(errorMessage(error),'error');}
   }
 
