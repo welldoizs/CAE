@@ -3490,7 +3490,7 @@
 
   function filterHistoryCards() {
     const query = String($('history-search')?.value || '').trim().toLocaleLowerCase('pt-BR');
-    $('#history-view .own-vent-card, #history-view .mood-history-card, #history-view .saved-content-card').forEach(card => {
+    $$('#history-view .own-vent-card, #history-view .mood-history-card, #history-view .saved-content-card').forEach(card => {
       card.classList.toggle('hidden', Boolean(query) && !card.textContent.toLocaleLowerCase('pt-BR').includes(query));
     });
   }
@@ -3505,10 +3505,10 @@
       results.classList.add('hidden');
       results.innerHTML = '';
       tabs.classList.remove('hidden');
-      $('#mural-view .panel').forEach(panel => panel.classList.remove('hidden'));
+      $$('#mural-view .panel').forEach(panel => panel.classList.remove('hidden'));
       return;
     }
-    const cards = $('#mural-view .panel article.card, #mural-view .podcast-grid article.card');
+    const cards = $$('#mural-view .panel article.card, #mural-view .podcast-grid article.card');
     const matches = cards.filter(card => card.textContent.toLocaleLowerCase('pt-BR').includes(query));
     const sections = ['announcements', 'events', 'posts', 'polls', 'podcasts'];
     const sectionLabels = { announcements: 'Avisos', events: 'Eventos', posts: 'Publicações', polls: 'Enquetes', podcasts: 'Podcasts' };
@@ -3520,7 +3520,7 @@
     }).join('') : '<div class="card"><p>Nenhum resultado encontrado para “' + escapeHTML(input.value.trim()) + '”.</p></div>';
     results.classList.remove('hidden');
     tabs.classList.add('hidden');
-    $('#mural-view .panel').forEach(panel => panel.classList.add('hidden'));
+    $$('#mural-view .panel').forEach(panel => panel.classList.add('hidden'));
     refreshIcons();
   }
 
@@ -3612,7 +3612,7 @@
     const showContent = state.adminReportFilter !== 'chat';
     $('admin-chat-report-section')?.classList.toggle('hidden', !showChat);
     $('admin-content-report-section')?.classList.toggle('hidden', !showContent);
-    $('[data-report-filter]').forEach(button => {
+    $$('[data-report-filter]').forEach(button => {
       const active = button.dataset.reportFilter === state.adminReportFilter;
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', String(active));
