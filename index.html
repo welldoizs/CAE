@@ -809,7 +809,7 @@
           <button class="tab admin-tab" type="button" data-admin-tab="podcasts" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="headphones"></i></span><span><b>Podcasts</b><small>Revisar recomendações</small></span></button>
           <button class="tab admin-tab" type="button" data-admin-tab="reports" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="flag"></i></span><span><b>Denúncias</b><small>Analisar mensagens sinalizadas</small></span></button>
           <button class="tab admin-tab admin-only" type="button" data-admin-tab="private_chats" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="shield-check"></i></span><span><b>Conversas privadas</b><small>Acesso reservado para segurança</small></span></button>
-          <button class="tab admin-tab" type="button" data-admin-tab="support" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="headphones"></i></span><span><b>Atendimentos</b><small>Responder Fale conosco</small></span></button>
+          <button class="tab admin-tab admin-only" type="button" data-admin-tab="support" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="headphones"></i></span><span><b>Atendimentos</b><small>Responder Fale conosco</small></span></button>
           <button class="tab admin-tab admin-only" type="button" data-admin-tab="deletions" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="user-round-x"></i></span><span><b>Exclusões</b><small>Pedidos de exclusão de conta</small></span></button>
           <button class="tab admin-tab admin-restricted hidden" type="button" data-admin-tab="identity" data-high-trust-only role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="shield-alert"></i></span><span><b>Acesso restrito</b><small>Identificação em casos graves</small></span></button>
           <button class="tab admin-tab" type="button" data-admin-tab="accounts" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="users-round"></i></span><span><b>Contas e equipe</b><small>Cargos, timeout e bloqueios</small></span></button>
@@ -1014,13 +1014,13 @@
 </div>
         </div>
 
-        <div id="admin-panel-support" class="admin-panel hidden" data-admin-panel="support">
+        <div id="admin-panel-support" class="admin-panel hidden admin-only" data-admin-panel="support">
           <div class="card admin-support-card" id="admin-support-card">
 <div class="admin-panel-heading">
 <div>
 <div class="eyebrow">Atendimento</div>
 <h3>Fale conosco</h3>
-<p class="cae-muted">Selecione uma conversa para visualizar e responder as mensagens.</p>
+<p class="cae-muted">Acesso reservado aos administradores e ao dono. As mensagens enviadas aqui são privadas.</p>
 </div>
 <span id="admin-support-count" class="admin-summary-count">0</span>
 </div>
