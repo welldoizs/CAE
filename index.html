@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="style.css?v=45">
+  <link rel="stylesheet" href="style.css?v=46">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   <link rel="preconnect" href="https://challenges.cloudflare.com">
@@ -58,7 +58,7 @@
           <p class="muted">Entre para acessar o espaço do CAE.</p>
           <div class="field">
 <div class="field-label-row">
-<label for="login-email">E-mail escolar</label><button class="help-question" type="button" data-site-help data-help-title="E-mail escolar" data-help-text="Use o e-mail da escola. Ele precisa terminar exatamente com @escola.pr.gov.br. E-mails pessoais, como Gmail ou Outlook, não são aceitos.">?</button>
+<label for="login-email">E-mail escolar</label><button class="help-question" type="button" data-site-help data-help-title="E-mail escolar" data-help-text="Use o e-mail da escola para entrar ou criar sua conta." data-help-detail="O endereço precisa terminar exatamente com @escola.pr.gov.br. E-mails pessoais, como Gmail ou Outlook, não são aceitos.">?</button>
 </div>
 <input id="login-email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="nome@escola.pr.gov.br" required><small class="auth-email-hint">Use seu e-mail escolar: @escola.pr.gov.br</small>
 </div>
@@ -79,7 +79,7 @@
           <p class="muted">Seu nome público é gerado automaticamente para preservar sua privacidade.</p>
           <div class="field">
 <div class="field-label-row">
-<label for="signup-email">E-mail escolar</label><button class="help-question" type="button" data-site-help data-help-title="E-mail escolar" data-help-text="Para criar uma conta, use seu e-mail da escola. O endereço precisa terminar exatamente com @escola.pr.gov.br.">?</button>
+<label for="signup-email">E-mail escolar</label><button class="help-question" type="button" data-site-help data-help-title="E-mail escolar" data-help-text="Use o e-mail da escola para entrar ou criar sua conta." data-help-detail="O endereço precisa terminar exatamente com @escola.pr.gov.br. E-mails pessoais, como Gmail ou Outlook, não são aceitos.">?</button>
 </div>
 <input id="signup-email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="nome@escola.pr.gov.br" required><small class="auth-email-hint">Use seu e-mail escolar: @escola.pr.gov.br</small>
 </div>
@@ -176,7 +176,7 @@
         <div class="section-head"><div>
 <div class="eyebrow">Conversa estudantil</div>
 <h2>Chat</h2>
-<p class="muted">Use o nome público mostrado pelo CAE e trate as outras pessoas com respeito.</p>
+<p class="muted">Converse pelo seu código público e respeite as outras pessoas.</p>
 </div></div>
         <div class="chat-layout">
           <div class="card">
@@ -194,7 +194,7 @@
           <aside class="card">
             <div class="eyebrow">Convivência</div>
             <h3>Faça do chat um lugar seguro.</h3>
-            <p class="muted">Não compartilhe senhas, endereço, telefone ou outros dados pessoais. Use o botão <b>Denunciar</b> quando uma mensagem precisar de moderação.</p>
+            <p class="muted">Proteja seus dados. Denuncie mensagens que desrespeitem as regras.</p>
             <div class="notice">
 <b>O chat não substitui atendimento profissional.</b><br><span class="muted">Para apoio imediato, veja a página Ajuda.</span>
 </div>
@@ -207,7 +207,7 @@
           <div>
 <div class="eyebrow">Espaço privado</div>
 <h2>Conversas privadas</h2>
-<p class="muted">Converse com uma pessoa específica somente depois que o convite for aceito.</p>
+<p class="muted">A conversa começa quando a outra pessoa aceita o convite.</p>
 </div>
         </div>
         <div class="private-chat-layout">
@@ -215,7 +215,7 @@
             <div class="card private-start-card">
               <div class="eyebrow">Novo convite</div>
 <h3>Conversar por código</h3>
-              <p class="muted">Digite o código público da pessoa. Ela precisará aceitar antes da conversa começar.</p>
+              <p class="muted">Digite o código da pessoa. Ela precisa aceitar o convite.</p>
               <div class="field">
 <label for="private-chat-code">Código público</label><input id="private-chat-code" type="text" maxlength="20" placeholder="Ex.: J01" autocomplete="off">
 </div>
@@ -249,7 +249,7 @@
             <form id="private-chat-form" class="chat-form hidden">
 <textarea id="private-chat-input" maxlength="3000" placeholder="Escreva uma mensagem privada..."></textarea><button class="btn primary" id="private-chat-send" type="submit"><i data-lucide="send"></i>Enviar</button>
 </form>
-            <p class="cae-muted private-chat-safety-note">Aviso: suas mensagens podem ser moderadas para segurança. Em situações graves ou suspeita de crime, a equipe poderá verificar o conteúdo.</p>
+            <p class="cae-muted private-chat-safety-note">A equipe pode verificar mensagens em situações de segurança.</p>
           </section>
         </div>
       </section>
@@ -259,15 +259,15 @@
           <div>
             <div class="eyebrow">Seu espaço</div>
             <h2>Desabafos</h2>
-            <p class="muted">Leia, escreva ou grave um desabafo. Você escolhe se ele será público ou privado.</p>
+            <p class="muted">Leia ou envie um desabafo. Você escolhe se será público ou privado.</p>
           </div>
-          <button class="help-question" type="button" data-site-help data-help-title="Área de desabafos" data-help-text="Leia desabafos públicos aprovados ou envie o seu em texto, por perguntas guiadas, escolhendo uma frase ou gravando áudio. Antes de enviar, escolha se será público ou privado. Público só aparece depois da aprovação. Privado não aparece para outros estudantes. No histórico você pode rever o que enviou.">?</button>
+          <button class="help-question" type="button" data-site-help data-help-title="Área de desabafos" data-help-text="Leia ou envie um desabafo. Você escolhe a privacidade." data-help-detail="Leia desabafos públicos aprovados ou envie o seu em texto, por perguntas guiadas, escolhendo uma frase ou gravando áudio. Antes de enviar, escolha se será público ou privado. Público só aparece depois da aprovação. Privado não aparece para outros estudantes. No histórico você pode rever o que enviou.">?</button>
         </div><section class="vent-compose-section desabafo-compose-panel" aria-labelledby="vent-compose-title">
           <div class="section-head vent-compose-section-head">
             <div>
 <div class="eyebrow">Seu espaço</div>
 <h3 id="vent-compose-title">Escrever um desabafo</h3>
-<p class="muted">Aqui você cria e envia o seu conteúdo. Escolha o formato e depois defina quem poderá acessá-lo.</p>
+<p class="muted">Escolha como escrever e quem poderá ver.</p>
 </div>
           </div>
           <div class="tabs vent-type-tabs vent-compose-tabs" role="tablist" aria-label="Tipos de desabafo">
@@ -279,7 +279,7 @@
           <div class="card vent-privacy-selector">
           <div class="field-label-row">
 <div class="eyebrow">Privacidade</div>
-<button class="help-question" type="button" data-site-help data-help-title="Público ou privado?" data-help-text="Público: depois da aprovação, qualquer pessoa no CAE pode ver. Privado: não aparece no mural público; fica disponível para você e para a equipe responsável pela segurança e moderação.">?</button>
+<button class="help-question" type="button" data-site-help data-help-title="Público ou privado?" data-help-text="Escolha quem poderá ver seu desabafo." data-help-detail="Público: depois da aprovação, qualquer pessoa no CAE pode ver. Privado: não aparece no mural público; fica disponível para você e para a equipe responsável pela segurança e moderação.">?</button>
 </div>
           <h3>Quem poderá acessar este desabafo?</h3>
           <div class="vent-visibility-grid" role="group" aria-label="Privacidade do desabafo">
@@ -345,12 +345,12 @@
 <span class="vent-tab-icon"><i data-lucide="mic"></i></span><div>
 <strong>Mude o som da sua voz</strong><p id="audio-anonymity-text">Escolha um efeito para o áudio público.</p>
 </div>
-<button class="help-question" type="button" data-site-help data-help-title="Filtros de voz" data-help-text="Escolha um efeito, grave até cinco segundos no botão de teste e ouça como ficou. O filtro muda a voz, mas não garante anonimato total. Evite dizer seu nome ou outros dados pessoais.">?</button>
+<button class="help-question" type="button" data-site-help data-help-title="Filtros de voz" data-help-text="Teste um efeito antes de enviar o áudio." data-help-detail="Escolha um efeito, grave até cinco segundos no botão de teste e ouça como ficou. O filtro muda a voz, mas não garante anonimato total. Evite dizer seu nome ou outros dados pessoais.">?</button>
 </div>
           <div id="voice-filter-picker" class="voice-filter-picker">
             <div class="field-label-row">
 <div class="eyebrow">Efeitos de voz</div>
-<button class="help-question" type="button" data-site-help data-help-title="Como funcionam os efeitos" data-help-text="Cada opção muda o som da gravação. O teste é feito no seu aparelho e não é enviado. Para um desabafo público, o efeito escolhido é aplicado antes do envio.">?</button>
+<button class="help-question" type="button" data-site-help data-help-title="Como funcionam os efeitos" data-help-text="O teste é feito no seu aparelho e não é enviado." data-help-detail="Cada opção muda o som da gravação. O teste é feito no seu aparelho e não é enviado. Para um desabafo público, o efeito escolhido é aplicado antes do envio.">?</button>
 </div>
             <div class="voice-filter-grid" role="group" aria-label="Escolha o filtro de voz">
               <button class="voice-filter-option active" type="button" data-voice-filter="anonymized" aria-pressed="true"><i data-lucide="shield-check"></i><span><b>Disfarçado</b><small>Muda bastante</small></span></button>
@@ -381,20 +381,20 @@
 <h3 id="text-voice-title">Transformar texto em áudio</h3>
 <p class="muted">Fale ou digite sua mensagem. Depois, escolha uma voz e gere o áudio.</p>
 </div>
-              <button class="help-question" type="button" data-site-help data-help-title="Transformar texto em áudio" data-help-text="Você pode falar para preencher o texto ou digitar. Confira e corrija a mensagem, escolha uma voz e toque em Gerar áudio. O áudio criado é uma narração; ele não usa sua voz natural. A transcrição depende do navegador e pode precisar de internet.">?</button>
+              <button class="help-question" type="button" data-site-help data-help-title="Transformar texto em áudio" data-help-text="Digite ou fale, revise o texto e gere a narração." data-help-detail="Você pode falar para preencher o texto ou digitar. Confira e corrija a mensagem, escolha uma voz e toque em Gerar áudio. O áudio criado é uma narração; ele não usa sua voz natural. A transcrição depende do navegador e pode precisar de internet.">?</button>
             </div>
             <div class="text-voice-record-row">
               <button class="btn secondary" id="tts-dictate" type="button"><i data-lucide="mic"></i>Falar agora</button>
               <span id="tts-dictation-status" class="cae-muted" aria-live="polite">Toque e fale sua mensagem.</span>
             </div>
             <div class="field-label-row">
-<label class="text-voice-label" for="tts-transcript">Texto do áudio</label><button class="help-question" type="button" data-site-help data-help-title="Revise o texto" data-help-text="A transcrição pode errar algumas palavras. Leia o texto, corrija o que precisar ou escreva diretamente aqui antes de gerar o áudio. Quando o navegador oferecer, você também poderá escolher outra sugestão para um trecho.">?</button>
+<label class="text-voice-label" for="tts-transcript">Texto do áudio</label><button class="help-question" type="button" data-site-help data-help-title="Revise o texto" data-help-text="Confira a transcrição antes de gerar o áudio." data-help-detail="A transcrição pode errar algumas palavras. Leia o texto, corrija o que precisar ou escreva diretamente aqui antes de gerar o áudio. Quando o navegador oferecer, você também poderá escolher outra sugestão para um trecho.">?</button>
 </div>
             <textarea id="tts-transcript" maxlength="1600" placeholder="Sua mensagem aparecerá aqui. Você também pode digitar."></textarea>
             <div id="tts-transcript-alternatives" class="tts-transcript-alternatives hidden" aria-live="polite"></div>
             <div class="field-label-row">
 <div class="eyebrow text-voice-choice-label">Escolha uma voz</div>
-<button class="help-question" type="button" data-site-help data-help-title="Escolha da voz" data-help-text="A voz feminina usa o modelo Dii em português brasileiro, de TigreGotico Lda. O modelo fica nos arquivos do CAE e é carregado no aparelho quando você usa essa opção. Ele é distribuído sem alterações e apenas para fins não comerciais, conforme a licença CC BY-NC-ND 4.0. Créditos: https://huggingface.co/OpenVoiceOS/pipertts_pt-BR_dii. A voz masculina mantém o mecanismo atual.">?</button>
+<button class="help-question" type="button" data-site-help data-help-title="Escolha da voz" data-help-text="Escolha a voz usada na narração." data-help-detail="A voz feminina usa o modelo Dii em português brasileiro, de TigreGotico Lda. O modelo fica nos arquivos do CAE e é carregado no aparelho quando você usa essa opção. Ele é distribuído sem alterações e apenas para fins não comerciais, conforme a licença CC BY-NC-ND 4.0. Créditos: https://huggingface.co/OpenVoiceOS/pipertts_pt-BR_dii. A voz masculina mantém o mecanismo atual.">?</button>
 </div>
             <div class="voice-filter-grid text-voice-grid" role="group" aria-label="Escolha a voz">
               <button class="voice-filter-option text-voice-option active" type="button" data-tts-voice="female" aria-pressed="true"><i data-lucide="mic-vocal"></i><span><b>Feminina</b><small>Voz feminina brasileira</small></span></button>
@@ -469,10 +469,10 @@
           <div class="card podcast-intro">
 <div class="eyebrow">Escuta e informação</div>
 <h3>Podcasts sobre psicologia e saúde mental</h3>
-<p class="muted">Conversas e conteúdos para conhecer melhor a psicologia, emoções, relações e saúde mental. Ouvir um podcast pode informar, mas não substitui uma conversa com um profissional.</p>
+<p class="muted">Ouça conversas sobre psicologia, emoções e saúde mental.</p>
 </div>
-          <div class="card podcast-share-card"><div class="field-label-row"><div><div class="eyebrow">Compartilhe interesses</div><h3>Recomende um podcast</h3></div><button class="help-question" type="button" data-site-help data-help-title="Compartilhar podcasts" data-help-text="Recomende podcasts de qualquer assunto: cultura, humor, ciência, histórias, jogos, educação e outros. A equipe revisa antes de publicar. Seu nome não aparece para outros estudantes; a equipe mantém um registro interno para segurança.">?</button></div>
-            <p class="muted">Pode ser sobre qualquer assunto, não só saúde mental. Sua recomendação aparece sem seu nome depois de aprovada.</p>
+          <div class="card podcast-share-card"><div class="field-label-row"><div><div class="eyebrow">Compartilhe interesses</div><h3>Recomende um podcast</h3></div><button class="help-question" type="button" data-site-help data-help-title="Compartilhar podcasts" data-help-text="Envie uma recomendação. A equipe revisa antes de publicar." data-help-detail="Recomende podcasts de qualquer assunto: cultura, humor, ciência, histórias, jogos, educação e outros. A equipe revisa antes de publicar. Seu nome não aparece para outros estudantes; a equipe mantém um registro interno para segurança.">?</button></div>
+            <p class="muted">Envie podcasts de qualquer tema. Sua recomendação aparece sem seu nome após a aprovação.</p>
             <form id="podcast-share-form"><div class="field"><label for="podcast-share-title">Nome do podcast ou episódio</label><input id="podcast-share-title" maxlength="120" required placeholder="Nome do podcast"></div>
               <div class="grid-2"><div class="field"><label for="podcast-share-category">Assunto</label><select id="podcast-share-category"><option>Geral</option><option>Cultura</option><option>Ciência</option><option>Educação</option><option>Entretenimento</option><option>Saúde e bem-estar</option></select></div><div class="field"><label for="podcast-share-url">Link para ouvir</label><input id="podcast-share-url" type="url" maxlength="1000" required placeholder="https://..."></div></div>
               <div class="field"><label for="podcast-share-description">Por que recomenda? (opcional)</label><textarea id="podcast-share-description" maxlength="500" placeholder="O que achou interessante?"></textarea></div><div id="podcast-share-status" role="status" aria-live="polite"></div><button class="btn primary" type="submit"><i data-lucide="send"></i>Enviar recomendação anônima</button>
@@ -483,24 +483,24 @@
             <article class="card podcast-card"><div class="podcast-mark"><i data-lucide="headphones"></i></div>
 <div class="eyebrow">Conselho Federal de Psicologia</div>
 <h3>CFP — Podcast</h3>
-<p class="muted">Conteúdos e debates do Conselho Federal de Psicologia. Há episódios sobre saúde mental, direitos e questões que afetam crianças e adolescentes.</p>
+<p class="muted">Episódios sobre psicologia, direitos e saúde mental.</p>
 <div class="podcast-actions">
 <a class="btn primary" href="https://open.spotify.com/show/47DBUJt5fFLxWlHlGpmf8V" target="_blank" rel="noopener noreferrer">Ouvir no Spotify</a><a class="btn secondary" href="https://site.cfp.org.br/podcast-do-cfp-debate-os-desafios-a-saude-mental-da-populacao/" target="_blank" rel="noopener noreferrer">Sobre o episódio</a>
 </div></article>
             <article class="card podcast-card"><div class="podcast-mark"><i data-lucide="book-open-headphones"></i></div>
 <div class="eyebrow">Universidade Federal de Santa Catarina</div>
 <h3>Cadernos Brasileiros de Saúde Mental</h3>
-<p class="muted">Podcast ligado à revista acadêmica da área de saúde coletiva, com episódios sobre prevenção do suicídio, terapia cognitivo-comportamental, transtornos alimentares e outros temas.</p>
+<p class="muted">Episódios sobre saúde coletiva, emoções e cuidado em saúde mental.</p>
 <div class="podcast-actions">
 <a class="btn primary" href="https://open.spotify.com/show/0WnGhAUnp2NyfES6TyqvQs" target="_blank" rel="noopener noreferrer">Ouvir no Spotify</a><a class="btn secondary" href="https://periodicos.ufsc.br/index.php/cbsm/spotify" target="_blank" rel="noopener noreferrer">Página da revista</a>
 </div></article>
           </div>
-          <p class="cae-muted podcast-note">Os links abrem plataformas externas. Confira a descrição e o tema de cada episódio antes de ouvir.</p>
+          <p class="cae-muted podcast-note">Os links abrem plataformas externas.</p>
         </div>
       </section>
 
       <section id="history-view" class="view">
-        <div class="section-head"><div><div class="eyebrow">Somente você</div><h2>Seu histórico</h2><p class="muted">Seus desabafos, registros de bem-estar e conteúdos salvos em um só lugar.</p></div><button class="help-question" type="button" data-site-help data-help-title="Seu histórico" data-help-text="Aqui ficam seus desabafos enviados, seu diário privado e os conteúdos que você salvou. Use as abas para alternar entre eles. Só você pode consultar seus registros pessoais.">?</button></div>
+        <div class="section-head"><div><div class="eyebrow">Somente você</div><h2>Seu histórico</h2><p class="muted">Seus desabafos, registros e itens salvos.</p></div><button class="help-question" type="button" data-site-help data-help-title="Seu histórico" data-help-text="Veja seus desabafos, registros e conteúdos salvos." data-help-detail="Aqui ficam seus desabafos enviados, seu diário privado e os conteúdos que você salvou. Use as abas para alternar entre eles. Só você pode consultar seus registros pessoais.">?</button></div>
         <div class="tabs vent-type-tabs history-tabs" role="tablist" aria-label="Seções do histórico">
           <button class="tab vent-tab active" id="history-tab-vents" type="button" data-history-filter="vents" role="tab" aria-controls="history-vents-panel" aria-selected="true" tabindex="0">Desabafos</button>
           <button class="tab vent-tab" id="history-tab-mood" type="button" data-history-filter="mood" role="tab" aria-controls="history-mood-panel" aria-selected="false" tabindex="-1">Diário de bem-estar</button>
@@ -514,7 +514,7 @@
           <div id="history-list" class="admin-list"></div>
         </div>
         <div id="history-mood-panel" class="hidden" role="tabpanel" aria-labelledby="history-tab-mood" tabindex="0">
-          <div class="card mood-entry-form"><div class="field-label-row"><div class="eyebrow">Como você está hoje?</div><button class="help-question" type="button" data-site-help data-help-title="Diário de bem-estar" data-help-text="Escolha como está se sentindo e, se quiser, escreva uma anotação. O registro é privado e só você pode consultar ou excluir. Não é diagnóstico nem substitui atendimento profissional.">?</button></div>
+          <div class="card mood-entry-form"><div class="field-label-row"><div class="eyebrow">Como você está hoje?</div><button class="help-question" type="button" data-site-help data-help-title="Diário de bem-estar" data-help-text="Registre como está se sentindo. É privado." data-help-detail="Escolha como está se sentindo e, se quiser, escreva uma anotação. O registro é privado e só você pode consultar ou excluir. Não é diagnóstico nem substitui atendimento profissional.">?</button></div>
             <form id="mood-entry-form">
               <div class="mood-choice-grid" role="group" aria-label="Escolha como está se sentindo">
                 <label class="mood-choice"><input type="radio" name="mood-entry" value="great" required><span>😄<b>Muito bem</b></span></label><label class="mood-choice"><input type="radio" name="mood-entry" value="good"><span>🙂<b>Bem</b></span></label><label class="mood-choice"><input type="radio" name="mood-entry" value="neutral"><span>😐<b>Mais ou menos</b></span></label><label class="mood-choice"><input type="radio" name="mood-entry" value="difficult"><span>😟<b>Difícil</b></span></label><label class="mood-choice"><input type="radio" name="mood-entry" value="very_difficult"><span>😢<b>Muito difícil</b></span></label>
@@ -525,48 +525,48 @@
           </div>
           <div class="section-head mood-history-head"><div><div class="eyebrow">Seus registros</div><h3>Registros anteriores</h3><p class="muted">Somente você pode consultar e excluir estes registros.</p></div></div><div id="mood-entry-list" class="admin-list"></div>
         </div>
-        <div id="history-saved-panel" class="hidden" role="tabpanel" aria-labelledby="history-tab-saved" tabindex="0"><div class="card"><div class="field-label-row"><div><h3>Conteúdos salvos</h3><p class="muted">Guarde avisos, eventos, publicações, enquetes e podcasts para consultar depois.</p></div><button class="help-question" type="button" data-site-help data-help-title="Conteúdos salvos" data-help-text="Use Salvar em um conteúdo para guardá-lo aqui. Salvar não publica nada no seu perfil e não avisa quem criou o conteúdo.">?</button></div></div><div id="saved-content-list" class="admin-list"></div></div>
+        <div id="history-saved-panel" class="hidden" role="tabpanel" aria-labelledby="history-tab-saved" tabindex="0"><div class="card"><div class="field-label-row"><div><h3>Conteúdos salvos</h3><p class="muted">Guarde avisos, eventos, publicações, enquetes e podcasts para consultar depois.</p></div><button class="help-question" type="button" data-site-help data-help-title="Conteúdos salvos" data-help-text="Encontre aqui o que você salvou no CAE." data-help-detail="Use Salvar em um conteúdo para guardá-lo aqui. Salvar não publica nada no seu perfil e não avisa quem criou o conteúdo.">?</button></div></div><div id="saved-content-list" class="admin-list"></div></div>
       </section>
 
       <section id="help-view" class="view">
         <div class="section-head"><div>
 <div class="eyebrow">Apoio</div>
 <h2>Ajuda e contatos</h2>
-<p class="muted">Canais nacionais e contatos do Paraná e de São José dos Pinhais. Não há contatos específicos de outros estados.</p>
+<p class="muted">Contatos nacionais e do Paraná. Confira a cidade de cada serviço.</p>
 </div></div>
         <div class="card urgent-help-card">
-          <div><div class="eyebrow">Risco imediato</div><h3>Você ou outra pessoa está em perigo agora?</h3><p class="muted">Em emergência médica, ligue 192. Em risco imediato de violência, ligue 190. Para apoio emocional gratuito e sigiloso, o CVV atende pelo 188.</p></div>
+          <div><div class="eyebrow">Risco imediato</div><h3>Você ou outra pessoa está em perigo agora?</h3><p class="muted">Emergência médica: 192. Violência imediata: 190. Apoio emocional: CVV 188.</p></div>
           <div class="actions"><a class="btn primary" href="tel:192">SAMU 192</a><a class="btn secondary" href="tel:190">Polícia 190</a><a class="btn secondary" href="tel:188">CVV 188</a></div>
         </div>
         <div class="card help-university-intro" style="margin-bottom:14px">
 <div class="eyebrow">Clínicas-escola e universidades</div>
 <h3>Atendimento psicológico gratuito ou com valor social</h3>
-<p class="muted">Os contatos abaixo foram conferidos em páginas institucionais. Gratuidade, triagem e vagas podem variar conforme o serviço; veja a observação de cada instituição antes de agendar.</p>
+<p class="muted">Valores, triagem e vagas podem mudar. Confirme com cada instituição antes de ir.</p>
 </div>
         <div class="help-subheading"><div class="eyebrow">Gratuito confirmado · Curitiba e Paraná</div></div>
         <div class="help-grid help-grid-wide university-help-grid">
           <article class="help-card help-card-featured"><div class="eyebrow">CURITIBA · GRATUITO</div>
 <h3>UniCesumar · Clínica de Psicologia</h3>
-<p class="muted">Atendimento gratuito à comunidade, realizado com participação de acadêmicos e supervisão de professores. Segunda a sexta, das 8h às 20h; sábado, das 9h às 15h.</p>
+<p class="muted">Gratuito, com supervisão de professores. Segunda a sexta: 8h às 20h. Sábado: 9h às 15h.</p>
 <p class="cae-muted">Rua Itajubá, 673 – Curitiba.</p>
 <strong>(41) 99193-7523</strong><div class="help-actions">
 <a class="btn primary" href="tel:+5541991937523">Ligar</a><a class="btn secondary" href="https://www.unicesumar.edu.br/comunidade-volta-a-contar-com-atendimentos-gratuitos-da-unicesumar-a-partir-de-fevereiro/" target="_blank" rel="noopener noreferrer">Informações oficiais</a>
 </div></article>
           <article class="help-card"><div class="eyebrow">LONDRINA · GRATUITO</div>
 <h3>UEL · Clínica de Psicologia</h3>
-<p class="muted">Clínica-escola gratuita. O atendimento começa com triagem e depende da ordem de inscrição e das vagas.</p>
+<p class="muted">Gratuito. Há triagem e as vagas dependem da fila.</p>
 <strong>(43) 3371-4237</strong><div class="help-actions">
 <a class="btn primary" href="tel:+554333714237">Ligar</a><a class="btn secondary" href="https://www.parana.pr.gov.br/aen/Noticia/Populacao-pode-buscar-atendimento-psicologico-gratuito-em-universidades-estaduais" target="_blank" rel="noopener noreferrer">Informações oficiais</a>
 </div></article>
           <article class="help-card"><div class="eyebrow">MARINGÁ · GRATUITO</div>
 <h3>UEM · Clínica de Psicologia Aplicada</h3>
-<p class="muted">Atendimento psicológico gratuito à comunidade, com triagem e disponibilidade conforme as vagas.</p>
+<p class="muted">Gratuito, sujeito à triagem e às vagas.</p>
 <strong>(44) 3011-9070</strong><div class="help-actions">
 <a class="btn primary" href="tel:+554430119070">Ligar</a><a class="btn secondary" href="https://www.parana.pr.gov.br/aen/Noticia/Populacao-pode-buscar-atendimento-psicologico-gratuito-em-universidades-estaduais" target="_blank" rel="noopener noreferrer">Informações oficiais</a>
 </div></article>
           <article class="help-card"><div class="eyebrow">IRATI · GRATUITO</div>
 <h3>Unicentro · Clínica-Escola de Psicologia</h3>
-<p class="muted">Atendimento gratuito à comunidade. Confirme a triagem e a disponibilidade antes de se deslocar.</p>
+<p class="muted">Gratuito. Confirme a triagem e as vagas antes de ir.</p>
 <strong>(42) 3421-3226 / 3227</strong><div class="help-actions">
 <a class="btn primary" href="tel:+554234213226">Ligar</a><a class="btn secondary" href="https://wa.me/554288225141">WhatsApp</a><a class="btn secondary" href="https://www.parana.pr.gov.br/aen/Noticia/Populacao-pode-buscar-atendimento-psicologico-gratuito-em-universidades-estaduais" target="_blank" rel="noopener noreferrer">Informações oficiais</a>
 </div></article>
@@ -575,13 +575,13 @@
         <div class="help-grid help-grid-wide university-help-grid">
           <article class="help-card"><div class="eyebrow">CURITIBA · CONFIRMAR VALOR</div>
 <h3>PUCPR · Núcleo de Práticas em Psicologia</h3>
-<p class="muted">Atendimento à comunidade realizado por estudantes do último ano, com supervisão de professores. A página institucional não informa se o atendimento é gratuito; confirme o valor e as vagas ao entrar em contato.</p>
+<p class="muted">Atendimento supervisionado. Confirme o valor e as vagas por telefone.</p>
 <strong>(41) 98467-7169</strong><div class="help-actions">
 <a class="btn primary" href="tel:+5541984677169">Ligar</a><a class="btn secondary" href="https://www.pucpr.br/escola-de-medicina-e-ciencias-da-vida/servicos/nucleo-de-pratica-em-psicologia/" target="_blank" rel="noopener noreferrer">Página da PUCPR</a>
 </div></article>
           <article class="help-card"><div class="eyebrow">CURITIBA · VALOR SOCIAL</div>
 <h3>FESP · Serviço-Escola de Psicologia</h3>
-<p class="muted">Atendimento com valor social. A faculdade informa que pode haver isenção em casos específicos, após avaliação socioeconômica. Segunda a sexta, das 17h às 21h.</p>
+<p class="muted">Valor social, com possível isenção após avaliação. Segunda a sexta: 17h às 21h.</p>
 <strong>(41) 99231-7193</strong><div class="help-actions">
 <a class="btn primary" href="tel:+5541992317193">Ligar</a><a class="btn secondary" href="https://fesppr.edu.br/servicos/servico-escola-de-psicologia/" target="_blank" rel="noopener noreferrer">Página da FESP</a>
 </div></article>
@@ -659,7 +659,7 @@
 <div>
 <div class="eyebrow">Fale conosco</div>
 <h3>Converse com a equipe do CAE</h3>
-<p class="muted">Use este canal para pedir orientação ou explicar uma situação. A equipe do CAE pode responder por aqui. Você pode apagar suas próprias mensagens.</p>
+<p class="muted">Peça orientação à equipe por aqui. Você pode apagar suas mensagens.</p>
 </div>
 <button class="btn ghost" type="button" id="support-toggle">Abrir conversa</button>
 </div>
@@ -680,7 +680,7 @@
 <div>
 <div class="eyebrow">Acesso restrito</div>
 <h2>Histórico de desabafos privados</h2>
-<p class="muted">Conteúdo confidencial, disponível somente para a equipe de moderação. Os usuários aparecem apenas pelo código público.</p>
+<p class="muted">Acesso restrito à equipe de moderação. Os usuários aparecem pelo código público.</p>
 </div>
 <button class="btn secondary" type="button" data-open-view="admin-view">Voltar ao Admin</button>
 </div>
@@ -723,9 +723,10 @@
         <article class="card" style="margin-top:16px">
           <div class="eyebrow">Aplicativo oficial do CAE</div>
           <h3>CAE para Android</h3>
-          <p class="muted">Instale o aplicativo do CAE em celulares e tablets Android. Esta versão não é compatível com iPhone ou iPad.</p>
+          <p class="muted">O aplicativo atual funciona em celulares e tablets Android.</p>
           <div class="notice" style="margin:12px 0">
-            <strong>Aviso de segurança:</strong> como o aplicativo é instalado por APK, fora da Google Play Store, o Android pode mostrar uma mensagem de que o app é desconhecido ou pedir uma confirmação do Play Protect. Isso não prova que o aplicativo seja perigoso, mas também não garante que seja seguro. Confira sempre se o arquivo veio do endereço oficial do CAE. Se aparecer um alerta específico de malware ou uma permissão inesperada, não prossiga com a instalação.
+            <strong>Aviso:</strong> o Android ou o Google Drive pode mostrar alertas para arquivos APK. Isso não confirma a presença de vírus nem garante que o arquivo seja seguro. Se aparecer um alerta de malware ou uma permissão inesperada, não instale.
+            <details class="site-more"><summary>Por que esse aviso aparece?</summary><p>O Google Drive pode não conseguir verificar todos os arquivos executáveis. A mensagem não é uma análise que confirmou que o arquivo está limpo, nem uma confirmação de que ele tenha vírus. Baixe somente pelo link oficial do CAE.</p></details>
           </div>
           <a class="btn primary" href="https://drive.google.com/uc?export=download&id=1xGy6Xh-pPyZ45mUElHBWym5y5-ROC0zt">
             <i data-lucide="download"></i>Baixar APK para Android
@@ -755,7 +756,7 @@
         </div>
         <div class="card account-deletion-card" style="margin-top:16px">
           <div class="eyebrow">Seus dados</div><h3>Solicitar exclusão da conta</h3>
-          <p class="muted">A solicitação será encaminhada à equipe para conferência e processamento seguro. Ela não apaga a conta imediatamente.</p>
+          <p class="muted">A equipe vai analisar o pedido. A conta não é apagada na hora.</p>
           <button class="btn danger" type="button" id="request-account-deletion">Solicitar exclusão da conta</button>
           <p id="account-deletion-status" class="cae-muted" role="status" aria-live="polite"></p>
         </div>
@@ -765,17 +766,23 @@
         <div class="section-head"><div><div class="eyebrow">Transparência</div><h2>Central de privacidade</h2><p class="muted">Entenda quais informações o CAE usa e como o anonimato funciona.</p></div><button class="btn secondary" type="button" data-open-view="account-view">Voltar à conta</button></div>
         <article class="card privacy-info-card">
           <h3>O que identifica sua conta?</h3>
-          <p>O e-mail escolar fica associado à autenticação e não é exibido publicamente. Nas áreas comunitárias, o CAE usa um código público em vez de mostrar seu e-mail ou nome real.</p>
+          <p>Seu e-mail não aparece para outros estudantes.</p>
+          <details class="site-more"><summary>Mais detalhes</summary><p>O e-mail escolar fica associado à autenticação e não é exibido publicamente. Nas áreas comunitárias, o CAE usa um código público em vez de mostrar seu e-mail ou nome real.</p></details>
           <h3>O que é público?</h3>
-          <p>Publicações e desabafos enviados como públicos só aparecem na área pública depois da aprovação da moderação. Antes de publicar, confira o texto e evite incluir nome completo, endereço, telefone, escola específica ou outros dados que possam identificar você.</p>
+          <p>Conteúdos públicos só aparecem depois da aprovação. Evite incluir dados pessoais.</p>
+          <details class="site-more"><summary>Mais detalhes</summary><p>Publicações e desabafos enviados como públicos só aparecem na área pública depois da aprovação da moderação. Antes de publicar, confira o texto e evite incluir nome completo, endereço, telefone, escola específica ou outros dados que possam identificar você.</p></details>
           <h3>O que é privado?</h3>
-          <p>Registros marcados como privados e mensagens de conversas privadas não são conteúdo público. A equipe pode ter acesso limitado para moderação e verificação de segurança, conforme a estrutura e as permissões do CAE.</p>
+          <p>Seus registros privados não aparecem para outros estudantes. A equipe pode acessá-los por segurança.</p>
+          <details class="site-more"><summary>Mais detalhes</summary><p>Registros marcados como privados e mensagens de conversas privadas não são conteúdo público. A equipe pode ter acesso limitado para moderação e verificação de segurança, conforme a estrutura e as permissões do CAE.</p></details>
           <h3>Áudios e anonimato</h3>
-          <p>Filtros de voz alteram características do áudio, mas não garantem anonimato completo. Voz, contexto e detalhes mencionados podem identificar alguém. Pense nisso antes de enviar uma gravação.</p>
+          <p>Filtros mudam a voz, mas não garantem anonimato.</p>
+          <details class="site-more"><summary>Mais detalhes</summary><p>Filtros de voz alteram características do áudio, mas não garantem anonimato completo. Voz, contexto e detalhes mencionados podem identificar alguém. Pense nisso antes de enviar uma gravação.</p></details>
           <h3>Seus controles</h3>
-          <p>Você pode consultar seu histórico, excluir seus próprios desabafos e solicitar a exclusão da conta. A solicitação de exclusão precisa ser processada pela equipe; não é instantânea.</p>
+          <p>Você pode ver seu histórico, apagar desabafos e pedir a exclusão da conta.</p>
+          <details class="site-more"><summary>Mais detalhes</summary><p>Você pode consultar seu histórico, excluir seus próprios desabafos e solicitar a exclusão da conta. A solicitação de exclusão precisa ser processada pela equipe; não é instantânea.</p></details>
           <h3>Uma observação importante</h3>
-          <p>Esta página é uma explicação funcional do CAE, não substitui a política de privacidade oficial da instituição responsável. A escola ou entidade mantenedora deve revisar e publicar a política completa, incluindo responsável pelo tratamento, finalidades, prazos de retenção, compartilhamentos e canal para exercer direitos previstos na LGPD.</p>
+          <p>A instituição responsável ainda deve publicar a política oficial de privacidade.</p>
+          <details class="site-more"><summary>Mais detalhes</summary><p>Esta página é uma explicação funcional do CAE, não substitui a política de privacidade oficial da instituição responsável. A escola ou entidade mantenedora deve revisar e publicar a política completa, incluindo responsável pelo tratamento, finalidades, prazos de retenção, compartilhamentos e canal para exercer direitos previstos na LGPD.</p></details>
         </article>
       </section>
 
@@ -1097,6 +1104,7 @@
 <button class="icon-btn" id="site-help-close" type="button" aria-label="Fechar">×</button>
 </div>
       <p id="site-help-text" class="muted"></p>
+      <details id="site-help-details" class="site-more" hidden><summary>Mais detalhes</summary><p id="site-help-detail"></p></details>
       <div class="actions"><button class="btn primary" id="site-help-ok" type="button">Entendi</button></div>
     </div>
   </div>
@@ -1198,6 +1206,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=46" defer></script>
+  <script src="script.js?v=47" defer></script>
 </body>
 </html>
