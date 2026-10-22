@@ -4509,3 +4509,89 @@ input:focus,textarea:focus,select:focus {
   font-size: .72rem;
   font-weight: 800;
 }
+
+
+/* Leitura em camadas: respostas curtas primeiro, detalhes quando a pessoa pedir. */
+.site-more {
+  margin-top: 10px;
+  color: var(--ink-2);
+  font-size: .9rem;
+}
+.site-more summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  padding: 6px 0;
+  color: var(--lilac-dark);
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+.site-more summary::-webkit-details-marker { display: none; }
+.site-more summary::before {
+  content: "+";
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: .9rem;
+  line-height: 1;
+}
+.site-more[open] summary::before { content: "−"; }
+.site-more > p {
+  margin: 4px 0 2px;
+  color: var(--muted);
+  font-size: .88rem;
+  line-height: 1.6;
+}
+.site-help-card > #site-help-text {
+  margin: 0;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+.site-help-card #site-help-details[hidden] { display: none; }
+.site-help-card #site-help-details:not([hidden]) { margin-top: 12px; }
+.site-help-card #site-help-detail { max-width: 62ch; }
+.privacy-info-card > .site-more { margin: -2px 0 16px; }
+.notice .site-more > p { margin-bottom: 0; }
+
+/* Página inicial: atalhos e apoio ficam próximos, sem áreas vazias desnecessárias. */
+#home-view { min-height: 0; }
+#home-view > * { min-height: 0; }
+#home-view .tutorial-video-card { margin-top: 5px; }
+#home-view .tutorial-video-screen {
+  aspect-ratio: 16 / 7.5;
+  max-height: 300px;
+}
+#home-view .home-shortcuts { margin-top: 12px; margin-bottom: 0; }
+#home-view .home-help-actions {
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 0;
+}
+#home-view .home-help-actions .home-simple-note {
+  flex: 1 1 420px;
+  max-width: none;
+  padding: 12px 15px;
+  line-height: 1.45;
+}
+#home-view .home-help-actions > .btn { margin: 0; }
+#home-view .home-help-actions > .btn,
+#home-view .home-simple-actions .btn { min-height: 42px; }
+@media (max-width: 720px) {
+  #home-view .tutorial-video-screen {
+    aspect-ratio: 16 / 9;
+    max-height: 210px;
+  }
+  #home-view .home-help-actions {
+    align-items: stretch;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  #home-view .home-help-actions .home-simple-note { flex-basis: 100%; }
+  #home-view .home-help-actions > .btn { width: 100%; }
+}
