@@ -666,7 +666,7 @@
 
   function showAdminPanel(panel) {
     if (!isStaff()) return;
-    const allowed = ['vents','posts','announcements','events','polls','podcasts','reports','private_chats','support','accounts'];
+    const allowed = ['vents','posts','announcements','events','polls','podcasts','reports','private_chats','support','deletions','accounts'];
     let value = allowed.includes(panel) ? panel : 'vents';
     if (value === 'accounts' && !isStaff()) value = 'vents';
     $$('[data-admin-tab]').forEach(button => {
@@ -680,6 +680,7 @@
       panelEl.classList.toggle('hidden', !active);
     });
     if (value === 'private_chats') loadAdminPrivateChats();
+    if (value === 'deletions') loadAdminDeletionRequests();
     if (value === 'podcasts') loadAdminSharedPodcasts();
     if (value === 'reports') { loadChatReports(); loadContentReports(); }
     refreshIcons();
@@ -3957,17 +3958,21 @@
 
   async function requestAccountDeletion() {
     if (!state.user || !state.supabase) return;
-    if (!window.confirm('Enviar uma solicitação de exclusão da conta? A equipe precisará processá-la; a conta não será apagada imediatamente.')) return;
+    const message = ($('account-deletion-message')?.value || '').trim();
+    if (!window.confirm('Enviar uma solicitação de exclusão da conta? A equipe verá sua mensagem, se houver, e precisará processar o pedido. A conta não será apagada imediatamente.')) return;
     const button = $('request-account-deletion');
     setBusy(button, true, 'Enviando solicitação…');
     try {
-      const { error } = await state.supabase.rpc('cae_request_account_deletion');
+      const { error } = await state.supabase.rpc('cae_request_account_deletion', {
+        p_message: message || null
+      });
       if (error) throw error;
-      setStatus('account-deletion-status', 'Solicitação registrada. A equipe precisa processar a exclusão manualmente.');
+      if ($('account-deletion-message')) $('account-deletion-message').value = '';
+      setStatus('account-deletion-status', 'Solicitação registrada. A equipe vai revisar o pedido.');
       toast('Solicitação de exclusão enviada.');
     } catch (error) {
       console.error('ACCOUNT DELETION REQUEST', error);
-      setStatus('account-deletion-status', 'Não foi possível registrar a solicitação. Confira se a migração do CAE foi aplicada.');
+      setStatus('account-deletion-status', 'Não foi possível registrar a solicitação. Tente novamente ou fale com a equipe.');
     } finally {
       setBusy(button, false);
     }
@@ -3978,12 +3983,15 @@
     if (!list || !isStaff() || !state.supabase) return;
     try {
       const { data, error } = await state.supabase.from(TABLE.deletionRequests)
-        .select('id,user_id,status,requested_at').in('status', ['pending', 'processing'])
+        .select('id,user_id,status,requested_at,message').in('status', ['pending', 'processing'])
         .order('requested_at', { ascending: true }).limit(100);
       if (error) throw error;
-      list.innerHTML = data?.length ? data.map(row =>
-        '<article class="card"><div class="cae-post-meta">' + escapeHTML(publicName(row.user_id)) + ' · ' + escapeHTML(formatDate(row.requested_at)) + '</div><p>Status: ' + escapeHTML(row.status) + '</p><p class="cae-muted">Após revisar e excluir os dados/usuário manualmente no Supabase, marque como concluída.</p><button class="btn secondary btn-small" type="button" data-complete-deletion-request="' + escapeHTML(row.id) + '">Marcar como concluída</button></article>'
-      ).join('') : '<div class="card"><p>Nenhuma solicitação pendente.</p></div>';
+      list.innerHTML = data?.length ? data.map(row => {
+        const message = row.message
+          ? '<p class="deletion-request-message"><strong>Mensagem:</strong><br>' + escapeHTML(row.message).replace(/\n/g, '<br>') + '</p>'
+          : '<p class="cae-muted">A pessoa não deixou uma mensagem adicional.</p>';
+        return '<article class="card"><div class="cae-post-meta">' + escapeHTML(publicName(row.user_id)) + ' · ' + escapeHTML(formatDate(row.requested_at)) + '</div><p>Status: ' + escapeHTML(row.status) + '</p>' + message + '<p class="cae-muted">Depois de fazer a exclusão da conta e revisar os dados no Supabase, marque o pedido como concluído.</p><button class="btn secondary btn-small" type="button" data-complete-deletion-request="' + escapeHTML(row.id) + '">Marcar como concluída</button></article>';
+      }).join('') : '<div class="card"><p>Nenhuma solicitação pendente.</p></div>';
     } catch (error) {
       console.warn('DELETION REQUESTS', error);
       list.innerHTML = '<div class="card"><p class="cae-muted">Solicitações indisponíveis. Confira se a migração do CAE foi aplicada.</p></div>';
