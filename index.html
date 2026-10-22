@@ -725,8 +725,8 @@
           <h3>CAE para Android</h3>
           <p class="muted">O aplicativo atual funciona em celulares e tablets Android.</p>
           <div class="notice" style="margin:12px 0">
-            <strong>Aviso:</strong> o Android ou o Google Drive pode mostrar alertas para arquivos APK. Isso não confirma a presença de vírus nem garante que o arquivo seja seguro. Se aparecer um alerta de malware ou uma permissão inesperada, não instale.
-            <details class="site-more"><summary>Por que esse aviso aparece?</summary><p>O Google Drive pode não conseguir verificar todos os arquivos executáveis. A mensagem não é uma análise que confirmou que o arquivo está limpo, nem uma confirmação de que ele tenha vírus. Baixe somente pelo link oficial do CAE.</p></details>
+            <strong>Aviso:</strong> o Google Drive pode mostrar um aviso ao baixar arquivos APK porque nem todos podem ser verificados automaticamente. Use o botão oficial desta página para acessar o aplicativo do CAE.
+            <details class="site-more"><summary>Por que esse aviso aparece?</summary><p>O Google Drive pode não conseguir verificar todos os arquivos executáveis. Por isso, pode mostrar um aviso antes do download.</p></details>
           </div>
           <a class="btn primary" href="https://drive.google.com/uc?export=download&id=1xGy6Xh-pPyZ45mUElHBWym5y5-ROC0zt">
             <i data-lucide="download"></i>Baixar APK para Android
@@ -757,6 +757,11 @@
         <div class="card account-deletion-card" style="margin-top:16px">
           <div class="eyebrow">Seus dados</div><h3>Solicitar exclusão da conta</h3>
           <p class="muted">A equipe vai analisar o pedido. A conta não é apagada na hora.</p>
+          <div class="field">
+            <label for="account-deletion-message">Quer deixar uma mensagem? (opcional)</label>
+            <textarea id="account-deletion-message" maxlength="1000" rows="3" placeholder="Explique, se quiser, algo sobre seu pedido..."></textarea>
+            <small>Você pode enviar o pedido sem escrever nada.</small>
+          </div>
           <button class="btn danger" type="button" id="request-account-deletion">Solicitar exclusão da conta</button>
           <p id="account-deletion-status" class="cae-muted" role="status" aria-live="polite"></p>
         </div>
@@ -805,6 +810,7 @@
           <button class="tab admin-tab" type="button" data-admin-tab="reports" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="flag"></i></span><span><b>Denúncias</b><small>Analisar mensagens sinalizadas</small></span></button>
           <button class="tab admin-tab" type="button" data-admin-tab="private_chats" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="shield-check"></i></span><span><b>Conversas privadas</b><small>Acesso reservado para segurança</small></span></button>
           <button class="tab admin-tab" type="button" data-admin-tab="support" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="headphones"></i></span><span><b>Atendimentos</b><small>Responder Fale conosco</small></span></button>
+          <button class="tab admin-tab" type="button" data-admin-tab="deletions" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="user-round-x"></i></span><span><b>Exclusões</b><small>Pedidos de exclusão de conta</small></span></button>
           <button class="tab admin-tab admin-only" type="button" data-admin-tab="accounts" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="users-round"></i></span><span><b>Contas e equipe</b><small>Cargos, timeout e bloqueios</small></span></button>
         </div>
 
@@ -1024,6 +1030,15 @@
 </div>
         </div>
 
+        <div id="admin-panel-deletions" class="admin-panel hidden" data-admin-panel="deletions">
+          <div class="card admin-manage-card">
+            <div class="eyebrow">Privacidade</div>
+            <h3>Solicitações de exclusão de conta</h3>
+            <p class="muted">Leia a mensagem opcional e confira o pedido. A conta só deve ser marcada como concluída depois que a equipe fizer a exclusão no Supabase.</p>
+            <div id="admin-deletion-request-list" class="admin-list"></div>
+          </div>
+        </div>
+
         <div id="admin-panel-accounts" class="admin-panel hidden admin-only" data-admin-panel="accounts">
           <div class="admin-manage-grid">
             <div class="card admin-manage-card admin-role-card">
@@ -1066,9 +1081,7 @@
 <div id="admin-moderation-status" class="admin-action-status" role="status" aria-live="polite"></div>
 </div>
           </div>
-          <div class="card admin-manage-card">
-              <div class="eyebrow">Privacidade</div><h3>Solicitações de exclusão de conta</h3><p class="muted">Após a exclusão manual e conferência dos dados no Supabase, marque a solicitação como concluída.</p><div id="admin-deletion-request-list" class="admin-list"></div>
-</div>
+
           <div class="card moderator-info-card">
 <div class="eyebrow">Organização</div>
 <h3>Como usar esta central</h3>
@@ -1206,6 +1219,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=47" defer></script>
+  <script src="script.js?v=48" defer></script>
 </body>
 </html>
