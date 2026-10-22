@@ -671,7 +671,7 @@
     if (!isStaff()) return;
     const allowed = ['vents','posts','announcements','events','polls','podcasts','reports','private_chats','support','deletions','accounts'];
     let value = allowed.includes(panel) ? panel : 'vents';
-    if (['private_chats','deletions'].includes(value) && !isAdmin()) value = 'vents';
+    if (['private_chats','support','deletions'].includes(value) && !isAdmin()) value = 'vents';
     $$('[data-admin-tab]').forEach(button => {
       const active = button.dataset.adminTab === value;
       button.classList.toggle('active', active);
@@ -2942,7 +2942,7 @@
     box.innerHTML=header+messages.map(message=>{
       const own=message.sender_id===currentUserId;
       const label=adminView?(own?'Você · equipe':code):(own?'Você':'Equipe do CAE');
-      const canDelete=adminView ? isStaff() : own;
+      const canDelete=adminView ? isAdmin() : own;
       const deleteButton=canDelete?`<button class="support-delete" type="button" data-delete-support="${escapeHTML(message.id)}" aria-label="Apagar mensagem" title="Apagar mensagem">Apagar</button>`:'';
       return `<div class="support-message ${own?'support-message-own':'support-message-staff'}"><div class="support-message-label">${escapeHTML(label)} · ${escapeHTML(formatDate(message.created_at))}</div><div class="support-message-body">${escapeHTML(message.body).replace(/\n/g,'<br>')}</div>${deleteButton}</div>`;
     }).join('');
@@ -2971,7 +2971,7 @@
 
       input.value = '';
       await loadSupportChat();
-      if (isStaff()) await loadAdminSupport();
+      if (isAdmin()) await loadAdminSupport();
     } catch (error) {
       console.error('SUPPORT SEND', error);
       toast(errorMessage(error), 'error');
@@ -2984,7 +2984,7 @@
   async function deleteSupportMessage(id){
     if(!state.user||!state.supabase)return;
     const target=String(id||'').trim();if(!target)return;
-    if(isStaff()) { await deleteStaffContent('support_message',target,'esta mensagem'); return; }
+    if(isAdmin()) { await deleteStaffContent('support_message',target,'esta mensagem'); return; }
     if(!window.confirm('Apagar esta mensagem permanentemente?'))return;
     try{
       const {error}=await state.supabase.from(TABLE.support).delete().eq('id',target).eq('sender_id',state.user.id).eq('conversation_user_id',state.user.id);
@@ -2994,14 +2994,14 @@
     }catch(error){console.error('SUPPORT DELETE',error);toast(errorMessage(error),'error');}
   }
 
-  async function loadAdminSupport(){const select=$('admin-support-conversation');const thread=$('admin-support-thread');const count=$('admin-support-count');if(!select||!thread||!state.user||!isStaff())return;try{const {data,error}=await state.supabase.from(TABLE.support).select('id,conversation_user_id,sender_id,body,created_at').order('created_at',{ascending:true}).limit(500);if(error)throw error;const grouped=new Map();(data||[]).forEach(message=>{const id=message.conversation_user_id;if(!grouped.has(id))grouped.set(id,[]);grouped.get(id).push(message);});if(count)count.textContent=String(grouped.size);const conversations=[...grouped.entries()].sort((a,b)=>new Date(b[1][b[1].length-1].created_at)-new Date(a[1][a[1].length-1].created_at));const current=state.supportConversationUserId||'';select.innerHTML='<option value="">Selecionar conversa</option>'+conversations.map(([id,messages])=>`<option value="${escapeHTML(id)}">${escapeHTML(publicName(id))} · ${messages.length} mensagem${messages.length===1?'':'ns'}</option>`).join('');if(conversations.some(([id])=>id===current))select.value=current;else{state.supportConversationUserId=conversations[0]?.[0]||null;select.value=state.supportConversationUserId||'';}const selected=select.value||'';state.supportConversationUserId=selected||null;renderSupportMessages(selected?grouped.get(selected):[],'admin-support-thread',state.user.id,selected||null);if(selected){thread.insertAdjacentHTML('beforeend','<form id="admin-support-form" class="chat-form support-admin-form"><textarea id="admin-support-input" maxlength="2000" placeholder="Responder ao estudante..."></textarea><button class="btn primary" id="admin-support-send" type="submit">Enviar</button></form>');}}catch(error){console.error('ADMIN SUPPORT LOAD',error);thread.innerHTML=`<div class="support-empty"><p class="cae-danger">${escapeHTML(errorMessage(error))}</p></div>`;}}
+  async function loadAdminSupport(){const select=$('admin-support-conversation');const thread=$('admin-support-thread');const count=$('admin-support-count');if(!select||!thread||!state.user||!isAdmin())return;try{const {data,error}=await state.supabase.from(TABLE.support).select('id,conversation_user_id,sender_id,body,created_at').order('created_at',{ascending:true}).limit(500);if(error)throw error;const grouped=new Map();(data||[]).forEach(message=>{const id=message.conversation_user_id;if(!grouped.has(id))grouped.set(id,[]);grouped.get(id).push(message);});if(count)count.textContent=String(grouped.size);const conversations=[...grouped.entries()].sort((a,b)=>new Date(b[1][b[1].length-1].created_at)-new Date(a[1][a[1].length-1].created_at));const current=state.supportConversationUserId||'';select.innerHTML='<option value="">Selecionar conversa</option>'+conversations.map(([id,messages])=>`<option value="${escapeHTML(id)}">${escapeHTML(publicName(id))} · ${messages.length} mensagem${messages.length===1?'':'ns'}</option>`).join('');if(conversations.some(([id])=>id===current))select.value=current;else{state.supportConversationUserId=conversations[0]?.[0]||null;select.value=state.supportConversationUserId||'';}const selected=select.value||'';state.supportConversationUserId=selected||null;renderSupportMessages(selected?grouped.get(selected):[],'admin-support-thread',state.user.id,selected||null);if(selected){thread.insertAdjacentHTML('beforeend','<form id="admin-support-form" class="chat-form support-admin-form"><textarea id="admin-support-input" maxlength="2000" placeholder="Responder ao estudante..."></textarea><button class="btn primary" id="admin-support-send" type="submit">Enviar</button></form>');}}catch(error){console.error('ADMIN SUPPORT LOAD',error);thread.innerHTML=`<div class="support-empty"><p class="cae-danger">${escapeHTML(errorMessage(error))}</p></div>`;}}
 
   function renderSelectedAdminSupportConversation(){state.supportConversationUserId=$('admin-support-conversation')?.value||null;loadAdminSupport();}
 
   async function sendAdminSupportMessage(event) {
     event.preventDefault();
-    if (!isStaff() || !state.user || !state.supportConversationUserId) {
-      return toast('Selecione uma conversa primeiro.', 'error');
+    if (!isAdmin() || !state.user || !state.supportConversationUserId) {
+      return toast('Somente administradores e o dono podem responder aos atendimentos.', 'error');
     }
 
     const input = $('admin-support-input');
