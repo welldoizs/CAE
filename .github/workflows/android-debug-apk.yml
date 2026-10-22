@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   build-android:
-    name: Build unsigned test APK
+    name: Build debug-signed test APK
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
