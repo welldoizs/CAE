@@ -811,6 +811,7 @@
           <button class="tab admin-tab" type="button" data-admin-tab="private_chats" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="shield-check"></i></span><span><b>Conversas privadas</b><small>Acesso reservado para segurança</small></span></button>
           <button class="tab admin-tab" type="button" data-admin-tab="support" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="headphones"></i></span><span><b>Atendimentos</b><small>Responder Fale conosco</small></span></button>
           <button class="tab admin-tab" type="button" data-admin-tab="deletions" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="user-round-x"></i></span><span><b>Exclusões</b><small>Pedidos de exclusão de conta</small></span></button>
+          <button class="tab admin-tab admin-restricted hidden" type="button" data-admin-tab="identity" data-high-trust-only role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="shield-alert"></i></span><span><b>Acesso restrito</b><small>Identificação em casos graves</small></span></button>
           <button class="tab admin-tab admin-only" type="button" data-admin-tab="accounts" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="users-round"></i></span><span><b>Contas e equipe</b><small>Cargos, timeout e bloqueios</small></span></button>
         </div>
 
@@ -1101,6 +1102,83 @@
 </div>
 </div>
         </div>
+
+        <div id="admin-panel-identity" class="admin-panel hidden" data-admin-panel="identity">
+          <div class="card admin-manage-card identity-access-card">
+            <div class="admin-panel-heading">
+              <div>
+                <div class="eyebrow">Acesso excepcional</div>
+                <h3>Identificação de conta</h3>
+                <p class="cae-muted">Área exclusiva para administradores de alto nível. Use somente em situações graves, com uma referência de caso ou protocolo.</p>
+              </div>
+              <span class="security-lock"><i data-lucide="shield-alert"></i></span>
+            </div>
+            <div class="notice">
+              <b>Privacidade e responsabilidade</b><br>
+              Consulte apenas quando houver risco grave à segurança ou solicitação formal de autoridade competente. Não use por curiosidade, conflitos pessoais ou para investigar alguém por conta própria. Cada consulta fica registrada.
+            </div>
+
+            <div id="identity-mfa-enroll" class="identity-mfa-step hidden">
+              <h4>Ative a proteção extra</h4>
+              <p class="muted">Antes de consultar qualquer e-mail, configure um aplicativo autenticador na sua própria conta. O código muda periodicamente e não é compartilhado com outros moderadores.</p>
+              <div class="identity-qr-wrap"><img id="identity-mfa-qr" alt="QR code para configurar a autenticação em dois fatores" class="hidden"></div>
+              <div class="field">
+                <label for="identity-mfa-secret">Chave manual, caso não consiga ler o QR code</label>
+                <code id="identity-mfa-secret" class="identity-mfa-secret">A chave aparecerá aqui.</code>
+              </div>
+              <div class="field">
+                <label for="identity-mfa-setup-code">Código do aplicativo autenticador</label>
+                <input id="identity-mfa-setup-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000">
+              </div>
+              <div class="actions">
+                <button class="btn primary" id="identity-enroll-start" type="button">Configurar autenticador</button>
+                <button class="btn secondary" id="identity-enroll-verify" type="button">Confirmar configuração</button>
+              </div>
+            </div>
+
+            <div id="identity-mfa-challenge" class="identity-mfa-step hidden">
+              <h4>Confirme que é você</h4>
+              <p class="muted">Digite o código atual do seu aplicativo autenticador para liberar uma consulta.</p>
+              <div class="field">
+                <label for="identity-mfa-login-code">Código de verificação</label>
+                <input id="identity-mfa-login-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000">
+              </div>
+              <button class="btn primary" id="identity-mfa-unlock" type="button">Confirmar e liberar</button>
+            </div>
+
+            <div id="identity-lookup-section" class="identity-mfa-step hidden">
+              <h4>Consultar uma conta específica</h4>
+              <p class="muted">Informe o código público e a referência do caso. A área não oferece uma lista geral nem permite baixar os e-mails dos usuários.</p>
+              <form id="identity-lookup-form">
+                <div class="field">
+                  <label for="identity-public-code">Código público da conta</label>
+                  <input id="identity-public-code" type="text" maxlength="20" autocomplete="off" placeholder="Ex.: G14" required>
+                </div>
+                <div class="field">
+                  <label for="identity-case-reference">Referência do caso ou protocolo</label>
+                  <input id="identity-case-reference" type="text" maxlength="100" placeholder="Número do registro ou protocolo" required>
+                </div>
+                <div class="field">
+                  <label for="identity-case-reason">Motivo da consulta</label>
+                  <select id="identity-case-reason" required>
+                    <option value="">Selecione uma opção</option>
+                    <option value="immediate_safety_risk">Risco grave e imediato à segurança</option>
+                    <option value="formal_authority_request">Solicitação formal de autoridade competente</option>
+                  </select>
+                </div>
+                <div id="identity-access-status" aria-live="polite"></div>
+                <button class="btn primary" id="identity-lookup-button" type="submit"><i data-lucide="search"></i>Consultar e-mail</button>
+              </form>
+              <div id="identity-result" class="identity-result hidden" aria-live="polite">
+                <span class="eyebrow">Resultado da consulta</span>
+                <strong id="identity-result-code"></strong>
+                <p><b>E-mail cadastrado:</b> <span id="identity-result-email"></span></p>
+                <small>Esta consulta foi registrada no histórico de auditoria da equipe. Não compartilhe o endereço fora do procedimento autorizado.</small>
+              </div>
+            </div>
+            <p class="cae-muted identity-audit-note">O sistema registra quem consultou, qual código foi pesquisado, a data, a referência e o motivo selecionado. Há limite de consultas para reduzir abuso.</p>
+          </div>
+        </div>
       </section>
 
     </main>
@@ -1219,6 +1297,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=49" defer></script>
+  <script src="script.js?v=50" defer></script>
 </body>
 </html>
