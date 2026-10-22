@@ -1,0 +1,7 @@
+{
+  "appId": "br.com.cae.estudantil",
+  "appName": "CAE",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": { "androidScheme": "https" }
+}
