@@ -3959,7 +3959,7 @@
   async function requestAccountDeletion() {
     if (!state.user || !state.supabase) return;
     const message = ($('account-deletion-message')?.value || '').trim();
-    if (!window.confirm('Enviar uma solicitação de exclusão da conta? A equipe verá sua mensagem, se houver, e precisará processar o pedido. A conta não será apagada imediatamente.')) return;
+    if (!window.confirm('Tem certeza de que deseja solicitar a exclusão da sua conta? A equipe vai revisar o pedido e poderá excluir sua conta e os dados associados. O envio desta solicitação não apaga a conta imediatamente.')) return;
     const button = $('request-account-deletion');
     setBusy(button, true, 'Enviando solicitação…');
     try {
