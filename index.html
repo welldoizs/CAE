@@ -675,12 +675,12 @@
 <b>Em risco imediato?</b> Use o serviço de emergência adequado e procure uma pessoa de confiança perto de você. O CAE não é um serviço de emergência.</div></div>
       </section>
 
-      <section id="admin-private-history-view" class="view">
+      <section id="admin-private-history-view" class="view admin-only">
         <div class="section-head">
 <div>
 <div class="eyebrow">Acesso restrito</div>
 <h2>Histórico de desabafos privados</h2>
-<p class="muted">Acesso restrito à equipe de moderação. Os usuários aparecem pelo código público.</p>
+<p class="muted">Acesso reservado aos administradores e ao dono. Os usuários aparecem pelo código público.</p>
 </div>
 <button class="btn secondary" type="button" data-open-view="admin-view">Voltar ao Admin</button>
 </div>
@@ -808,11 +808,11 @@
           <button class="tab admin-tab" type="button" data-admin-tab="polls" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="bar-chart-3"></i></span><span><b>Enquetes</b><small>Criar e excluir pesquisas</small></span></button>
           <button class="tab admin-tab" type="button" data-admin-tab="podcasts" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="headphones"></i></span><span><b>Podcasts</b><small>Revisar recomendações</small></span></button>
           <button class="tab admin-tab" type="button" data-admin-tab="reports" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="flag"></i></span><span><b>Denúncias</b><small>Analisar mensagens sinalizadas</small></span></button>
-          <button class="tab admin-tab" type="button" data-admin-tab="private_chats" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="shield-check"></i></span><span><b>Conversas privadas</b><small>Acesso reservado para segurança</small></span></button>
+          <button class="tab admin-tab admin-only" type="button" data-admin-tab="private_chats" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="shield-check"></i></span><span><b>Conversas privadas</b><small>Acesso reservado para segurança</small></span></button>
           <button class="tab admin-tab" type="button" data-admin-tab="support" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="headphones"></i></span><span><b>Atendimentos</b><small>Responder Fale conosco</small></span></button>
-          <button class="tab admin-tab" type="button" data-admin-tab="deletions" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="user-round-x"></i></span><span><b>Exclusões</b><small>Pedidos de exclusão de conta</small></span></button>
+          <button class="tab admin-tab admin-only" type="button" data-admin-tab="deletions" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="user-round-x"></i></span><span><b>Exclusões</b><small>Pedidos de exclusão de conta</small></span></button>
           <button class="tab admin-tab admin-restricted hidden" type="button" data-admin-tab="identity" data-high-trust-only role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="shield-alert"></i></span><span><b>Acesso restrito</b><small>Identificação em casos graves</small></span></button>
-          <button class="tab admin-tab admin-only" type="button" data-admin-tab="accounts" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="users-round"></i></span><span><b>Contas e equipe</b><small>Cargos, timeout e bloqueios</small></span></button>
+          <button class="tab admin-tab" type="button" data-admin-tab="accounts" role="tab" aria-selected="false"><span class="vent-tab-icon"><i data-lucide="users-round"></i></span><span><b>Contas e equipe</b><small>Cargos, timeout e bloqueios</small></span></button>
         </div>
 
         <div id="admin-panel-vents" class="admin-panel active" data-admin-panel="vents">
@@ -841,7 +841,7 @@
 <h3>Moderação e resposta privada</h3>
 <p class="cae-muted">Aprove, recuse ou exclua. Quando fizer sentido, responda diretamente em uma conversa privada com quem enviou.</p>
 </div>
-<button class="btn secondary" type="button" data-open-view="admin-private-history-view"><i data-lucide="lock-keyhole"></i>Histórico privado</button>
+<button class="btn secondary admin-only" type="button" data-open-view="admin-private-history-view"><i data-lucide="lock-keyhole"></i>Histórico privado</button>
 </div>
             <div class="tabs vent-type-tabs admin-vent-tabs" role="tablist" aria-label="Tipos de desabafos para moderação">
               <button class="tab vent-tab active" type="button" data-admin-vent-filter="free" role="tab" aria-selected="true"><span class="vent-tab-icon"><i data-lucide="pen-line"></i></span><span><b>Texto livre</b><small>Texto escrito</small></span></button>
@@ -1000,13 +1000,13 @@
           </div>
         </div>
 
-        <div id="admin-panel-private-chats" class="admin-panel hidden" data-admin-panel="private_chats">
+        <div id="admin-panel-private-chats" class="admin-panel hidden admin-only" data-admin-panel="private_chats">
           <div class="card private-security-card">
 <div class="admin-panel-heading">
 <div>
 <div class="eyebrow">Acesso reservado</div>
 <h3>Conversas privadas · segurança</h3>
-<p class="cae-muted">Somente para verificar situações de segurança. Esta área é somente leitura: a equipe não pode enviar mensagens nem participar das conversas.</p>
+<p class="cae-muted">Acesso reservado aos administradores e ao dono para verificar situações de segurança. Esta área é somente leitura.</p>
 </div>
 <span class="security-lock"><i data-lucide="shield-check"></i></span>
 </div>
@@ -1031,7 +1031,7 @@
 </div>
         </div>
 
-        <div id="admin-panel-deletions" class="admin-panel hidden" data-admin-panel="deletions">
+        <div id="admin-panel-deletions" class="admin-panel hidden admin-only" data-admin-panel="deletions">
           <div class="card admin-manage-card">
             <div class="eyebrow">Privacidade</div>
             <h3>Solicitações de exclusão de conta</h3>
@@ -1040,12 +1040,12 @@
           </div>
         </div>
 
-        <div id="admin-panel-accounts" class="admin-panel hidden admin-only" data-admin-panel="accounts">
+        <div id="admin-panel-accounts" class="admin-panel hidden" data-admin-panel="accounts">
           <div class="admin-manage-grid">
-            <div class="card admin-manage-card admin-role-card">
+            <div class="card admin-manage-card admin-role-card admin-only">
 <div class="eyebrow">Equipe</div>
 <h3>Alterar cargo</h3>
-<p class="muted">Use o código público. Moderador e administrador têm a mesma permissão de equipe no CAE.</p>
+<p class="muted">Somente administradores e o dono podem alterar cargos. As opções são estudante ou moderador.</p>
 <div class="field">
 <label for="admin-role-identifier">Código público</label><input id="admin-role-identifier" type="text" autocomplete="off" placeholder="Ex.: J01" maxlength="20">
 </div>
@@ -1053,7 +1053,7 @@
 <div class="grid-2 admin-user-grid">
 <div class="field">
 <label for="admin-user-role">Permissão</label><select id="admin-user-role"><option value="student">Estudante</option>
-<option value="admin">Equipe de moderação</option></select>
+<option value="moderator">Moderador</option></select>
 </div>
 <div class="field admin-role-action">
 <label> </label><button class="btn primary" id="admin-role-button" type="button">Salvar cargo</button>
