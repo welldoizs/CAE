@@ -190,10 +190,12 @@
     }
   }
 
-  // No CAE, moderador e administrador possuem a mesma permissão de equipe.
-  // Mantemos os dois valores antigos no banco por compatibilidade.
-  const isStaff = () => ['admin', 'moderator'].includes(state.profile?.role);
-  const isAdmin = () => isStaff();
+  // Moderadores cuidam da moderação cotidiana; admins e dono acessam áreas de alta confiança.
+  const TRUSTED_ACCOUNT_CODES = new Set(['A04', 'B03', 'L02', 'J01']);
+  const isProtectedAccount = (account) =>
+    TRUSTED_ACCOUNT_CODES.has(String(account?.public_code || '').trim().toUpperCase());
+  const isStaff = () => ['admin', 'moderator', 'owner'].includes(state.profile?.role);
+  const isAdmin = () => ['admin', 'owner'].includes(state.profile?.role);
 
   const escapeHTML = (value) => {
     const div = document.createElement('div');
@@ -283,7 +285,8 @@
     if (/email not confirmed/i.test(raw)) return 'Confirme seu e-mail antes de entrar.';
     if (/already registered|user already registered/i.test(raw)) return 'Este e-mail já possui uma conta.';
     if (/password.*6|at least 6/i.test(raw)) return 'A senha precisa ter pelo menos 6 caracteres.';
-    if (/CAE_ADMIN_REQUIRED/i.test(raw)) return 'Essa ação é exclusiva da equipe de moderação.';
+    if (/CAE_ADMIN_REQUIRED/i.test(raw)) return 'Essa ação é exclusiva dos administradores e do dono.';
+    if (/CAE_PROTECTED_ACCOUNT|PROTECTED_ACCOUNT/i.test(raw)) return 'Esta conta é protegida e não pode receber banimento, timeout ou alteração de cargo.';
     if (/rate limit|too many requests/i.test(raw)) return 'Você está enviando muito rápido. Aguarde alguns segundos.';
     if (/row-level security|rls|not allowed|permission denied/i.test(raw)) return 'O banco bloqueou essa ação. Verifique as políticas RLS do CAE.';
     if (/relation .* does not exist|table .* does not exist/i.test(raw)) return 'Uma tabela do CAE ainda não existe no Supabase.';
@@ -415,7 +418,7 @@
     $('nav-admin')?.classList.toggle('hidden', !isStaff());
     $$('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin()));
     const roleButton = $('admin-role-button');
-    if (roleButton) { roleButton.disabled = !isStaff(); roleButton.title = isStaff() ? 'Alterar permissão da equipe' : 'Somente a equipe de moderação pode alterar permissões.'; }
+    if (roleButton) { roleButton.disabled = !isAdmin(); roleButton.title = isAdmin() ? 'Alterar permissão da equipe' : 'Somente administradores e o dono podem alterar cargos.'; }
 
     if (state.profile.banned_until && new Date(state.profile.banned_until) > new Date()) {
       const reason = String(state.profile.ban_reason || '').trim();
@@ -668,7 +671,7 @@
     if (!isStaff()) return;
     const allowed = ['vents','posts','announcements','events','polls','podcasts','reports','private_chats','support','deletions','accounts'];
     let value = allowed.includes(panel) ? panel : 'vents';
-    if (value === 'accounts' && !isStaff()) value = 'vents';
+    if (['private_chats','deletions'].includes(value) && !isAdmin()) value = 'vents';
     $$('[data-admin-tab]').forEach(button => {
       const active = button.dataset.adminTab === value;
       button.classList.toggle('active', active);
@@ -720,7 +723,7 @@
   function showView(id) {
     if (!state.user) return showAuth();
     if (id === 'admin-view' && !isStaff()) id = 'home-view';
-    if (id === 'admin-private-history-view' && !isStaff()) id = 'home-view';
+    if (id === 'admin-private-history-view' && !isAdmin()) id = 'home-view';
     $$('.view').forEach(view => view.classList.remove('active'));
     $(id)?.classList.add('active');
     ensureViewHelpButton(id);
@@ -738,7 +741,7 @@
     if (id === 'mural-view') { loadMural(); loadCommunityPodcasts(); }
     if (id === 'history-view') loadHistory(state.historyFilter);
     if (id === 'admin-view' && isStaff()) { showAdminPanel('vents'); loadAdmin(); loadAdminNotifications(); }
-    if (id === 'admin-private-history-view' && isStaff()) loadAdminPrivateHistory();
+    if (id === 'admin-private-history-view' && isAdmin()) loadAdminPrivateHistory();
     if (id === 'help-view') loadSupportChat();
     refreshIcons();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2373,7 +2376,7 @@
   }
 
   async function loadAdminPrivateChats(){
-    if(!isStaff()||!state.supabase)return;
+    if(!isAdmin()||!state.supabase)return;
     const list=$('admin-private-chat-list'); if(!list)return;
     try{
       const {data,error}=await state.supabase.rpc('cae_admin_private_chat_feed');if(error)throw error;
@@ -2395,7 +2398,7 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.polls }, () => queueMuralReload())
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.pollOptions }, () => queueMuralReload())
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.pollVotes }, () => queueMuralReload())
-      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.vents }, () => { loadPublicVents(); if (isStaff()) loadAdmin(); if (isStaff()) loadAdminPrivateHistory(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.vents }, () => { loadPublicVents(); if (isStaff()) loadAdmin(); if (isAdmin()) loadAdminPrivateHistory(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.support }, () => { loadSupportChat(); if (isStaff()) loadAdminSupport(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.notifications }, () => { loadNotifications(); if (state.currentView === 'private-conversations-view' && state.privateSelectedConversationId) loadPrivateChatData(state.privateSelectedConversationId); })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'cae_admin_notifications', filter: `user_id=eq.${state.user.id}` }, () => { if (isStaff()) loadNotifications(); })
@@ -2886,7 +2889,7 @@
   }
 
   async function fetchAdminPrivateVents(){
-    if(!isStaff()||!state.supabase)return [];
+    if(!isAdmin()||!state.supabase)return [];
     const {data,error}=await state.supabase.from(TABLE.vents).select('id,user_id,type,body,feeling,audio_url,status,visibility,created_at,moderated_at').eq('visibility','private').order('created_at',{ascending:false}).limit(500);
     if(error)throw error; return data||[];
   }
@@ -2915,12 +2918,12 @@
   }
 
   async function loadAdminPrivateVents(){
-    const card=$('admin-private-vents-card');if(!card)return;const staff=isStaff();card.classList.toggle('hidden',!staff);if(!staff)return;
+    const card=$('admin-private-vents-card');if(!card)return;const staff=isAdmin();card.classList.toggle('hidden',!staff);if(!staff)return;
     try{const data=await fetchAdminPrivateVents();$('admin-private-count').textContent=String(data.length);}catch(error){console.error('ADMIN PRIVATE SUMMARY',error);$('admin-private-count').textContent='—';}
   }
 
   async function loadAdminPrivateHistory(filter=state.adminPrivateFilter){
-    if(!isStaff())return;const list=$('admin-private-history-list');if(!list)return;list.innerHTML='<div class="admin-private-empty"><p>Carregando histórico...</p></div>';
+    if(!isAdmin())return;const list=$('admin-private-history-list');if(!list)return;list.innerHTML='<div class="admin-private-empty"><p>Carregando histórico...</p></div>';
     try{
       const data=await fetchAdminPrivateVents();
       state.adminPrivateFilter=['free','guided','feelings','audio'].includes(filter)?filter:'free';
@@ -3027,17 +3030,19 @@
   }
 
   async function setAccountRole() {
-    if (!isStaff()) return toast('Esta área é restrita à equipe de moderação.', 'error');
+    if (!isAdmin()) return toast('Somente administradores e o dono podem alterar cargos.', 'error');
     const target = renderAdminTarget('admin-role-identifier', 'admin-role-target', 'admin-role-status');
     if (!target) return toast('Selecione uma conta válida.', 'error');
     if (target.user_id === state.user.id) return toast('Não altere o próprio cargo por esta tela.', 'error');
+    if (isProtectedAccount(target)) return toast('Esta é uma conta protegida e não pode ser alterada por esta tela.', 'error');
     const role = $('admin-user-role')?.value;
+    if (!['student', 'moderator'].includes(role)) return toast('Escolha somente Estudante ou Moderador.', 'error');
     const button = $('admin-role-button');
     setBusy(button, true, 'Salvando...');
     try {
       const { error } = await state.supabase.rpc('cae_admin_set_role', { p_target_user_id: target.user_id, p_role: role });
       if (error) throw error;
-      const label = { student: 'Estudante', moderator: 'Moderador', admin: 'Administrador' }[role] || role;
+      const label = { student: 'Estudante', moderator: 'Moderador' }[role] || role;
       if (state.publicDirectory.has(target.user_id)) state.publicDirectory.get(target.user_id).role = role;
       $('admin-role-status').textContent = `#${target.public_code || '—'} agora está como ${label}.`;
       toast(`Cargo atualizado: ${label}.`);
@@ -3054,6 +3059,7 @@
     if (!isStaff()) return toast('Somente a equipe de moderação pode moderar contas.', 'error');
     const target = renderAdminTarget('admin-moderation-identifier', 'admin-moderation-target', 'admin-moderation-status');
     if (!target) return toast('Selecione uma conta válida.', 'error');
+    if (isProtectedAccount(target)) return toast('Esta conta é protegida e não pode receber banimento ou timeout.', 'error');
     if (target.user_id === state.user.id) return toast('Não aplique ban ou timeout na própria conta.', 'error');
     const minutes = Number($('admin-timeout-duration')?.value || 0);
     let reason = null;
@@ -3980,7 +3986,7 @@
 
   async function loadAdminDeletionRequests() {
     const list = $('admin-deletion-request-list');
-    if (!list || !isStaff() || !state.supabase) return;
+    if (!list || !isAdmin() || !state.supabase) return;
     try {
       const { data, error } = await state.supabase.from(TABLE.deletionRequests)
         .select('id,user_id,status,requested_at,message').in('status', ['pending', 'processing'])
@@ -3990,7 +3996,7 @@
         const message = row.message
           ? '<p class="deletion-request-message"><strong>Mensagem:</strong><br>' + escapeHTML(row.message).replace(/\n/g, '<br>') + '</p>'
           : '<p class="cae-muted">A pessoa não deixou uma mensagem adicional.</p>';
-        const action = state.profile?.role === 'admin'
+        const action = isAdmin()
           ? '<button class="btn danger btn-small" type="button" data-delete-account-request="' + escapeHTML(row.id) + '">Excluir conta e dados</button>'
           : '<p class="cae-muted">A exclusão permanente só pode ser feita por um administrador.</p>';
         return '<article class="card"><div class="cae-post-meta">' + escapeHTML(publicName(row.user_id)) + ' · ' + escapeHTML(formatDate(row.requested_at)) + '</div><p>Status: ' + escapeHTML(row.status) + '</p>' + message + '<p class="cae-muted">Ao confirmar, a conta será excluída do CAE e os dados pessoais associados serão removidos. Essa ação não pode ser desfeita.</p>' + action + '</article>';
@@ -4002,7 +4008,7 @@
   }
 
   async function deleteAccountFromRequest(id) {
-    if (state.profile?.role !== 'admin' || !state.supabase) return;
+    if (!isAdmin() || !state.supabase) return;
     if (!window.confirm('Tem certeza? Esta ação vai excluir permanentemente a conta e remover os dados pessoais associados. Não será possível desfazer.')) return;
     const confirmation = window.prompt('Para confirmar a exclusão permanente, digite EXCLUIR:');
     if (confirmation !== 'EXCLUIR') {
