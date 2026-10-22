@@ -3990,7 +3990,10 @@
         const message = row.message
           ? '<p class="deletion-request-message"><strong>Mensagem:</strong><br>' + escapeHTML(row.message).replace(/\n/g, '<br>') + '</p>'
           : '<p class="cae-muted">A pessoa não deixou uma mensagem adicional.</p>';
-        return '<article class="card"><div class="cae-post-meta">' + escapeHTML(publicName(row.user_id)) + ' · ' + escapeHTML(formatDate(row.requested_at)) + '</div><p>Status: ' + escapeHTML(row.status) + '</p>' + message + '<p class="cae-muted">Depois de fazer a exclusão da conta e revisar os dados no Supabase, marque o pedido como concluído.</p><button class="btn secondary btn-small" type="button" data-complete-deletion-request="' + escapeHTML(row.id) + '">Marcar como concluída</button></article>';
+        const action = state.profile?.role === 'admin'
+          ? '<button class="btn danger btn-small" type="button" data-delete-account-request="' + escapeHTML(row.id) + '">Excluir conta e dados</button>'
+          : '<p class="cae-muted">A exclusão permanente só pode ser feita por um administrador.</p>';
+        return '<article class="card"><div class="cae-post-meta">' + escapeHTML(publicName(row.user_id)) + ' · ' + escapeHTML(formatDate(row.requested_at)) + '</div><p>Status: ' + escapeHTML(row.status) + '</p>' + message + '<p class="cae-muted">Ao confirmar, a conta será excluída do CAE e os dados pessoais associados serão removidos. Essa ação não pode ser desfeita.</p>' + action + '</article>';
       }).join('') : '<div class="card"><p>Nenhuma solicitação pendente.</p></div>';
     } catch (error) {
       console.warn('DELETION REQUESTS', error);
@@ -3998,18 +4001,25 @@
     }
   }
 
-  async function completeDeletionRequest(id) {
-    if (!isStaff() || !window.confirm('Confirma que a solicitação já foi processada e que a exclusão foi realizada no Supabase?')) return;
+  async function deleteAccountFromRequest(id) {
+    if (state.profile?.role !== 'admin' || !state.supabase) return;
+    if (!window.confirm('Tem certeza? Esta ação vai excluir permanentemente a conta e remover os dados pessoais associados. Não será possível desfazer.')) return;
+    const confirmation = window.prompt('Para confirmar a exclusão permanente, digite EXCLUIR:');
+    if (confirmation !== 'EXCLUIR') {
+      toast('Exclusão cancelada.');
+      return;
+    }
     try {
-      const { error } = await state.supabase.from(TABLE.deletionRequests).update({
-        status: 'completed', completed_at: new Date().toISOString()
-      }).eq('id', id);
+      const { data, error } = await state.supabase.functions.invoke('admin-delete-account', {
+        body: { requestId: id }
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       await loadAdminDeletionRequests();
-      toast('Solicitação marcada como concluída.');
+      toast('Conta e dados associados excluídos.');
     } catch (error) {
-      console.error('COMPLETE DELETION REQUEST', error);
-      toast('Não foi possível atualizar a solicitação.', 'error');
+      console.error('ADMIN DELETE ACCOUNT', error);
+      toast(error?.message || 'Não foi possível concluir a exclusão.', 'error');
     }
   }
 
@@ -4056,7 +4066,7 @@
       if(button.matches('[data-resolve-content-report]')){await updateContentReportStatus(button.dataset.resolveContentReport,'reviewed');return;}
       if(button.matches('[data-dismiss-content-report]')){await updateContentReportStatus(button.dataset.dismissContentReport,'dismissed');return;}
       if(button.matches('[data-remove-reported-content]')){await removeReportedContent(button.dataset.reportId,button.dataset.contentType,button.dataset.contentId);return;}
-      if(button.matches('[data-complete-deletion-request]')){await completeDeletionRequest(button.dataset.completeDeletionRequest);return;}
+      if(button.matches('[data-delete-account-request]')){await deleteAccountFromRequest(button.dataset.deleteAccountRequest);return;}
       if(button.matches('#signout-other-sessions')){await signOutOtherSessions();return;}
       if(button.matches('#request-account-deletion')){await requestAccountDeletion();return;}
       if(button.matches('#tts-cancel')){cancelTextVoiceGeneration();return;}
