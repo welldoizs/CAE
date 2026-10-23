@@ -57,6 +57,8 @@
     profile: null,
     session: null,
     realtime: null,
+    realtimeFallbackTimer: null,
+    realtimeStatus: 'DISCONNECTED',
     currentView: 'home-view',
     currentPanel: 'posts',
     historyFilter: 'vents',
@@ -614,10 +616,15 @@
 
   async function logout() {
     try {
+      if (state.realtimeFallbackTimer) {
+        clearInterval(state.realtimeFallbackTimer);
+        state.realtimeFallbackTimer = null;
+      }
       if (state.realtime) {
         await state.supabase?.removeChannel(state.realtime);
         state.realtime = null;
       }
+      state.realtimeStatus = 'DISCONNECTED';
       await state.supabase?.auth.signOut();
     } catch (error) { console.warn('LOGOUT', error); }
     state.user = null;
@@ -2489,6 +2496,22 @@
     }catch(error){console.error('ADMIN PRIVATE CHATS',error);list.innerHTML=`<div class="private-chat-empty"><p class="cae-danger">${escapeHTML(errorMessage(error))}</p></div>`;}
   }
 
+  function startRealtimeFallback() {
+    if (state.realtimeFallbackTimer || !state.user) return;
+    console.warn('CAE Realtime indisponível; ativando atualização automática de contingência.');
+    state.realtimeFallbackTimer = window.setInterval(() => {
+      if (!state.user || !state.supabase) return;
+      if (state.currentView === 'chat-view') queueChatReload();
+      if (state.currentView === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId);
+    }, 4000);
+  }
+
+  function stopRealtimeFallback() {
+    if (!state.realtimeFallbackTimer) return;
+    clearInterval(state.realtimeFallbackTimer);
+    state.realtimeFallbackTimer = null;
+  }
+
   function subscribeRealtime() {
     if (!state.supabase || !state.user) return;
     if (state.realtime) state.supabase.removeChannel(state.realtime);
@@ -2508,7 +2531,15 @@
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: TABLE.privateMessages }, () => { if (state.currentView === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId); })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: TABLE.privateRequests }, () => { if (state.currentView === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId); loadNotifications(); })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: TABLE.privateRequests }, () => { if (state.currentView === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId); loadNotifications(); })
-      .subscribe(status => console.debug('CAE Realtime:', status));
+      .subscribe(status => {
+        state.realtimeStatus = status;
+        console.debug('CAE Realtime:', status);
+        if (status === 'SUBSCRIBED') {
+          stopRealtimeFallback();
+        } else if (['CHANNEL_ERROR', 'TIMED_OUT', 'CLOSED'].includes(status)) {
+          startRealtimeFallback();
+        }
+      });
   }
 
   function queueMuralReload() {
