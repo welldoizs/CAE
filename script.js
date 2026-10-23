@@ -2297,8 +2297,6 @@
     if (!target || target.user_id === state.user.id) { box.classList.toggle('hidden', !$('private-chat-code')?.value.trim()); box.innerHTML = target ? '<span class="cae-danger">Este é o seu próprio código.</span>' : '<span class="cae-danger">Nenhuma conta encontrada.</span>'; return target; }
     box.classList.remove('hidden');
     const blocked = (state.privateChatData.blocked_users || []).some(item => String(item.user_id) === String(target.user_id));
-    const requestButton = $('private-chat-request');
-    if (requestButton) requestButton.disabled = blocked;
     box.innerHTML = `<strong>Destino</strong><span>#${escapeHTML(target.public_code || '—')}</span>`
       + (blocked ? '<small class="cae-danger">Você bloqueou esta conta. Desbloqueie-a para enviar um convite.</small>' : '');
     return target;
@@ -2352,7 +2350,7 @@
       card = document.createElement('div');
       card.id = 'private-blocked-card';
       card.className = 'card private-blocked-card';
-      card.innerHTML = '<div class="eyebrow">Privacidade</div><h3>Pessoas bloqueadas</h3><p class="muted">Contas bloqueadas não podem enviar convites privados para você. Você pode desbloquear quando quiser.</p><div id="private-blocked-list" class="private-blocked-list"></div>';
+      card.innerHTML = '<div class="eyebrow">Privacidade</div><h3>Pessoas bloqueadas</h3><p class="muted">O bloqueio impede convites privados entre vocês. Você pode desbloquear quando quiser.</p><div id="private-blocked-list" class="private-blocked-list"></div>';
       sidebar.appendChild(card);
     }
     const list = $('private-blocked-list');
@@ -2429,11 +2427,12 @@
 
   async function blockPrivateChatUser(userId) {
     if (!state.user || !userId) return;
-    if (!window.confirm('Bloquear esta pessoa? Ela não poderá enviar convites privados para você. Qualquer conversa ativa entre vocês será encerrada. Você poderá desbloquear depois.')) return;
+    if (!window.confirm('Bloquear esta pessoa? Convites privados entre vocês serão impedidos e qualquer conversa ativa será encerrada. Você poderá desbloquear depois.')) return;
     try {
       const { error } = await state.supabase.rpc('cae_block_private_chat_user', { p_blocked_user_id: userId });
       if (error) throw error;
-      state.privateSelectedConversationId = null;
+      const selected = (state.privateChatData.conversations || []).find(c => String(c.id) === String(state.privateSelectedConversationId));
+      if (selected && String(otherPrivateParticipant(selected)?.user_id) === String(userId)) state.privateSelectedConversationId = null;
       toast('Pessoa bloqueada. Convites privados entre vocês foram desativados.');
       await loadPrivateChatData();
     } catch (error) {
