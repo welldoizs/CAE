@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="style.css?v=47">
+  <link rel="stylesheet" href="style.css?v=48">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   <link rel="preconnect" href="https://challenges.cloudflare.com">
@@ -127,7 +127,10 @@
 <div class="eyebrow">Central</div>
 <h3>Notificações</h3>
 </div>
+<div class="notification-panel-actions">
 <button class="btn ghost btn-small" id="notifications-mark-read" type="button">Marcar todas como lidas</button>
+<button class="btn ghost btn-small notification-delete-read" id="notifications-delete-read" type="button">Excluir lidas</button>
+</div>
 </div>
               <div id="notifications-list" class="notifications-list"><div class="notification-empty">Nenhuma notificação nova.</div></div>
             </div>
@@ -1299,6 +1302,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=55" defer></script>
+  <script src="script.js?v=56" defer></script>
 </body>
 </html>
