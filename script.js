@@ -89,7 +89,7 @@
     adminPrivateFilter: 'free',
     adminVentFilter: 'free',
     reportedMessageIds: new Set(),
-    privateChatData: { conversations: [], incoming_requests: [], outgoing_requests: [] },
+    privateChatData: { conversations: [], incoming_requests: [], outgoing_requests: [], blocked_users: [] },
     privateChatLoading: false,
     privateChatReloadQueued: false,
     privateSelectedConversationId: null,
@@ -624,7 +624,7 @@
     state.profile = null;
     state.session = null;
     state.lastHydratedAccessToken = null;
-    state.privateChatData = { conversations: [], incoming_requests: [], outgoing_requests: [] };
+    state.privateChatData = { conversations: [], incoming_requests: [], outgoing_requests: [], blocked_users: [] };
     state.privateSelectedConversationId = null;
     state.notifications = [];
     openNotificationsPanel(false);
@@ -2296,7 +2296,11 @@
     if (!box) return target;
     if (!target || target.user_id === state.user.id) { box.classList.toggle('hidden', !$('private-chat-code')?.value.trim()); box.innerHTML = target ? '<span class="cae-danger">Este é o seu próprio código.</span>' : '<span class="cae-danger">Nenhuma conta encontrada.</span>'; return target; }
     box.classList.remove('hidden');
-    box.innerHTML = `<strong>Destino</strong><span>#${escapeHTML(target.public_code || '—')}</span>`;
+    const blocked = (state.privateChatData.blocked_users || []).some(item => String(item.user_id) === String(target.user_id));
+    const requestButton = $('private-chat-request');
+    if (requestButton) requestButton.disabled = blocked;
+    box.innerHTML = `<strong>Destino</strong><span>#${escapeHTML(target.public_code || '—')}</span>`
+      + (blocked ? '<small class="cae-danger">Você bloqueou esta conta. Desbloqueie-a para enviar um convite.</small>' : '');
     return target;
   }
 
@@ -2304,6 +2308,8 @@
     if (!state.user) return;
     const target = renderPrivateTarget();
     if (!target || target.user_id === state.user.id) return toast('Digite um código público válido de outra pessoa.','error');
+    const blocked = (state.privateChatData.blocked_users || []).some(item => String(item.user_id) === String(target.user_id));
+    if (blocked) return setStatus('private-chat-request-status', 'Você bloqueou esta conta. Desbloqueie-a antes de enviar um convite.');
     const button = $('private-chat-request'); setBusy(button,true,'Enviando...');
     try {
       const { error } = await state.supabase.rpc('cae_request_private_chat',{p_target_user_id:target.user_id});
@@ -2321,7 +2327,7 @@
     const incoming=data.incoming_requests||[];
     if(count)count.textContent=String(incoming.length);
     if(!list)return;
-    list.innerHTML=incoming.length?incoming.map(r=>`<article class="private-request-item"><div><strong>#${escapeHTML(r.requester_code||'conta')}</strong><small>Quer iniciar uma conversa privada com você.</small><em>${escapeHTML(formatDate(r.created_at))}</em></div><div class="actions"><button class="btn primary btn-small" type="button" data-private-request-action="accept" data-private-request-id="${escapeHTML(r.id)}">Aceitar</button><button class="btn secondary btn-small" type="button" data-private-request-action="reject" data-private-request-id="${escapeHTML(r.id)}">Recusar</button></div></article>`).join(''):'<div class="private-chat-empty compact"><p>Nenhuma solicitação pendente.</p></div>';
+    list.innerHTML=incoming.length?incoming.map(r=>`<article class="private-request-item"><div><strong>#${escapeHTML(r.requester_code||'conta')}</strong><small>Quer iniciar uma conversa privada com você.</small><em>${escapeHTML(formatDate(r.created_at))}</em></div><div class="actions"><button class="btn primary btn-small" type="button" data-private-request-action="accept" data-private-request-id="${escapeHTML(r.id)}">Aceitar</button><button class="btn secondary btn-small" type="button" data-private-request-action="reject" data-private-request-id="${escapeHTML(r.id)}">Recusar</button><button class="btn danger btn-small" type="button" data-block-private-user="${escapeHTML(r.requester_id)}">Bloquear</button></div></article>`).join(''):'<div class="private-chat-empty compact"><p>Nenhuma solicitação pendente.</p></div>';
   }
 
   function otherPrivateParticipant(conversation) {
@@ -2338,6 +2344,24 @@
     box.innerHTML=conversations.length?conversations.map(c=>{const other=otherPrivateParticipant(c);const last=(c.messages||[]).at(-1);return `<button type="button" class="private-conversation-item ${c.id===state.privateSelectedConversationId?'active':''}" data-private-conversation-id="${escapeHTML(c.id)}"><span class="notification-icon"><i data-lucide="${c.source_type==='vent_reply'?'message-circle':'lock-keyhole'}"></i></span><span><strong>#${escapeHTML(other?.public_code||'conversa')}</strong><small>${escapeHTML(last?.body||'Conversa iniciada')}</small><em>${escapeHTML(last?.created_at?formatDate(last.created_at):'')}</em></span></button>`}).join(''):'<div class="private-chat-empty compact"><p>Você ainda não tem conversas ativas.</p></div>';
   }
 
+  function renderPrivateBlockedUsers(users = []) {
+    const sidebar = document.querySelector('.private-chat-sidebar');
+    if (!sidebar) return;
+    let card = $('private-blocked-card');
+    if (!card) {
+      card = document.createElement('div');
+      card.id = 'private-blocked-card';
+      card.className = 'card private-blocked-card';
+      card.innerHTML = '<div class="eyebrow">Privacidade</div><h3>Pessoas bloqueadas</h3><p class="muted">Contas bloqueadas não podem enviar convites privados para você. Você pode desbloquear quando quiser.</p><div id="private-blocked-list" class="private-blocked-list"></div>';
+      sidebar.appendChild(card);
+    }
+    const list = $('private-blocked-list');
+    if (!list) return;
+    list.innerHTML = users.length
+      ? users.map(item => `<article class="private-blocked-item"><strong>#${escapeHTML(item.public_code || 'conta')}</strong><button class="btn secondary btn-small" type="button" data-unblock-private-user="${escapeHTML(item.user_id)}">Desbloquear</button></article>`).join('')
+      : '<div class="private-chat-empty compact"><p>Nenhuma pessoa bloqueada.</p></div>';
+  }
+
   function renderPrivateThread(conversation) {
     const head=$('private-chat-thread-head'), thread=$('private-chat-thread'), form=$('private-chat-form');
     if(!head||!thread||!form)return;
@@ -2347,7 +2371,7 @@
       form.classList.add('hidden'); refreshIcons(); return;
     }
     const other=otherPrivateParticipant(conversation);
-    head.innerHTML=`<div><div class="eyebrow">${conversation.source_type==='vent_reply'?'Resposta da equipe':'Conversa privada'}</div><strong>#${escapeHTML(other?.public_code||'conta')}</strong></div><span class="cae-muted">Somente participantes</span>`;
+    head.innerHTML=`<div class="private-thread-person"><div><div class="eyebrow">${conversation.source_type==='vent_reply'?'Resposta da equipe':'Conversa privada'}</div><strong>#${escapeHTML(other?.public_code||'conta')}</strong></div><span class="cae-muted">Somente participantes</span></div><div class="private-thread-actions"><button class="btn secondary btn-small" type="button" data-close-private-conversation="${escapeHTML(conversation.id)}">Encerrar conversa</button>${other?.user_id ? `<button class="btn danger btn-small" type="button" data-block-private-user="${escapeHTML(other.user_id)}">Bloquear pessoa</button>` : ''}</div>`;
     thread.innerHTML=(conversation.messages||[]).map(m=>`<div class="private-message ${m.sender_id===state.user.id?'own':''}"><div class="private-message-label">${m.sender_id===state.user.id?'Você':`#${escapeHTML((conversation.participants||[]).find(p=>p.user_id===m.sender_id)?.public_code||'conta')}`} · ${escapeHTML(formatDate(m.created_at))}</div><div class="private-message-body">${escapeHTML(m.body).replace(/\n/g,'<br>')}</div>${m.sender_id!==state.user.id?`<div class="private-message-actions"><button class="btn ghost btn-small" type="button" data-report-content="private_message" data-report-id="${escapeHTML(m.id)}">Denunciar</button></div>`:''}</div>`).join('') || '<div class="private-chat-empty compact"><p>A conversa está pronta. Mande a primeira mensagem.</p></div>';
     form.classList.remove('hidden');
     thread.scrollTop=thread.scrollHeight;
@@ -2367,6 +2391,7 @@
       state.privateChatData = data || {conversations:[],incoming_requests:[],outgoing_requests:[]};
       renderPrivateRequests(state.privateChatData);
       renderPrivateConversationList(state.privateChatData.conversations||[]);
+      renderPrivateBlockedUsers(state.privateChatData.blocked_users||[]);
       const list=state.privateChatData.conversations||[];
       const preferred=preferredId || state.privateSelectedConversationId;
       state.privateSelectedConversationId = list.some(c=>String(c.id)===String(preferred)) ? preferred : (list[0]?.id||null);
@@ -2385,6 +2410,49 @@
 
   async function respondPrivateRequest(requestId,accept) {
     try{const {data,error}=await state.supabase.rpc('cae_respond_private_chat_request',{p_request_id:requestId,p_accept:accept});if(error)throw error;toast(accept?'Convite aceito.':'Convite recusado.');await loadPrivateChatData(data?.conversation_id||null);}catch(error){console.error('PRIVATE REQUEST RESPOND',error);toast(errorMessage(error),'error');}
+  }
+
+  async function closePrivateConversation(conversationId) {
+    if (!state.user || !conversationId) return;
+    if (!window.confirm('Encerrar esta conversa? Ela será encerrada para as duas pessoas e não aceitará novas mensagens. O histórico poderá continuar disponível para a equipe em verificações de segurança.')) return;
+    try {
+      const { error } = await state.supabase.rpc('cae_close_private_conversation', { p_conversation_id: conversationId });
+      if (error) throw error;
+      if (String(state.privateSelectedConversationId) === String(conversationId)) state.privateSelectedConversationId = null;
+      toast('Conversa encerrada.');
+      await loadPrivateChatData();
+    } catch (error) {
+      console.error('PRIVATE CHAT CLOSE', error);
+      toast(errorMessage(error), 'error');
+    }
+  }
+
+  async function blockPrivateChatUser(userId) {
+    if (!state.user || !userId) return;
+    if (!window.confirm('Bloquear esta pessoa? Ela não poderá enviar convites privados para você. Qualquer conversa ativa entre vocês será encerrada. Você poderá desbloquear depois.')) return;
+    try {
+      const { error } = await state.supabase.rpc('cae_block_private_chat_user', { p_blocked_user_id: userId });
+      if (error) throw error;
+      state.privateSelectedConversationId = null;
+      toast('Pessoa bloqueada. Convites privados entre vocês foram desativados.');
+      await loadPrivateChatData();
+    } catch (error) {
+      console.error('PRIVATE CHAT BLOCK', error);
+      toast(errorMessage(error), 'error');
+    }
+  }
+
+  async function unblockPrivateChatUser(userId) {
+    if (!state.user || !userId) return;
+    try {
+      const { error } = await state.supabase.rpc('cae_unblock_private_chat_user', { p_blocked_user_id: userId });
+      if (error) throw error;
+      toast('Pessoa desbloqueada. Ela poderá enviar convites novamente.');
+      await loadPrivateChatData(state.privateSelectedConversationId);
+    } catch (error) {
+      console.error('PRIVATE CHAT UNBLOCK', error);
+      toast(errorMessage(error), 'error');
+    }
   }
 
   async function sendPrivateMessage(event) {
@@ -4124,6 +4192,9 @@
       if(button.matches('#notifications-mark-read')){await markAllNotificationsRead();return;}
       if(button.matches('[data-open-notification]')){await openNotification(button.dataset.openNotification);return;}
       if(button.matches('[data-private-request-action]')){await respondPrivateRequest(button.dataset.privateRequestId,button.dataset.privateRequestAction==='accept');return;}
+      if(button.matches('[data-close-private-conversation]')){await closePrivateConversation(button.dataset.closePrivateConversation);return;}
+      if(button.matches('[data-block-private-user]')){await blockPrivateChatUser(button.dataset.blockPrivateUser);return;}
+      if(button.matches('[data-unblock-private-user]')){await unblockPrivateChatUser(button.dataset.unblockPrivateUser);return;}
       if(button.matches('[data-private-conversation-id]')){state.privateSelectedConversationId=button.dataset.privateConversationId;await loadPrivateChatData(state.privateSelectedConversationId);return;}
       if(button.matches('#private-chat-request')){await requestPrivateChat();return;}
       if(button.matches('[data-reply-vent]')){openPrivateReplyModal(button.dataset.replyVent,button.dataset.replyCode);return;}
