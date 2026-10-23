@@ -2279,6 +2279,40 @@
     await loadNotifications();
   }
 
+  async function deleteReadNotifications() {
+    if (!state.user || !state.supabase) return;
+    const hasRead = state.notifications.some(item => Boolean(item.read_at));
+    if (!hasRead) return toast('Não há notificações lidas para excluir.', 'error');
+    if (!window.confirm('Excluir todas as notificações lidas? As não lidas serão mantidas. Esta ação não pode ser desfeita.')) return;
+
+    const button = $('notifications-delete-read');
+    setBusy(button, true, 'Excluindo...');
+    try {
+      const results = await Promise.all([
+        state.supabase.from(TABLE.notifications)
+          .delete()
+          .eq('user_id', state.user.id)
+          .not('read_at', 'is', null),
+        ...(isStaff() ? [
+          state.supabase.from('cae_admin_notifications')
+            .delete()
+            .eq('user_id', state.user.id)
+            .not('read_at', 'is', null)
+        ] : [])
+      ]);
+      const failed = results.find(result => result.error);
+      if (failed?.error) throw failed.error;
+      await loadNotifications();
+      toast('Todas as notificações lidas foram excluídas.');
+    } catch (error) {
+      console.error('DELETE READ NOTIFICATIONS', error);
+      toast(errorMessage(error), 'error');
+      await loadNotifications();
+    } finally {
+      setBusy(button, false);
+    }
+  }
+
   async function openNotification(id) {
     const notification = state.notifications.find(n => String(n.id) === String(id));
     if (!notification) return;
@@ -4220,6 +4254,7 @@
       if(button.matches('[data-open-admin-notification]')){await openAdminNotification(button.dataset.openAdminNotification);return;}
       if(button.matches('#notifications-button')){openNotificationsPanel();return;}
       if(button.matches('#notifications-mark-read')){await markAllNotificationsRead();return;}
+      if(button.matches('#notifications-delete-read')){await deleteReadNotifications();return;}
       if(button.matches('[data-open-notification]')){await openNotification(button.dataset.openNotification);return;}
       if(button.matches('[data-private-request-action]')){await respondPrivateRequest(button.dataset.privateRequestId,button.dataset.privateRequestAction==='accept');return;}
       if(button.matches('[data-close-private-conversation]')){await closePrivateConversation(button.dataset.closePrivateConversation);return;}
