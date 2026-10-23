@@ -2281,8 +2281,6 @@
 
   async function deleteReadNotifications() {
     if (!state.user || !state.supabase) return;
-    const hasRead = state.notifications.some(item => Boolean(item.read_at));
-    if (!hasRead) return toast('Não há notificações lidas para excluir.', 'error');
     if (!window.confirm('Excluir todas as notificações lidas? As não lidas serão mantidas. Esta ação não pode ser desfeita.')) return;
 
     const button = $('notifications-delete-read');
@@ -2292,18 +2290,23 @@
         state.supabase.from(TABLE.notifications)
           .delete()
           .eq('user_id', state.user.id)
-          .not('read_at', 'is', null),
+          .not('read_at', 'is', null)
+          .select('id'),
         ...(isStaff() ? [
           state.supabase.from('cae_admin_notifications')
             .delete()
             .eq('user_id', state.user.id)
             .not('read_at', 'is', null)
+            .select('id')
         ] : [])
       ]);
       const failed = results.find(result => result.error);
       if (failed?.error) throw failed.error;
+      const deletedCount = results.reduce((total, result) => total + (result.data?.length || 0), 0);
       await loadNotifications();
-      toast('Todas as notificações lidas foram excluídas.');
+      toast(deletedCount
+        ? `${deletedCount} ${deletedCount === 1 ? 'notificação lida excluída' : 'notificações lidas excluídas'}.`
+        : 'Não havia notificações lidas para excluir.');
     } catch (error) {
       console.error('DELETE READ NOTIFICATIONS', error);
       toast(errorMessage(error), 'error');
