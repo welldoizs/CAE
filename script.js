@@ -75,6 +75,7 @@
     publicVoiceFilter: 'anonymized',
     lastHydratedAccessToken: null,
     chatLoading: false,
+    chatReloadQueued: false,
     chatCooldownUntil: 0,
     chatCooldownTimer: null,
     chatRulesPendingSend: false,
@@ -89,6 +90,8 @@
     adminVentFilter: 'free',
     reportedMessageIds: new Set(),
     privateChatData: { conversations: [], incoming_requests: [], outgoing_requests: [] },
+    privateChatLoading: false,
+    privateChatReloadQueued: false,
     privateSelectedConversationId: null,
     notifications: [],
     notificationsOpen: false,
@@ -1838,7 +1841,11 @@
   }
 
   async function loadChat() {
-    if (!state.user || !state.supabase || state.chatLoading) return;
+    if (!state.user || !state.supabase) return;
+    if (state.chatLoading) {
+      state.chatReloadQueued = true;
+      return;
+    }
     const box = $('chat-messages');
     if (!box) return;
     state.chatLoading = true;
@@ -1855,7 +1862,22 @@
       console.error('CHAT LOAD', error);
       box.innerHTML = '';
       setStatus('chat-error', errorMessage(error));
-    } finally { state.chatLoading = false; }
+    } finally {
+      state.chatLoading = false;
+      if (state.chatReloadQueued) {
+        state.chatReloadQueued = false;
+        window.setTimeout(() => loadChat(), 0);
+      }
+    }
+  }
+
+  function queueChatReload() {
+    if (state.chatLoading) {
+      state.chatReloadQueued = true;
+      return;
+    }
+    window.clearTimeout(queueChatReload.timer);
+    queueChatReload.timer = window.setTimeout(() => loadChat(), 120);
   }
 
   function renderChat(messages) {
@@ -2334,6 +2356,12 @@
 
   async function loadPrivateChatData(preferredId=null) {
     if(!state.user||!state.supabase)return;
+    if(state.privateChatLoading){
+      state.privateChatReloadQueued=true;
+      if(preferredId) state.privateSelectedConversationId=preferredId;
+      return;
+    }
+    state.privateChatLoading=true;
     try{
       const {data,error}=await state.supabase.rpc('cae_get_my_private_chat_data');if(error)throw error;
       state.privateChatData = data || {conversations:[],incoming_requests:[],outgoing_requests:[]};
@@ -2346,6 +2374,13 @@
       renderPrivateThread(selected||null);
       refreshIcons();
     }catch(error){console.error('PRIVATE CHAT LOAD',error);$('private-chat-thread')?.replaceChildren();toast(`Conversas privadas: ${errorMessage(error)}`,'error');}
+    finally{
+      state.privateChatLoading=false;
+      if(state.privateChatReloadQueued){
+        state.privateChatReloadQueued=false;
+        window.setTimeout(()=>loadPrivateChatData(state.privateSelectedConversationId),0);
+      }
+    }
   }
 
   async function respondPrivateRequest(requestId,accept) {
@@ -2391,7 +2426,7 @@
     if (!state.supabase || !state.user) return;
     if (state.realtime) state.supabase.removeChannel(state.realtime);
     state.realtime = state.supabase.channel(`cae-${state.user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.chat }, () => loadChat())
+      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.chat }, () => queueChatReload())
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.posts }, () => queueMuralReload())
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.announcements }, () => queueMuralReload())
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.events }, () => queueMuralReload())
@@ -2400,10 +2435,12 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.pollVotes }, () => queueMuralReload())
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.vents }, () => { loadPublicVents(); if (isStaff()) loadAdmin(); if (isAdmin()) loadAdminPrivateHistory(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.support }, () => { loadSupportChat(); if (isStaff()) loadAdminSupport(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.notifications }, () => { loadNotifications(); if (state.currentView === 'private-conversations-view' && state.privateSelectedConversationId) loadPrivateChatData(state.privateSelectedConversationId); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.notifications }, (payload) => { loadNotifications(); const notification = payload?.new || payload?.old; if (state.currentView === 'private-conversations-view' && notification?.type !== 'private_message') loadPrivateChatData(state.privateSelectedConversationId); })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'cae_admin_notifications', filter: `user_id=eq.${state.user.id}` }, () => { if (isStaff()) loadNotifications(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.privateMessages }, () => { if (state.currentView === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.privateRequests }, () => { if (state.currentView === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId); loadNotifications(); })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: TABLE.privateMessages }, () => { if (state.currentView === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId); })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: TABLE.privateMessages }, () => { if (state.currentView === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId); })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: TABLE.privateRequests }, () => { if (state.currentView === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId); loadNotifications(); })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: TABLE.privateRequests }, () => { if (state.currentView === 'private-conversations-view') loadPrivateChatData(state.privateSelectedConversationId); loadNotifications(); })
       .subscribe(status => console.debug('CAE Realtime:', status));
   }
 
