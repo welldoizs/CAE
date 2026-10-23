@@ -4595,3 +4595,64 @@ input:focus,textarea:focus,select:focus {
   #home-view .home-help-actions .home-simple-note { flex-basis: 100%; }
   #home-view .home-help-actions > .btn { width: 100%; }
 }
+
+
+/* Controles de encerramento e bloqueio das conversas privadas */
+.private-thread-person {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.private-thread-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.private-blocked-card > p {
+  margin: 7px 0 12px;
+  font-size: .88rem;
+}
+
+.private-blocked-list {
+  display: grid;
+  gap: 8px;
+}
+
+.private-blocked-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #fff;
+}
+
+.private-blocked-item strong {
+  color: var(--ink-2);
+  font-size: .92rem;
+}
+
+@media (max-width: 700px) {
+  .private-thread-person {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .private-thread-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .private-thread-actions .btn {
+    flex: 1 1 auto;
+  }
+}
