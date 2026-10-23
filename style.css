@@ -2719,6 +2719,30 @@ input:focus,textarea:focus,select:focus {
   margin: 4px 0 0;
 }
 
+.notification-panel-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.notification-delete-read {
+  color: var(--danger, #b42318);
+}
+
+@media (max-width: 480px) {
+  .notification-panel-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .notification-panel-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
 .btn-small {
   padding: 8px 10px;
   font-size: .78rem;
