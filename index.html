@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="style.css?v=48">
+  <link rel="stylesheet" href="style.css?v=49">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   <link rel="preconnect" href="https://challenges.cloudflare.com">
@@ -21,30 +21,34 @@
     <div class="auth-shell">
       <div class="auth-hero">
         <div class="auth-visual" aria-hidden="true">
-          <div class="visual-glow visual-glow-a"></div>
-          <div class="visual-glow visual-glow-b"></div>
-          <div class="visual-card visual-card-main">
-            <span class="visual-card-kicker">CAE · apoio estudantil</span>
-            <strong>Informação, conversa<br>e acolhimento.</strong>
-            <span class="visual-card-line"></span>
-            <span class="visual-card-small">privacidade · escuta · comunidade</span>
-          </div>
-          <div class="visual-card visual-card-float">
-            <i data-lucide="message-circle"></i>
-            <span>Você pode começar<br>pelo que conseguir.</span>
-          </div>
-          <div class="visual-orbit visual-orbit-1"></div>
-          <div class="visual-orbit visual-orbit-2"></div>
+          <svg class="auth-illustration" viewBox="0 0 520 260" xmlns="http://www.w3.org/2000/svg" focusable="false">
+            <rect x="42" y="18" width="412" height="224" rx="18" fill="#fff" stroke="#c7deea" stroke-width="2"/>
+            <path d="M42 54h412" stroke="#e3eff5" stroke-width="2"/>
+            <circle cx="65" cy="36" r="4" fill="#2d8ec7"/><circle cx="80" cy="36" r="4" fill="#a9c7d8"/><circle cx="95" cy="36" r="4" fill="#a9c7d8"/>
+            <text x="66" y="82" fill="#165a83" font-family="DM Sans, sans-serif" font-size="11" font-weight="700" letter-spacing="1.5">CAE · PARA ESTUDANTES</text>
+            <text x="66" y="119" fill="#16324a" font-family="Fraunces, Georgia, serif" font-size="25" font-weight="700">O que você encontra aqui</text>
+            <path d="M66 136h360" stroke="#d9e8f1" stroke-width="1.5"/>
+            <circle cx="82" cy="169" r="13" fill="#e5f5ff"/>
+            <path d="M76 167h12M76 172h8" stroke="#165a83" stroke-width="2" stroke-linecap="round"/>
+            <text x="108" y="167" fill="#16324a" font-family="DM Sans, sans-serif" font-size="15" font-weight="700">Desabafos</text>
+            <text x="108" y="184" fill="#657b8d" font-family="DM Sans, sans-serif" font-size="11">Texto, perguntas guiadas ou áudio</text>
+            <circle cx="82" cy="213" r="13" fill="#e5f5ff"/>
+            <path d="M76 210c0-2 2-4 4-4h5c3 0 5 2 5 4s-2 4-5 4h-3l-4 3v-3c-1-1-2-2-2-4Z" fill="none" stroke="#165a83" stroke-width="1.8" stroke-linejoin="round"/>
+            <text x="108" y="211" fill="#16324a" font-family="DM Sans, sans-serif" font-size="15" font-weight="700">Conversa e orientação</text>
+            <text x="108" y="228" fill="#657b8d" font-family="DM Sans, sans-serif" font-size="11">Chat, código público e contatos de apoio</text>
+            <path d="M430 186c0-15 12-27 27-27s27 12 27 27-12 27-27 27h-8l-14 9 3-15c-5-5-8-12-8-21Z" fill="#165a83"/>
+            <circle cx="447" cy="186" r="2.8" fill="#fff"/><circle cx="457" cy="186" r="2.8" fill="#fff"/><circle cx="467" cy="186" r="2.8" fill="#fff"/>
+          </svg>
         </div>
         <div class="auth-copy">
           <div class="brand">
 <span class="brand-mark"><i data-lucide="heart-handshake"></i></span><span>CAE</span>
 </div>
-          <h1>Você não precisa passar por tudo sozinho.</h1>
-          <p>Um espaço estudantil para conversar, desabafar, compartilhar ideias e encontrar caminhos de apoio.</p>
+          <h1>Você pode escrever, conversar e pedir orientação.</h1>
+          <p>O CAE reúne desabafos, conversas e informações de apoio para estudantes.</p>
         </div>
         <div class="auth-note">
-<i data-lucide="shield-check"></i><span>Use um apelido público no CAE. Seu e-mail permanece ligado à sua conta, mas não aparece nas conversas.</span>
+<i data-lucide="shield-check"></i><span>Nas conversas, você aparece pelo código público. Seu e-mail fica associado à conta e não é exibido para outros estudantes.</span>
 </div>
       </div>
       <div class="auth-panel">
@@ -54,7 +58,7 @@
         </div>
 
         <form id="login-form">
-          <h2>Bem-vindo de volta</h2>
+          <h2>Entre na sua conta</h2>
           <p class="muted">Entre para acessar o espaço do CAE.</p>
           <div class="field">
 <div class="field-label-row">
@@ -76,7 +80,7 @@
 
         <form id="signup-form" class="hidden">
           <h2>Crie sua conta</h2>
-          <p class="muted">Seu nome público é gerado automaticamente para preservar sua privacidade.</p>
+          <p class="muted">Ao criar a conta, você recebe um código público para usar nas conversas sem mostrar seu nome real.</p>
           <div class="field">
 <div class="field-label-row">
 <label for="signup-email">E-mail escolar</label><button class="help-question" type="button" data-site-help data-help-title="E-mail escolar" data-help-text="Use o e-mail da escola para entrar ou criar sua conta." data-help-detail="O endereço precisa terminar exatamente com @escola.pr.gov.br. E-mails pessoais, como Gmail ou Outlook, não são aceitos.">?</button>
@@ -129,13 +133,13 @@
 </div>
 <div class="notification-panel-actions">
 <button class="btn ghost btn-small" id="notifications-mark-read" type="button">Marcar todas como lidas</button>
-<button class="btn ghost btn-small notification-delete-read" id="notifications-delete-read" type="button">Excluir lidas</button>
+<button class="btn ghost btn-small notification-delete-read" id="notifications-delete-read" type="button" aria-label="Excluir todas as notificações lidas" title="Apaga apenas notificações já lidas">Excluir lidas</button>
 </div>
 </div>
               <div id="notifications-list" class="notifications-list"><div class="notification-empty">Nenhuma notificação nova.</div></div>
             </div>
           </div>
-          <span class="session-pill"><span class="session-dot"></span>Conta protegida</span>
+          <span class="session-pill"><span class="session-dot"></span>Sessão ativa</span>
           <button class="btn secondary" id="logout-button" type="button"><i data-lucide="log-out"></i><span class="desktop-only">Sair</span></button>
         </div>
       </div>
@@ -146,8 +150,8 @@
         <div class="home-simple-head">
           <div>
             <div class="eyebrow">Centro de Acolhimento Estudantil</div>
-            <h2>Um espaço para você.</h2>
-            <p class="muted">Desabafe, converse, acompanhe o mural ou encontre ajuda quando precisar.</p>
+            <h2>Por onde você quer começar?</h2>
+            <p class="muted">Escreva um desabafo, converse no chat ou consulte o mural e os contatos de apoio.</p>
           </div>
           <div class="actions home-simple-actions">
             <button class="btn primary" type="button" data-open-view="desabafo-view"><i data-lucide="pen-line"></i>Desabafar</button>
@@ -158,9 +162,9 @@
         <section class="tutorial-video-card" aria-labelledby="tutorial-video-title">
           <div class="tutorial-video-screen">
             <div class="tutorial-video-placeholder">
-              <span class="tutorial-play"><i data-lucide="play"></i></span>
+              <span class="tutorial-play"><i data-lucide="video"></i></span>
               <strong id="tutorial-video-title">Tutorial do CAE</strong>
-              <span>O vídeo de apresentação será colocado aqui.</span>
+              <span>O vídeo de apresentação ainda está em preparação.</span>
             </div>
           </div>
         </section>
@@ -171,7 +175,7 @@
         </div>
         <div class="home-help-actions">
           <div class="notice home-simple-note"><strong>Precisa de apoio agora?</strong><br>O CAE não é um serviço de emergência. Consulte os canais adequados na página Ajuda.</div>
-          <button class="btn primary" type="button" data-open-view="help-view"><i data-lucide="life-buoy"></i>Preciso de ajuda agora</button>
+          <button class="btn primary" type="button" data-open-view="help-view"><i data-lucide="life-buoy"></i>Ver contatos de ajuda</button>
         </div>
       </section>
 
@@ -179,7 +183,7 @@
         <div class="section-head"><div>
 <div class="eyebrow">Conversa estudantil</div>
 <h2>Chat</h2>
-<p class="muted">Converse pelo seu código público e respeite as outras pessoas.</p>
+<p class="muted">Suas mensagens aparecem com o código público, não com seu nome real.</p>
 </div></div>
         <div class="chat-layout">
           <div class="card">
@@ -196,8 +200,8 @@
           </div>
           <aside class="card">
             <div class="eyebrow">Convivência</div>
-            <h3>Faça do chat um lugar seguro.</h3>
-            <p class="muted">Proteja seus dados. Denuncie mensagens que desrespeitem as regras.</p>
+            <h3>Cuide dos seus dados ao conversar.</h3>
+            <p class="muted">Não envie nome completo, telefone ou endereço. Use Denunciar para sinalizar mensagens que desrespeitem as regras.</p>
             <div class="notice">
 <b>O chat não substitui atendimento profissional.</b><br><span class="muted">Para apoio imediato, veja a página Ajuda.</span>
 </div>
@@ -246,8 +250,8 @@
 <span class="cae-muted">Privada</span>
 </div>
             <div id="private-chat-thread" class="private-chat-thread"><div class="private-chat-empty">
-<i data-lucide="lock-keyhole"></i><h3>Suas conversas aparecem aqui.</h3>
-<p class="muted">Aceite um convite recebido ou abra uma conversa já autorizada.</p>
+<i data-lucide="lock-keyhole"></i><h3>Nenhuma conversa selecionada.</h3>
+<p class="muted">Aceite um convite ou escolha uma conversa da lista.</p>
 </div></div>
             <form id="private-chat-form" class="chat-form hidden">
 <textarea id="private-chat-input" maxlength="3000" placeholder="Escreva uma mensagem privada..."></textarea><button class="btn primary" id="private-chat-send" type="submit"><i data-lucide="send"></i>Enviar</button>
@@ -260,7 +264,7 @@
       <section id="desabafo-view" class="view">
         <div class="section-head desabafo-page-head">
           <div>
-            <div class="eyebrow">Seu espaço</div>
+            <div class="eyebrow">Desabafo e escrita</div>
             <h2>Desabafos</h2>
             <p class="muted">Leia ou envie um desabafo. Você escolhe se será público ou privado.</p>
           </div>
@@ -268,7 +272,7 @@
         </div><section class="vent-compose-section desabafo-compose-panel" aria-labelledby="vent-compose-title">
           <div class="section-head vent-compose-section-head">
             <div>
-<div class="eyebrow">Seu espaço</div>
+<div class="eyebrow">Novo desabafo</div>
 <h3 id="vent-compose-title">Escrever um desabafo</h3>
 <p class="muted">Escolha como escrever e quem poderá ver.</p>
 </div>
@@ -298,8 +302,8 @@
 
         <div id="compose-free" class="compose card hidden">
           <div class="eyebrow">Texto livre</div>
-<h3>Escreva do seu jeito.</h3>
-          <textarea id="free-text" maxlength="2000" placeholder="Pode começar por “Hoje eu...”"></textarea>
+<h3>O que você quer registrar?</h3>
+          <textarea id="free-text" maxlength="2000" placeholder="Escreva o que aconteceu ou o que está sentindo."></textarea>
           <div class="section-head">
 <span id="free-counter" class="cae-muted">0 / 2000</span><button class="btn primary" id="send-free" type="button"><i data-lucide="send"></i>Enviar</button>
 </div>
@@ -324,7 +328,7 @@
           <div class="eyebrow" id="guided-progress">PERGUNTA 1 DE 4</div>
           <div class="progress"><span id="guided-progress-bar" style="width:25%"></span></div>
           <h3 id="guided-question"></h3>
-          <textarea id="guided-answer" maxlength="1200" placeholder="Escreva o que vier à mente..."></textarea>
+          <textarea id="guided-answer" maxlength="1200" placeholder="Digite sua resposta aqui."></textarea>
           <div class="actions">
 <button class="btn secondary" id="guided-back" type="button">Voltar</button><button class="btn primary" id="guided-next" type="button">Próxima</button>
 </div>
@@ -346,7 +350,7 @@
 <h3>Gravação de áudio</h3>
           <div class="audio-anonymity-notice">
 <span class="vent-tab-icon"><i data-lucide="mic"></i></span><div>
-<strong>Mude o som da sua voz</strong><p id="audio-anonymity-text">Escolha um efeito para o áudio público.</p>
+<strong>Escolha um efeito para a gravação</strong><p id="audio-anonymity-text">Escolha um efeito para o áudio público.</p>
 </div>
 <button class="help-question" type="button" data-site-help data-help-title="Filtros de voz" data-help-text="Teste um efeito antes de enviar o áudio." data-help-detail="Escolha um efeito, grave até cinco segundos no botão de teste e ouça como ficou. O filtro muda a voz, mas não garante anonimato total. Evite dizer seu nome ou outros dados pessoais.">?</button>
 </div>
@@ -415,7 +419,7 @@
             <div>
               <div class="eyebrow">Comunidade</div>
               <h3 id="public-vent-title">Desabafos públicos</h3>
-              <p class="muted">Conteúdos aprovados pela moderação, separados por tipo.</p>
+              <p class="muted">Desabafos públicos que passaram pela revisão da equipe.</p>
             </div>
           </div>
           <div class="tabs vent-type-tabs public-vent-tabs" role="tablist" aria-label="Tipos de desabafos públicos">
@@ -432,7 +436,7 @@
         <div class="section-head"><div>
 <div class="eyebrow">Comunidade</div>
 <h2>Mural</h2>
-<p class="muted">Veja o que está acontecendo no CAE e participe quando fizer sentido.</p>
+<p class="muted">Avisos, eventos, publicações, enquetes e podcasts da comunidade escolar.</p>
 </div></div>
         <div class="field mural-search-field"><label for="mural-search">Buscar no mural</label><input id="mural-search" type="search" placeholder="Avisos, eventos, publicações, enquetes e podcasts..." autocomplete="off"></div>
         <div id="mural-search-results" class="admin-list mural-search-results hidden" aria-live="polite"></div>
@@ -475,7 +479,7 @@
 <p class="muted">Ouça conversas sobre psicologia, emoções e saúde mental.</p>
 </div>
           <div class="card podcast-share-card"><div class="field-label-row"><div><div class="eyebrow">Compartilhe interesses</div><h3>Recomende um podcast</h3></div><button class="help-question" type="button" data-site-help data-help-title="Compartilhar podcasts" data-help-text="Envie uma recomendação. A equipe revisa antes de publicar." data-help-detail="Recomende podcasts de qualquer assunto: cultura, humor, ciência, histórias, jogos, educação e outros. A equipe revisa antes de publicar. Seu nome não aparece para outros estudantes; a equipe mantém um registro interno para segurança.">?</button></div>
-            <p class="muted">Envie podcasts de qualquer tema. Sua recomendação aparece sem seu nome após a aprovação.</p>
+            <p class="muted">Indique um podcast de qualquer tema. Se for aprovado, ele aparece sem seu nome.</p>
             <form id="podcast-share-form"><div class="field"><label for="podcast-share-title">Nome do podcast ou episódio</label><input id="podcast-share-title" maxlength="120" required placeholder="Nome do podcast"></div>
               <div class="grid-2"><div class="field"><label for="podcast-share-category">Assunto</label><select id="podcast-share-category"><option>Geral</option><option>Cultura</option><option>Ciência</option><option>Educação</option><option>Entretenimento</option><option>Saúde e bem-estar</option></select></div><div class="field"><label for="podcast-share-url">Link para ouvir</label><input id="podcast-share-url" type="url" maxlength="1000" required placeholder="https://..."></div></div>
               <div class="field"><label for="podcast-share-description">Por que recomenda? (opcional)</label><textarea id="podcast-share-description" maxlength="500" placeholder="O que achou interessante?"></textarea></div><div id="podcast-share-status" role="status" aria-live="polite"></div><button class="btn primary" type="submit"><i data-lucide="send"></i>Enviar recomendação anônima</button>
@@ -503,7 +507,7 @@
       </section>
 
       <section id="history-view" class="view">
-        <div class="section-head"><div><div class="eyebrow">Somente você</div><h2>Seu histórico</h2><p class="muted">Seus desabafos, registros e itens salvos.</p></div><button class="help-question" type="button" data-site-help data-help-title="Seu histórico" data-help-text="Veja seus desabafos, registros e conteúdos salvos." data-help-detail="Aqui ficam seus desabafos enviados, seu diário privado e os conteúdos que você salvou. Use as abas para alternar entre eles. Só você pode consultar seus registros pessoais.">?</button></div>
+        <div class="section-head"><div><div class="eyebrow">Registros pessoais</div><h2>Seu histórico</h2><p class="muted">Desabafos enviados, registros do diário e itens salvos.</p></div><button class="help-question" type="button" data-site-help data-help-title="Seu histórico" data-help-text="Veja seus desabafos, registros do diário e conteúdos salvos." data-help-detail="O diário e os itens salvos são pessoais. Desabafos privados podem ser consultados por administradores em situações de segurança.">?</button></div>
         <div class="tabs vent-type-tabs history-tabs" role="tablist" aria-label="Seções do histórico">
           <button class="tab vent-tab active" id="history-tab-vents" type="button" data-history-filter="vents" role="tab" aria-controls="history-vents-panel" aria-selected="true" tabindex="0">Desabafos</button>
           <button class="tab vent-tab" id="history-tab-mood" type="button" data-history-filter="mood" role="tab" aria-controls="history-mood-panel" aria-selected="false" tabindex="-1">Diário de bem-estar</button>
@@ -773,7 +777,7 @@
       </section>
 
       <section id="privacy-view" class="view">
-        <div class="section-head"><div><div class="eyebrow">Transparência</div><h2>Central de privacidade</h2><p class="muted">Entenda quais informações o CAE usa e como o anonimato funciona.</p></div><button class="btn secondary" type="button" data-open-view="account-view">Voltar à conta</button></div>
+        <div class="section-head"><div><div class="eyebrow">Transparência</div><h2>Central de privacidade</h2><p class="muted">Veja quais dados aparecem para outros estudantes e quem pode acessar seus registros.</p></div><button class="btn secondary" type="button" data-open-view="account-view">Voltar à conta</button></div>
         <article class="card privacy-info-card">
           <h3>O que identifica sua conta?</h3>
           <p>Seu e-mail não aparece para outros estudantes.</p>
@@ -782,16 +786,16 @@
           <p>Conteúdos públicos só aparecem depois da aprovação. Evite incluir dados pessoais.</p>
           <details class="site-more"><summary>Mais detalhes</summary><p>Publicações e desabafos enviados como públicos só aparecem na área pública depois da aprovação da moderação. Antes de publicar, confira o texto e evite incluir nome completo, endereço, telefone, escola específica ou outros dados que possam identificar você.</p></details>
           <h3>O que é privado?</h3>
-          <p>Seus registros privados não aparecem para outros estudantes. A equipe pode acessá-los por segurança.</p>
-          <details class="site-more"><summary>Mais detalhes</summary><p>Registros marcados como privados e mensagens de conversas privadas não são conteúdo público. A equipe pode ter acesso limitado para moderação e verificação de segurança, conforme a estrutura e as permissões do CAE.</p></details>
+          <p>Desabafos e conversas privadas não aparecem para outros estudantes. Administradores podem consultá-los em situações de segurança.</p>
+          <details class="site-more"><summary>Mais detalhes</summary><p>Desabafos marcados como privados e mensagens de conversas privadas não aparecem para outros estudantes. Administradores podem consultá-los para moderação e verificação de segurança.</p></details>
           <h3>Áudios e anonimato</h3>
           <p>Filtros mudam a voz, mas não garantem anonimato.</p>
           <details class="site-more"><summary>Mais detalhes</summary><p>Filtros de voz alteram características do áudio, mas não garantem anonimato completo. Voz, contexto e detalhes mencionados podem identificar alguém. Pense nisso antes de enviar uma gravação.</p></details>
           <h3>Seus controles</h3>
           <p>Você pode ver seu histórico, apagar desabafos e pedir a exclusão da conta.</p>
           <details class="site-more"><summary>Mais detalhes</summary><p>Você pode consultar seu histórico, excluir seus próprios desabafos e solicitar a exclusão da conta. A solicitação de exclusão precisa ser processada pela equipe; não é instantânea.</p></details>
-          <h3>Uma observação importante</h3>
-          <p>A instituição responsável ainda deve publicar a política oficial de privacidade.</p>
+          <h3>Política de privacidade oficial</h3>
+          <p>A política da instituição responsável ainda precisa ser publicada.</p>
           <details class="site-more"><summary>Mais detalhes</summary><p>Esta página é uma explicação funcional do CAE, não substitui a política de privacidade oficial da instituição responsável. A escola ou entidade mantenedora deve revisar e publicar a política completa, incluindo responsável pelo tratamento, finalidades, prazos de retenção, compartilhamentos e canal para exercer direitos previstos na LGPD.</p></details>
         </article>
       </section>
@@ -801,7 +805,7 @@
           <div>
 <div class="eyebrow">Equipe CAE</div>
 <h2>Central da equipe</h2>
-<p class="muted">Cada tarefa tem sua própria área. Entre na categoria certa e veja somente o que precisa ser feito.</p>
+<p class="muted">Use as abas para revisar desabafos, acompanhar denúncias e acessar as ferramentas da equipe.</p>
 </div>
         </div>
 
@@ -1302,6 +1306,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=56" defer></script>
+  <script src="script.js?v=57" defer></script>
 </body>
 </html>
