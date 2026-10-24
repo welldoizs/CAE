@@ -140,7 +140,7 @@
   };
 
   const $ = (id) => document.getElementById(id);
-  const $ = (selector) => [...document.querySelectorAll(selector)];
+  const $$ = (selector) => [...document.querySelectorAll(selector)];
 
   function applyTextSizePreference(value) {
     const size = ['normal', 'large', 'larger'].includes(value) ? value : 'normal';
