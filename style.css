@@ -4823,8 +4823,8 @@ body { background: var(--paper); }
   padding: 0 5px;
   place-items: center;
   border-radius: 10px;
-  background: #f4e8e8;
-  color: #8f3030;
+  background: #e8eef2;
+  color: #294c66;
   font-size: .7rem;
   font-weight: 800;
 }
@@ -4858,4 +4858,13 @@ select:focus-visible {
   .home-shortcuts > button:last-child {
     border-bottom: 0;
   }
+}
+
+
+/* Estados selecionados usam uma cor sólida para manter a leitura discreta. */
+.vent-type-tabs .vent-tab.active,
+.admin-tab.active {
+  background: #165a83;
+  border-color: #165a83;
+  box-shadow: none;
 }
