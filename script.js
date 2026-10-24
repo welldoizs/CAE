@@ -2237,8 +2237,8 @@
     button.title = count === 0
       ? 'Não há notificações lidas para excluir.'
       : Number.isInteger(count)
-        ? `Exclui apenas as ${count} notificações lidas. As não lidas são mantidas.`
-        : 'Exclui apenas notificações lidas. As não lidas são mantidas.';
+        ? `Exclui somente as ${count} notificações lidas. As novas permanecem.`
+        : 'Exclui somente notificações lidas. As novas permanecem.';
     button.setAttribute('aria-label', Number.isInteger(count)
       ? `Excluir todas as notificações lidas: ${count}`
       : 'Excluir todas as notificações lidas');
@@ -2332,7 +2332,11 @@
 
   async function deleteReadNotifications() {
     if (!state.user || !state.supabase) return;
-    if (!window.confirm('Apagar as notificações que você já abriu? Isso não apaga mensagens nem conversas. As notificações não lidas serão mantidas. Esta ação não pode ser desfeita.')) return;
+    const readCount = state.notificationReadCount;
+    const confirmation = Number.isInteger(readCount)
+      ? `Apagar ${readCount} ${readCount === 1 ? 'notificação lida' : 'notificações lidas'}? As não lidas ficam. Mensagens e conversas não serão apagadas. Esta ação não pode ser desfeita.`
+      : 'Apagar as notificações lidas? As não lidas ficam. Mensagens e conversas não serão apagadas. Esta ação não pode ser desfeita.';
+    if (!window.confirm(confirmation)) return;
 
     const button = $('notifications-delete-read');
     setBusy(button, true, 'Excluindo...');
@@ -2646,7 +2650,7 @@
     list.innerHTML = data?.length ? data.map(row => {
       const staffActions = isStaff() ? `<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-content="1" data-content-type="announcement" data-content-id="${escapeHTML(row.id)}" data-content-label="este aviso">Excluir</button></div>` : '';
       return `<article class="card mural-searchable"><div class="eyebrow">Aviso · ${escapeHTML(formatDate(row.created_at))}</div><h3>${escapeHTML(getField(row,['title'],'Aviso'))}</h3><p>${escapeHTML(getField(row,['body'],'')).replace(/\n/g,'<br>')}</p><div class="actions">${bookmarkButtonHTML('announcement',row.id)}</div>${staffActions}</article>`;
-    }).join('') : '<div class="card mural-empty-state"><span class="mural-empty-icon"><i data-lucide="megaphone"></i></span><h3>Nenhum aviso por enquanto</h3><p class="muted">Quando a equipe compartilhar um aviso, ele aparecerá aqui.</p></div>';
+    }).join('') : '<div class="card mural-empty-state"><span class="mural-empty-icon"><i data-lucide="megaphone"></i></span><h3>A equipe ainda não publicou avisos.</h3><p class="muted">Quando um aviso for publicado, ele ficará disponível nesta aba.</p></div>';
   }
 
   async function loadEvents() {
@@ -2660,7 +2664,7 @@
       const date = getField(row,['event_date'],null); const time = String(getField(row,['event_time'],'')).slice(0,5);
       const staffActions = isStaff() ? `<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-content="1" data-content-type="event" data-content-id="${escapeHTML(row.id)}" data-content-label="este evento">Excluir</button></div>` : '';
       return `<article class="card mural-searchable"><div class="eyebrow">${escapeHTML(formatDateOnly(date))}${time ? ` · ${escapeHTML(time)}` : ''}</div><h3>${escapeHTML(getField(row,['title'],'Evento'))}</h3><p>${escapeHTML(getField(row,['description'],'')).replace(/\n/g,'<br>')}</p><p class="cae-muted">${escapeHTML(getField(row,['place'],'')).replace(/\n/g,'<br>')}</p><div class="actions"><button class="btn secondary btn-small" type="button" data-download-event="${escapeHTML(row.id)}"><i data-lucide="calendar-plus"></i>Adicionar ao calendário</button>${bookmarkButtonHTML('event',row.id)}</div>${staffActions}</article>`;
-    }).join('') : '<div class="card mural-empty-state"><span class="mural-empty-icon"><i data-lucide="calendar-days"></i></span><h3>Nenhum evento por enquanto</h3><p class="muted">Os próximos encontros e atividades da comunidade serão anunciados aqui.</p></div>';
+    }).join('') : '<div class="card mural-empty-state"><span class="mural-empty-icon"><i data-lucide="calendar-days"></i></span><h3>Não há eventos cadastrados.</h3><p class="muted">Os eventos publicados pela equipe aparecem nesta aba.</p></div>';
   }
 
   async function loadPosts() {
@@ -2752,7 +2756,7 @@
     if (error) throw error;
     updateMuralActivityBadge('polls', polls || []);
     if (!polls?.length) {
-      list.innerHTML = '<div class="card mural-empty-state"><span class="mural-empty-icon"><i data-lucide="vote"></i></span><h3>Nenhuma enquete por enquanto</h3><p class="muted">Quando houver uma votação, ela aparecerá aqui para você participar.</p></div>';
+      list.innerHTML = '<div class="card mural-empty-state"><span class="mural-empty-icon"><i data-lucide="vote"></i></span><h3>Não há enquetes disponíveis.</h3><p class="muted">Quando uma enquete for publicada, você poderá responder por aqui.</p></div>';
       return;
     }
     const ids = polls.map(p=>p.id);
@@ -2829,7 +2833,7 @@
       const visibleRows = (data || []).filter(row => row.status === 'approved' || row.user_id === state.user.id);
       updateMuralActivityBadge('podcasts', visibleRows);
       list.innerHTML = visibleRows.length ? visibleRows.map(row => communityPodcastCardHTML(row)).join('') :
-        '<div class="card"><p>Ainda não há recomendações. Você pode ser a primeira pessoa a compartilhar uma!</p></div>';
+        '<div class="card"><p>As indicações aprovadas aparecem aqui. Use o formulário acima para sugerir um episódio.</p></div>';
       refreshIcons();
     } catch (error) {
       console.error('COMMUNITY PODCASTS', error);
@@ -2999,7 +3003,7 @@
           feelings: 'Nenhum desabafo de “Como eu me sinto” foi aprovado ainda.',
           audio: 'Nenhum desabafo em áudio foi aprovado ainda.'
         }[state.publicVentFilter];
-        list.innerHTML=`<div class="public-vent-empty"><p>${escapeHTML(empty)}</p><p class="cae-muted">Quando houver conteúdo aprovado, ele aparecerá aqui.</p></div>`;
+        list.innerHTML=`<div class="public-vent-empty"><p>${escapeHTML(empty)}</p><p class="cae-muted">Esta lista mostra apenas desabafos aprovados pela equipe.</p></div>`;
         return;
       }
       list.innerHTML=data.map(vent=>{
@@ -3127,7 +3131,7 @@
       button.setAttribute('aria-selected',String(active));
     });
     const filtered=(data||[]).filter(vent=>String(vent.type||'free')===state.adminPrivateFilter);
-    if(!filtered.length){list.innerHTML='<div class="admin-private-empty"><h3>Nenhum desabafo nesta categoria</h3><p class="cae-muted">Quando houver registros privados deste tipo, eles aparecerão aqui.</p></div>';return;}
+    if(!filtered.length){list.innerHTML='<div class="admin-private-empty"><h3>Não há desabafos nesta categoria.</h3><p class="cae-muted">Tente outra categoria para consultar os registros disponíveis.</p></div>';return;}
     const grouped=new Map();
     filtered.forEach(vent=>{const key=publicName(vent.user_id);if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(vent);});
     list.innerHTML=[...grouped.entries()].map(([code,vents])=>{
@@ -3976,7 +3980,7 @@
       if (error) throw error;
       updateAdminReportCount('chat', reports?.length || 0);
       if (!reports?.length) {
-        list.innerHTML = '<div class="report-empty"><i data-lucide="check-circle-2"></i><div><strong>Nenhuma denúncia de chat pendente</strong><p>Quando alguém denunciar uma mensagem, ela aparecerá aqui.</p></div></div>';
+        list.innerHTML = '<div class="report-empty"><i data-lucide="check-circle-2"></i><div><strong>Não há denúncias de chat pendentes.</strong><p>As novas denúncias aparecerão aqui para análise.</p></div></div>';
         refreshIcons();
         return;
       }
