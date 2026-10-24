@@ -20,7 +20,7 @@ function verifyExistingChunks() {
     const prefix = modelName + '.part-';
     for (const name of manifest.parts) {
       if (typeof name !== 'string' || !name.startsWith(prefix) ||
-          !/^\\d{3}$/.test(name.slice(prefix.length))) return false;
+          !/^[0-9]{3}$/.test(name.slice(prefix.length))) return false;
       const partPath = path.join(voicesDir, name);
       if (!fs.existsSync(partPath)) return false;
       const size = fs.statSync(partPath).size;
