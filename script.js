@@ -96,6 +96,7 @@
     privateChatReloadQueued: false,
     privateSelectedConversationId: null,
     notifications: [],
+    notificationReadCount: null,
     notificationsOpen: false,
     adminNotifications: [],
     adminNotificationsOpen: false,
@@ -2226,6 +2227,23 @@
     button.setAttribute('aria-expanded', String(state.notificationsOpen));
   }
 
+  function updateNotificationDeleteButton() {
+    const button = $('notifications-delete-read');
+    if (!button) return;
+    const count = state.notificationReadCount;
+    const countLabel = $('notifications-read-count');
+    if (countLabel) countLabel.textContent = Number.isInteger(count) ? String(count) : '—';
+    button.disabled = count === 0;
+    button.title = count === 0
+      ? 'Não há notificações lidas para excluir.'
+      : Number.isInteger(count)
+        ? `Exclui apenas as ${count} notificações lidas. As não lidas são mantidas.`
+        : 'Exclui apenas notificações lidas. As não lidas são mantidas.';
+    button.setAttribute('aria-label', Number.isInteger(count)
+      ? `Excluir todas as notificações lidas: ${count}`
+      : 'Excluir todas as notificações lidas');
+  }
+
   async function loadNotifications() {
     if (!state.user || !state.supabase) return;
     try {
@@ -2249,6 +2267,31 @@
         ...adminRows
       ].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0,60);
 
+      // A lista visual é limitada às 60 mais recentes; a contagem consulta
+      // o total real para que o botão também considere notificações mais antigas.
+      const readCountQueries = [
+        state.supabase.from(TABLE.notifications)
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', state.user.id)
+          .not('read_at', 'is', null)
+      ];
+      if (isStaff()) {
+        readCountQueries.push(
+          state.supabase.from('cae_admin_notifications')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', state.user.id)
+            .not('read_at', 'is', null)
+        );
+      }
+      const readCountResults = await Promise.all(readCountQueries);
+      if (readCountResults.every(result => !result.error)) {
+        state.notificationReadCount = readCountResults.reduce((total, result) => total + (result.count || 0), 0);
+      } else {
+        state.notificationReadCount = null;
+        console.warn('NOTIFICATION READ COUNT', readCountResults.map(result => result.error).filter(Boolean));
+      }
+      updateNotificationDeleteButton();
+
       const unread = state.notifications.filter(n => !n.read_at).length;
       const badge = $('notifications-badge');
       if (badge) { badge.textContent = unread > 99 ? '99+' : String(unread); badge.classList.toggle('hidden', unread === 0 || !state.notificationsEnabled); }
@@ -2263,8 +2306,16 @@
   async function markNotificationRead(id, source = 'user') {
     if (!id || !state.user) return;
     const table = source === 'admin' && isStaff() ? 'cae_admin_notifications' : TABLE.notifications;
-    const { error } = await state.supabase.from(table).update({read_at:new Date().toISOString()}).eq('id',id).eq('user_id',state.user.id);
-    if (error) console.warn('NOTIFICATION READ', error);
+    const { error } = await state.supabase.from(table)
+      .update({ read_at: new Date().toISOString() })
+      .eq('id', id)
+      .eq('user_id', state.user.id);
+    if (error) {
+      console.warn('NOTIFICATION READ', error);
+      return;
+    }
+    // Atualiza o sininho imediatamente, sem esperar outro evento do banco.
+    await loadNotifications();
   }
 
   async function markAllNotificationsRead() {
@@ -2313,6 +2364,7 @@
       await loadNotifications();
     } finally {
       setBusy(button, false);
+      updateNotificationDeleteButton();
     }
   }
 
