@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="style.css?v=49">
+  <link rel="stylesheet" href="style.css?v=50">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   <link rel="preconnect" href="https://challenges.cloudflare.com">
@@ -26,7 +26,7 @@
             <path d="M42 54h412" stroke="#e3eff5" stroke-width="2"/>
             <circle cx="65" cy="36" r="4" fill="#2d8ec7"/><circle cx="80" cy="36" r="4" fill="#a9c7d8"/><circle cx="95" cy="36" r="4" fill="#a9c7d8"/>
             <text x="66" y="82" fill="#165a83" font-family="DM Sans, sans-serif" font-size="11" font-weight="700" letter-spacing="1.5">CAE · PARA ESTUDANTES</text>
-            <text x="66" y="119" fill="#16324a" font-family="Fraunces, Georgia, serif" font-size="25" font-weight="700">O que você encontra aqui</text>
+            <text x="66" y="119" fill="#16324a" font-family="Fraunces, Georgia, serif" font-size="25" font-weight="700">O que você pode fazer</text>
             <path d="M66 136h360" stroke="#d9e8f1" stroke-width="1.5"/>
             <circle cx="82" cy="169" r="13" fill="#e5f5ff"/>
             <path d="M76 167h12M76 172h8" stroke="#165a83" stroke-width="2" stroke-linecap="round"/>
@@ -44,11 +44,11 @@
           <div class="brand">
 <span class="brand-mark"><i data-lucide="heart-handshake"></i></span><span>CAE</span>
 </div>
-          <h1>Você pode escrever, conversar e pedir orientação.</h1>
-          <p>O CAE reúne desabafos, conversas e informações de apoio para estudantes.</p>
+          <h1>Você pode escrever, conversar e procurar apoio.</h1>
+          <p>Aqui você pode registrar um desabafo, conversar com outros estudantes e consultar contatos de apoio.</p>
         </div>
         <div class="auth-note">
-<i data-lucide="shield-check"></i><span>Nas conversas, você aparece pelo código público. Seu e-mail fica associado à conta e não é exibido para outros estudantes.</span>
+<i data-lucide="shield-check"></i><span>Nas conversas, outros estudantes veem seu código público, não seu e-mail. O endereço continua vinculado à sua conta.</span>
 </div>
       </div>
       <div class="auth-panel">
@@ -59,7 +59,7 @@
 
         <form id="login-form">
           <h2>Entre na sua conta</h2>
-          <p class="muted">Entre para acessar o espaço do CAE.</p>
+          <p class="muted">Use seu e-mail escolar e sua senha.</p>
           <div class="field">
 <div class="field-label-row">
 <label for="login-email">E-mail escolar</label><button class="help-question" type="button" data-site-help data-help-title="E-mail escolar" data-help-text="Use o e-mail da escola para entrar ou criar sua conta." data-help-detail="O endereço precisa terminar exatamente com @escola.pr.gov.br. E-mails pessoais, como Gmail ou Outlook, não são aceitos.">?</button>
@@ -80,7 +80,7 @@
 
         <form id="signup-form" class="hidden">
           <h2>Crie sua conta</h2>
-          <p class="muted">Ao criar a conta, você recebe um código público para usar nas conversas sem mostrar seu nome real.</p>
+          <p class="muted">Depois do cadastro, você recebe um código público. É ele que aparece nas conversas, em vez do seu nome.</p>
           <div class="field">
 <div class="field-label-row">
 <label for="signup-email">E-mail escolar</label><button class="help-question" type="button" data-site-help data-help-title="E-mail escolar" data-help-text="Use o e-mail da escola para entrar ou criar sua conta." data-help-detail="O endereço precisa terminar exatamente com @escola.pr.gov.br. E-mails pessoais, como Gmail ou Outlook, não são aceitos.">?</button>
@@ -133,7 +133,7 @@
 </div>
 <div class="notification-panel-actions">
 <button class="btn ghost btn-small" id="notifications-mark-read" type="button">Marcar todas como lidas</button>
-<button class="btn ghost btn-small notification-delete-read" id="notifications-delete-read" type="button" aria-label="Excluir todas as notificações lidas" title="Apaga apenas notificações já lidas">Excluir lidas</button>
+<button class="btn ghost btn-small notification-delete-read" id="notifications-delete-read" type="button" aria-label="Excluir todas as notificações lidas" title="Apaga apenas notificações já lidas">Excluir lidas <span class="notification-read-count" id="notifications-read-count">0</span></button>
 </div>
 </div>
               <div id="notifications-list" class="notifications-list"><div class="notification-empty">Nenhuma notificação nova.</div></div>
@@ -151,7 +151,7 @@
           <div>
             <div class="eyebrow">Centro de Acolhimento Estudantil</div>
             <h2>Por onde você quer começar?</h2>
-            <p class="muted">Escreva um desabafo, converse no chat ou consulte o mural e os contatos de apoio.</p>
+            <p class="muted">Escreva o que está acontecendo, converse com estudantes ou procure um contato de apoio.</p>
           </div>
           <div class="actions home-simple-actions">
             <button class="btn primary" type="button" data-open-view="desabafo-view"><i data-lucide="pen-line"></i>Desabafar</button>
@@ -169,9 +169,9 @@
           </div>
         </section>
         <div class="home-shortcuts">
-          <button type="button" data-open-view="chat-view"><i data-lucide="messages-square"></i><span><strong>Chat</strong><small>Converse com outros estudantes.</small></span></button>
-          <button type="button" data-open-view="history-view"><i data-lucide="history"></i><span><strong>Histórico</strong><small>Desabafos, diário e conteúdos salvos.</small></span></button>
-          <button type="button" data-open-view="private-conversations-view"><i data-lucide="lock-keyhole"></i><span><strong>Conversas privadas</strong><small>Converse depois de aceitar um convite.</small></span></button>
+          <button type="button" data-open-view="chat-view"><i data-lucide="messages-square"></i><span><strong>Chat</strong><small>Mensagens identificadas pelo código público.</small></span></button>
+          <button type="button" data-open-view="history-view"><i data-lucide="history"></i><span><strong>Histórico</strong><small>Reveja seus registros e o que guardou.</small></span></button>
+          <button type="button" data-open-view="private-conversations-view"><i data-lucide="lock-keyhole"></i><span><strong>Conversas privadas</strong><small>A conversa começa quando o convite é aceito.</small></span></button>
         </div>
         <div class="home-help-actions">
           <div class="notice home-simple-note"><strong>Precisa de apoio agora?</strong><br>O CAE não é um serviço de emergência. Consulte os canais adequados na página Ajuda.</div>
@@ -181,7 +181,7 @@
 
       <section id="chat-view" class="view">
         <div class="section-head"><div>
-<div class="eyebrow">Conversa estudantil</div>
+<div class="eyebrow">Chat com estudantes</div>
 <h2>Chat</h2>
 <p class="muted">Suas mensagens aparecem com o código público, não com seu nome real.</p>
 </div></div>
@@ -194,7 +194,7 @@
               <button class="btn primary" id="chat-send" type="submit"><i data-lucide="send"></i>Enviar</button>
             </form>
             <div class="chat-under-actions">
-              <p class="cae-muted">As diretrizes só aparecem na primeira tentativa de envio de uma mensagem.</p>
+              <p class="cae-muted">Antes da primeira mensagem, você verá as regras do chat.</p>
               <p class="cae-muted">Dica: Ctrl/Cmd + Enter envia a mensagem.</p>
             </div>
           </div>
@@ -434,9 +434,9 @@
 
       <section id="mural-view" class="view">
         <div class="section-head"><div>
-<div class="eyebrow">Comunidade</div>
+<div class="eyebrow">Avisos e atividades</div>
 <h2>Mural</h2>
-<p class="muted">Avisos, eventos, publicações, enquetes e podcasts da comunidade escolar.</p>
+<p class="muted">Avisos da escola, eventos, publicações, enquetes e indicações de podcast.</p>
 </div></div>
         <div class="field mural-search-field"><label for="mural-search">Buscar no mural</label><input id="mural-search" type="search" placeholder="Avisos, eventos, publicações, enquetes e podcasts..." autocomplete="off"></div>
         <div id="mural-search-results" class="admin-list mural-search-results hidden" aria-live="polite"></div>
@@ -451,8 +451,8 @@
         <div id="panel-events" class="panel" role="tabpanel" aria-labelledby="mural-tab-events" tabindex="0"><div id="event-list" class="admin-list"></div></div>
         <div id="panel-posts" class="panel active" role="tabpanel" aria-labelledby="mural-tab-posts" tabindex="0">
           <div class="card" style="margin-bottom:14px">
-            <div class="eyebrow">Compartilhe</div>
-<h3>Crie uma publicação.</h3>
+            <div class="eyebrow">Nova publicação</div>
+<h3>Escreva para o mural.</h3>
             <div class="post-compose-fields">
               <div class="field">
 <label for="post-category">Categoria</label><select id="post-category"><option>Geral</option>
@@ -476,7 +476,7 @@
           <div class="card podcast-intro">
 <div class="eyebrow">Escuta e informação</div>
 <h3>Podcasts sobre psicologia e saúde mental</h3>
-<p class="muted">Ouça conversas sobre psicologia, emoções e saúde mental.</p>
+<p class="muted">Encontre episódios sobre psicologia, emoções e saúde mental.</p>
 </div>
           <div class="card podcast-share-card"><div class="field-label-row"><div><div class="eyebrow">Compartilhe interesses</div><h3>Recomende um podcast</h3></div><button class="help-question" type="button" data-site-help data-help-title="Compartilhar podcasts" data-help-text="Envie uma recomendação. A equipe revisa antes de publicar." data-help-detail="Recomende podcasts de qualquer assunto: cultura, humor, ciência, histórias, jogos, educação e outros. A equipe revisa antes de publicar. Seu nome não aparece para outros estudantes; a equipe mantém um registro interno para segurança.">?</button></div>
             <p class="muted">Indique um podcast de qualquer tema. Se for aprovado, ele aparece sem seu nome.</p>
@@ -484,7 +484,7 @@
               <div class="grid-2"><div class="field"><label for="podcast-share-category">Assunto</label><select id="podcast-share-category"><option>Geral</option><option>Cultura</option><option>Ciência</option><option>Educação</option><option>Entretenimento</option><option>Saúde e bem-estar</option></select></div><div class="field"><label for="podcast-share-url">Link para ouvir</label><input id="podcast-share-url" type="url" maxlength="1000" required placeholder="https://..."></div></div>
               <div class="field"><label for="podcast-share-description">Por que recomenda? (opcional)</label><textarea id="podcast-share-description" maxlength="500" placeholder="O que achou interessante?"></textarea></div><div id="podcast-share-status" role="status" aria-live="polite"></div><button class="btn primary" type="submit"><i data-lucide="send"></i>Enviar recomendação anônima</button>
             </form></div>
-          <div class="section-head"><div><h3>Recomendações da comunidade</h3><p class="muted">Sugestões compartilhadas por estudantes, sem identificação pública.</p></div></div><div id="community-podcast-list" class="admin-list"></div>
+          <div class="section-head"><div><h3>Recomendações da comunidade</h3><p class="muted">Sugestões enviadas por estudantes. O nome de quem indicou não aparece no mural.</p></div></div><div id="community-podcast-list" class="admin-list"></div>
           <div class="section-head"><div><h3>Podcasts sobre saúde mental</h3></div></div>
           <div class="podcast-grid">
             <article class="card podcast-card"><div class="podcast-mark"><i data-lucide="headphones"></i></div>
@@ -1306,6 +1306,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=57" defer></script>
+  <script src="script.js?v=58" defer></script>
 </body>
 </html>
