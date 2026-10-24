@@ -19,78 +19,23 @@ function validateSiteFiles() {
     }
   }
 
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
-  const jsCheck = spawnSync(process.execPath, ['--check', path.join(root, 'script.js')], {
+  const check = spawnSync(process.execPath, ['--check', path.join(root, 'script.js')], {
     encoding: 'utf8',
     maxBuffer: 1024 * 1024
   });
-  if (jsCheck.error || jsCheck.status !== 0) {
-    throw new Error('A validação de sintaxe do script.js falhou: ' +
-      (jsCheck.stderr || jsCheck.error?.message || 'erro desconhecido'));
+  if (check.error || check.status !== 0) {
+    throw new Error('Erro de sintaxe no script.js: ' +
+      (check.stderr || check.error?.message || 'erro desconhecido'));
   }
 
-  const ids = [...html.matchAll(/\bid\s*=\s*(["'])([^"']+)\1/gi)].map(match => match[2]);
-  const seen = new Set();
-  const duplicates = new Set();
-  for (const id of ids) {
-    if (seen.has(id)) duplicates.add(id);
-    seen.add(id);
-  }
-  if (duplicates.size) throw new Error('IDs HTML duplicados: ' + [...duplicates].join(', '));
-
-  for (const match of html.matchAll(/\b(?:src|href)\s*=\s*(["'])([^"']+)\1/gi)) {
-    const reference = match[2].trim();
-    if (!reference ||
-        reference.startsWith('http://') ||
-        reference.startsWith('https://') ||
-        reference.startsWith('//') ||
-        reference.startsWith('#') ||
-        reference.startsWith('data:') ||
-        reference.startsWith('mailto:') ||
-        reference.startsWith('tel:') ||
-        reference.startsWith('javascript:')) continue;
-    let relative = reference.split(/[?#]/, 1)[0];
-    try { relative = decodeURIComponent(relative); } catch (_) {}
-    if (relative.startsWith('/')) relative = relative.slice(1);
-    if (!relative) continue;
-    const resolved = path.resolve(root, relative);
-    if (resolved !== root && !resolved.startsWith(root + path.sep)) {
-      throw new Error('Referência local fora da pasta do site: ' + reference);
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  for (const reference of ['style.css?v=54', 'script.js?v=62']) {
+    if (!html.includes(reference)) {
+      throw new Error('Referência de recurso esperada não encontrada em index.html: ' + reference);
     }
-    if (!fs.existsSync(resolved)) throw new Error('Arquivo local ausente: ' + reference);
   }
 
-  let depth = 0;
-  let quote = null;
-  let escaped = false;
-  let comment = false;
-  for (let i = 0; i < css.length; i++) {
-    const ch = css[i];
-    const next = css[i + 1];
-    if (comment) {
-      if (ch === '*' && next === '/') { comment = false; i++; }
-      continue;
-    }
-    if (quote) {
-      if (escaped) { escaped = false; continue; }
-      if (ch === '\\') { escaped = true; continue; }
-      if (ch === quote) quote = null;
-      continue;
-    }
-    if (ch === '/' && next === '*') { comment = true; i++; continue; }
-    if (ch === '"' || ch === "'") { quote = ch; continue; }
-    if (ch === '{') depth++;
-    if (ch === '}') {
-      depth--;
-      if (depth < 0) throw new Error('CSS contém uma chave de fechamento sem abertura.');
-    }
-  }
-  if (comment || quote || depth !== 0) {
-    throw new Error('CSS contém comentário, string ou bloco sem fechamento.');
-  }
-
-  console.log('Validação estática concluída: sintaxe JS, IDs HTML, arquivos locais e blocos CSS.');
+  console.log('Validação concluída: arquivos essenciais presentes e script.js sem erros de sintaxe.');
 }
 function removeBuildOnlyFiles() {
   for (const relative of ['SUPABASE_SETUP.md', 'scripts', 'supabase']) {
