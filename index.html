@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="style.css?v=51">
+  <link rel="stylesheet" href="style.css?v=52">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   <link rel="preconnect" href="https://challenges.cloudflare.com">
@@ -45,10 +45,10 @@
 <span class="brand-mark"><i data-lucide="heart-handshake"></i></span><span>CAE</span>
 </div>
           <h1>Você pode escrever, conversar e procurar apoio.</h1>
-          <p>Aqui você pode registrar um desabafo, conversar com outros estudantes e consultar contatos de apoio.</p>
+          <p>O CAE reúne um chat entre estudantes, espaços para desabafos e informações sobre serviços de apoio.</p>
         </div>
         <div class="auth-note">
-<i data-lucide="shield-check"></i><span>Nas conversas, outros estudantes veem seu código público, não seu e-mail. O endereço continua vinculado à sua conta.</span>
+<i data-lucide="shield-check"></i><span>Nas conversas, outros estudantes veem seu código público. Seu e-mail continua vinculado à conta, mas não aparece para eles.</span>
 </div>
       </div>
       <div class="auth-panel">
@@ -128,12 +128,12 @@
             <div id="notifications-panel" class="notification-panel hidden" aria-label="Central de notificações">
               <div class="notification-panel-head">
 <div>
-<div class="eyebrow">Central</div>
 <h3>Notificações</h3>
+<p class="notification-panel-note">Você pode apagar as lidas. As novas ficam.</p>
 </div>
 <div class="notification-panel-actions">
 <button class="btn ghost btn-small" id="notifications-mark-read" type="button">Marcar todas como lidas</button>
-<button class="btn ghost btn-small notification-delete-read" id="notifications-delete-read" type="button" aria-label="Excluir todas as notificações lidas" title="Apaga apenas notificações já lidas">Excluir lidas <span class="notification-read-count" id="notifications-read-count">0</span></button>
+<button class="btn ghost btn-small notification-delete-read" id="notifications-delete-read" type="button" aria-label="Excluir todas as notificações lidas" title="Apaga apenas as notificações já lidas. As novas são mantidas.">Excluir lidas <span class="notification-read-count" id="notifications-read-count" aria-live="polite">0</span></button>
 </div>
 </div>
               <div id="notifications-list" class="notifications-list"><div class="notification-empty">Nenhuma notificação nova.</div></div>
@@ -151,7 +151,7 @@
           <div>
             <div class="eyebrow">Centro de Acolhimento Estudantil</div>
             <h2>Por onde você quer começar?</h2>
-            <p class="muted">Escreva o que está acontecendo, converse com estudantes ou procure um contato de apoio.</p>
+            <p class="muted">Você pode começar por um desabafo, conversar com outros estudantes ou consultar os contatos de apoio.</p>
           </div>
           <div class="actions home-simple-actions">
             <button class="btn primary" type="button" data-open-view="desabafo-view"><i data-lucide="pen-line"></i>Desabafar</button>
@@ -164,17 +164,17 @@
             <div class="tutorial-video-placeholder">
               <span class="tutorial-play"><i data-lucide="video"></i></span>
               <strong id="tutorial-video-title">Tutorial do CAE</strong>
-              <span>O vídeo de apresentação ainda está em preparação.</span>
+              <span>O vídeo de apresentação será publicado aqui. Por enquanto, use os atalhos abaixo para encontrar cada área do CAE.</span>
             </div>
           </div>
         </section>
         <div class="home-shortcuts">
-          <button type="button" data-open-view="chat-view"><i data-lucide="messages-square"></i><span><strong>Chat</strong><small>Mensagens identificadas pelo código público.</small></span></button>
-          <button type="button" data-open-view="history-view"><i data-lucide="history"></i><span><strong>Histórico</strong><small>Reveja seus registros e o que guardou.</small></span></button>
-          <button type="button" data-open-view="private-conversations-view"><i data-lucide="lock-keyhole"></i><span><strong>Conversas privadas</strong><small>A conversa começa quando o convite é aceito.</small></span></button>
+          <button type="button" data-open-view="chat-view"><i data-lucide="messages-square"></i><span><strong>Chat</strong><small>No chat, seu código público aparece no lugar do nome.</small></span></button>
+          <button type="button" data-open-view="history-view"><i data-lucide="history"></i><span><strong>Histórico</strong><small>Consulte seus desabafos, o diário e os conteúdos que salvou.</small></span></button>
+          <button type="button" data-open-view="private-conversations-view"><i data-lucide="lock-keyhole"></i><span><strong>Conversas privadas</strong><small>Só é possível trocar mensagens depois que o convite for aceito.</small></span></button>
         </div>
         <div class="home-help-actions">
-          <div class="notice home-simple-note"><strong>Precisa de apoio agora?</strong><br>O CAE não é um serviço de emergência. Consulte os canais adequados na página Ajuda.</div>
+          <div class="notice home-simple-note"><strong>Precisa de apoio agora?</strong><br>O CAE não atende emergências. Na página Ajuda, há telefones e serviços que podem orientar você.</div>
           <button class="btn primary" type="button" data-open-view="help-view"><i data-lucide="life-buoy"></i>Ver contatos de ajuda</button>
         </div>
       </section>
@@ -183,7 +183,7 @@
         <div class="section-head"><div>
 <div class="eyebrow">Chat com estudantes</div>
 <h2>Chat</h2>
-<p class="muted">Suas mensagens aparecem com o código público, não com seu nome real.</p>
+<p class="muted">As outras pessoas veem seu código público, não seu e-mail.</p>
 </div></div>
         <div class="chat-layout">
           <div class="card">
@@ -201,7 +201,7 @@
           <aside class="card">
             <div class="eyebrow">Convivência</div>
             <h3>Cuide dos seus dados ao conversar.</h3>
-            <p class="muted">Não envie nome completo, telefone ou endereço. Use Denunciar para sinalizar mensagens que desrespeitem as regras.</p>
+            <p class="muted">Evite compartilhar dados que identifiquem você, como nome completo, telefone e endereço. Para sinalizar uma mensagem, use Denunciar.</p>
             <div class="notice">
 <b>O chat não substitui atendimento profissional.</b><br><span class="muted">Para apoio imediato, veja a página Ajuda.</span>
 </div>
@@ -214,7 +214,7 @@
           <div>
 <div class="eyebrow">Espaço privado</div>
 <h2>Conversas privadas</h2>
-<p class="muted">A conversa começa quando a outra pessoa aceita o convite.</p>
+<p class="muted">Você só poderá trocar mensagens depois que a outra pessoa aceitar o convite.</p>
 </div>
         </div>
         <div class="private-chat-layout">
@@ -436,7 +436,7 @@
         <div class="section-head"><div>
 <div class="eyebrow">Avisos e atividades</div>
 <h2>Mural</h2>
-<p class="muted">Avisos da escola, eventos, publicações, enquetes e indicações de podcast.</p>
+<p class="muted">Aqui ficam os avisos, eventos, publicações, enquetes e indicações de podcasts.</p>
 </div></div>
         <div class="field mural-search-field"><label for="mural-search">Buscar no mural</label><input id="mural-search" type="search" placeholder="Avisos, eventos, publicações, enquetes e podcasts..." autocomplete="off"></div>
         <div id="mural-search-results" class="admin-list mural-search-results hidden" aria-live="polite"></div>
@@ -479,12 +479,12 @@
 <p class="muted">Encontre episódios sobre psicologia, emoções e saúde mental.</p>
 </div>
           <div class="card podcast-share-card"><div class="field-label-row"><div><div class="eyebrow">Compartilhe interesses</div><h3>Recomende um podcast</h3></div><button class="help-question" type="button" data-site-help data-help-title="Compartilhar podcasts" data-help-text="Envie uma recomendação. A equipe revisa antes de publicar." data-help-detail="Recomende podcasts de qualquer assunto: cultura, humor, ciência, histórias, jogos, educação e outros. A equipe revisa antes de publicar. Seu nome não aparece para outros estudantes; a equipe mantém um registro interno para segurança.">?</button></div>
-            <p class="muted">Indique um podcast de qualquer tema. Se for aprovado, ele aparece sem seu nome.</p>
+            <p class="muted">Você pode indicar um podcast ou episódio. Se a equipe aprovar, a indicação será publicada sem seu nome.</p>
             <form id="podcast-share-form"><div class="field"><label for="podcast-share-title">Nome do podcast ou episódio</label><input id="podcast-share-title" maxlength="120" required placeholder="Nome do podcast"></div>
               <div class="grid-2"><div class="field"><label for="podcast-share-category">Assunto</label><select id="podcast-share-category"><option>Geral</option><option>Cultura</option><option>Ciência</option><option>Educação</option><option>Entretenimento</option><option>Saúde e bem-estar</option></select></div><div class="field"><label for="podcast-share-url">Link para ouvir</label><input id="podcast-share-url" type="url" maxlength="1000" required placeholder="https://..."></div></div>
               <div class="field"><label for="podcast-share-description">Por que recomenda? (opcional)</label><textarea id="podcast-share-description" maxlength="500" placeholder="O que achou interessante?"></textarea></div><div id="podcast-share-status" role="status" aria-live="polite"></div><button class="btn primary" type="submit"><i data-lucide="send"></i>Enviar recomendação anônima</button>
             </form></div>
-          <div class="section-head"><div><h3>Recomendações da comunidade</h3><p class="muted">Sugestões enviadas por estudantes. O nome de quem indicou não aparece no mural.</p></div></div><div id="community-podcast-list" class="admin-list"></div>
+          <div class="section-head"><div><h3>Recomendações da comunidade</h3><p class="muted">As indicações aprovadas aparecem aqui sem o nome de quem enviou.</p></div></div><div id="community-podcast-list" class="admin-list"></div>
           <div class="section-head"><div><h3>Podcasts sobre saúde mental</h3></div></div>
           <div class="podcast-grid">
             <article class="card podcast-card"><div class="podcast-mark"><i data-lucide="headphones"></i></div>
@@ -507,7 +507,7 @@
       </section>
 
       <section id="history-view" class="view">
-        <div class="section-head"><div><div class="eyebrow">Registros pessoais</div><h2>Seu histórico</h2><p class="muted">Desabafos enviados, registros do diário e itens salvos.</p></div><button class="help-question" type="button" data-site-help data-help-title="Seu histórico" data-help-text="Veja seus desabafos, registros do diário e conteúdos salvos." data-help-detail="O diário e os itens salvos são pessoais. Desabafos privados podem ser consultados por administradores em situações de segurança.">?</button></div>
+        <div class="section-head"><div><div class="eyebrow">Registros pessoais</div><h2>Seu histórico</h2><p class="muted">Aqui ficam seus desabafos, registros do diário e conteúdos salvos.</p></div><button class="help-question" type="button" data-site-help data-help-title="Seu histórico" data-help-text="Veja seus desabafos, registros do diário e conteúdos salvos." data-help-detail="O diário e os itens salvos são pessoais. Desabafos privados podem ser consultados por administradores em situações de segurança.">?</button></div>
         <div class="tabs vent-type-tabs history-tabs" role="tablist" aria-label="Seções do histórico">
           <button class="tab vent-tab active" id="history-tab-vents" type="button" data-history-filter="vents" role="tab" aria-controls="history-vents-panel" aria-selected="true" tabindex="0">Desabafos</button>
           <button class="tab vent-tab" id="history-tab-mood" type="button" data-history-filter="mood" role="tab" aria-controls="history-mood-panel" aria-selected="false" tabindex="-1">Diário de bem-estar</button>
@@ -539,7 +539,7 @@
         <div class="section-head"><div>
 <div class="eyebrow">Apoio</div>
 <h2>Ajuda e contatos</h2>
-<p class="muted">Contatos nacionais e do Paraná. Confira a cidade de cada serviço.</p>
+<p class="muted">Contatos nacionais, do Paraná e de São José dos Pinhais. Confira a cidade indicada em cada serviço.</p>
 </div></div>
         <div class="card urgent-help-card">
           <div><div class="eyebrow">Risco imediato</div><h3>Você ou outra pessoa está em perigo agora?</h3><p class="muted">Emergência médica: 192. Violência imediata: 190. Apoio emocional: CVV 188.</p></div>
@@ -730,7 +730,7 @@
         <article class="card" style="margin-top:16px">
           <div class="eyebrow">Aplicativo oficial do CAE</div>
           <h3>CAE para Android</h3>
-          <p class="muted">Acesso rápido pelo celular, com os recursos do CAE e atualizações do conteúdo sincronizadas com o site.</p>
+          <p class="muted">O aplicativo abre o CAE sem precisar entrar pelo navegador. As mudanças publicadas no site também aparecem nele.</p>
           <details class="site-more">
             <summary>Mais detalhes</summary>
             <p><strong>Alertas de segurança:</strong> Google Play Protect, Google Drive, Avast e outros antivírus podem exibir avisos durante o download ou a instalação do APK. Isso pode acontecer porque ele é distribuído fora da Google Play Store. Um alerta, por si só, não confirma que o arquivo seja malicioso. Confira sempre se o download veio do link oficial do CAE e leia o aviso apresentado.</p>
@@ -805,7 +805,7 @@
           <div>
 <div class="eyebrow">Equipe CAE</div>
 <h2>Central da equipe</h2>
-<p class="muted">Use as abas para revisar desabafos, acompanhar denúncias e acessar as ferramentas da equipe.</p>
+<p class="muted">Escolha uma aba para revisar conteúdos, acompanhar denúncias ou cuidar das contas.</p>
 </div>
         </div>
 
@@ -848,7 +848,7 @@
 <div>
 <div class="eyebrow">Fila de desabafos</div>
 <h3>Moderação e resposta privada</h3>
-<p class="cae-muted">Aprove, recuse ou exclua. Quando fizer sentido, responda diretamente em uma conversa privada com quem enviou.</p>
+<p class="cae-muted">Revise cada desabafo. Você pode aprovar, recusar, excluir ou enviar uma resposta privada.</p>
 </div>
 <button class="btn secondary admin-only" type="button" data-open-view="admin-private-history-view"><i data-lucide="lock-keyhole"></i>Histórico privado</button>
 </div>
@@ -1306,6 +1306,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=58" defer></script>
+  <script src="script.js?v=59" defer></script>
 </body>
 </html>
