@@ -705,11 +705,11 @@
     const heading = view.querySelector(':scope > .section-head, :scope > .home-simple-head');
     if (!heading || heading.querySelector('[data-site-help]')) return;
     const titles = {
-      'home-view': ['Página inicial', 'Encontre rapidamente a área que procura.', 'Desabafos: escreva ou leia relatos. Mural: veja avisos, eventos, publicações, enquetes e podcasts. Histórico: consulte seus registros e itens salvos.'],
+      'home-view': ['Página inicial', 'Escolha a área que deseja acessar.', 'Desabafos: escreva ou leia relatos. Mural: consulte avisos, eventos, publicações, enquetes e podcasts. Histórico: reveja seus desabafos, o diário e os itens salvos.'],
       'chat-view': ['Chat público', 'Converse com estudantes pelo seu código público.', 'Não compartilhe senhas, endereço, telefone ou outros dados pessoais. Use Denunciar quando uma mensagem desrespeitar as regras.'],
       'private-conversations-view': ['Conversas privadas', 'Convide alguém usando o código público.', 'A conversa só começa depois que a outra pessoa aceita. A equipe pode verificar mensagens em situações de segurança.'],
       'mural-view': ['Mural', 'Veja avisos, eventos, publicações, enquetes e podcasts.', 'Use as abas para trocar de assunto. Toque em Salvar para encontrar um conteúdo depois, no Histórico.'],
-      'history-view': ['Seu histórico', 'Veja seus desabafos, registros e itens salvos.', 'As abas separam seus desabafos, diário de bem-estar e conteúdos salvos. Só você pode consultar esses registros.'],
+      'history-view': ['Seu histórico', 'Veja seus desabafos, registros do diário e itens salvos.', 'O diário e os itens salvos são pessoais. Desabafos privados podem ser consultados por administradores em situações de segurança.'],
       'help-view': ['Ajuda e contatos', 'Veja contatos de apoio e serviços de atendimento.', 'Em risco imediato, use os telefones de emergência exibidos nesta página. O CAE não é um serviço de emergência.'],
       'account-view': ['Sua conta', 'Gerencie seu código público e suas preferências.', 'Seu código público permite conversar sem mostrar seu e-mail ou nome real. Aqui também ficam as opções de privacidade e o aplicativo.'],
       'privacy-view': ['Central de privacidade', 'Entenda o que fica público e o que fica privado.', 'Consulte também os detalhes sobre dados da conta, moderação, áudios e pedidos de exclusão.'],
@@ -1891,7 +1891,7 @@
     const box = $('chat-messages');
     if (!box) return;
     if (!messages.length) {
-      box.innerHTML = '<div class="message">Ainda não há mensagens. Seja a primeira pessoa a conversar. 🌿</div>';
+      box.innerHTML = '<div class="message">Ainda não há mensagens no chat.</div>';
       return;
     }
     box.innerHTML = messages.map(message => {
@@ -2414,7 +2414,7 @@
     }
     const other=otherPrivateParticipant(conversation);
     head.innerHTML=`<div class="private-thread-person"><div><div class="eyebrow">${conversation.source_type==='vent_reply'?'Resposta da equipe':'Conversa privada'}</div><strong>#${escapeHTML(other?.public_code||'conta')}</strong></div><span class="cae-muted">Somente participantes</span></div><div class="private-thread-actions"><button class="btn secondary btn-small" type="button" data-close-private-conversation="${escapeHTML(conversation.id)}">Encerrar conversa</button>${other?.user_id ? `<button class="btn danger btn-small" type="button" data-block-private-user="${escapeHTML(other.user_id)}">Bloquear pessoa</button>` : ''}</div>`;
-    thread.innerHTML=(conversation.messages||[]).map(m=>`<div class="private-message ${m.sender_id===state.user.id?'own':''}"><div class="private-message-label">${m.sender_id===state.user.id?'Você':`#${escapeHTML((conversation.participants||[]).find(p=>p.user_id===m.sender_id)?.public_code||'conta')}`} · ${escapeHTML(formatDate(m.created_at))}</div><div class="private-message-body">${escapeHTML(m.body).replace(/\n/g,'<br>')}</div>${m.sender_id!==state.user.id?`<div class="private-message-actions"><button class="btn ghost btn-small" type="button" data-report-content="private_message" data-report-id="${escapeHTML(m.id)}">Denunciar</button></div>`:''}</div>`).join('') || '<div class="private-chat-empty compact"><p>A conversa está pronta. Mande a primeira mensagem.</p></div>';
+    thread.innerHTML=(conversation.messages||[]).map(m=>`<div class="private-message ${m.sender_id===state.user.id?'own':''}"><div class="private-message-label">${m.sender_id===state.user.id?'Você':`#${escapeHTML((conversation.participants||[]).find(p=>p.user_id===m.sender_id)?.public_code||'conta')}`} · ${escapeHTML(formatDate(m.created_at))}</div><div class="private-message-body">${escapeHTML(m.body).replace(/\n/g,'<br>')}</div>${m.sender_id!==state.user.id?`<div class="private-message-actions"><button class="btn ghost btn-small" type="button" data-report-content="private_message" data-report-id="${escapeHTML(m.id)}">Denunciar</button></div>`:''}</div>`).join('') || '<div class="private-chat-empty compact"><p>Esta conversa ainda não tem mensagens.</p></div>';
     form.classList.remove('hidden');
     thread.scrollTop=thread.scrollHeight;
     refreshIcons();
@@ -4076,7 +4076,7 @@
         ok = true;
       } catch (error) { toast(errorMessage(error), 'error'); }
     } else ok = await deleteStaffContent(type, contentId, 'este conteúdo denunciado');
-    if (ok) await updateContentReportStatus(reportId, 'reviewed', 'A equipe analisou sua denúncia e removeu o conteúdo sinalizado. Obrigado por ajudar a manter o CAE seguro.');
+    if (ok) await updateContentReportStatus(reportId, 'reviewed', 'A equipe analisou a denúncia e removeu o conteúdo sinalizado.');
   }
 
   async function loadUserPreferences() {
