@@ -2332,7 +2332,7 @@
 
   async function deleteReadNotifications() {
     if (!state.user || !state.supabase) return;
-    if (!window.confirm('Excluir todas as notificações lidas? As não lidas serão mantidas. Esta ação não pode ser desfeita.')) return;
+    if (!window.confirm('Apagar as notificações que você já abriu? Isso não apaga mensagens nem conversas. As notificações não lidas serão mantidas. Esta ação não pode ser desfeita.')) return;
 
     const button = $('notifications-delete-read');
     setBusy(button, true, 'Excluindo...');
