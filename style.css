@@ -4868,3 +4868,13 @@ select:focus-visible {
   border-color: #165a83;
   box-shadow: none;
 }
+
+
+/* Rótulos de seção em escrita normal: menos aparência de etiqueta de template. */
+.eyebrow {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: .78rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
