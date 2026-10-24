@@ -1262,10 +1262,11 @@
   const TTS_PORTUGUESE_MODEL = 'Xenova/mms-tts-por';
   // Usa o arquivo ESM compilado do pacote para evitar a reescrita de módulos internos pelo CDN.
   const TTS_PIPER_MODULE_URL = 'https://unpkg.com/piper-tts-web@1.1.2/dist/piper-tts-web.js';
-  // Os arquivos da voz feminina ficam no próprio repositório do CAE.
-  // Assim, a síntese não depende do Hugging Face e respeita o caminho do GitHub Pages.
+  // O modelo feminino permanece no repositório. No Cloudflare Pages, o build o divide
+  // em partes menores que o limite por arquivo; em outras hospedagens, usa o ONNX original.
   const TTS_DII_CONFIG_URL = new URL('assets/voices/dii_pt-BR.onnx.json', document.baseURI).href;
   const TTS_DII_MODEL_URL = new URL('assets/voices/dii_pt-BR.onnx', document.baseURI).href;
+  const TTS_DII_MODEL_PARTS_URL = new URL('assets/voices/dii_pt-BR.onnx.parts.json', document.baseURI).href;
   const TTS_PIPER_ASSETS = 'https://unpkg.com/piper-tts-web@1.1.2/dist/';
 
   function chooseTextVoice(style) {
@@ -1535,6 +1536,7 @@
       const PIPER_BASE = ${JSON.stringify(`${TTS_PIPER_ASSETS}piper/`)};
       const CONFIG_URL = ${JSON.stringify(TTS_DII_CONFIG_URL)};
       const MODEL_URL = ${JSON.stringify(TTS_DII_MODEL_URL)};
+      const MODEL_PARTS_URL = ${JSON.stringify(TTS_DII_MODEL_PARTS_URL)};
 
       async function loadPiperModule() {
         if (!piperModulePromise) {
@@ -1562,17 +1564,62 @@
             if (!voiceDataPromise) {
               self.postMessage({ type: 'status', id: requestId, message: 'Carregando a voz feminina do CAE…' });
               voiceDataPromise = (async () => {
-                const [configResponse, modelResponse] = await Promise.all([
+                const [configResponse, manifestResponse] = await Promise.all([
                   fetch(CONFIG_URL, { credentials: 'same-origin', cache: 'force-cache' }),
-                  fetch(MODEL_URL, { credentials: 'same-origin', cache: 'force-cache' })
+                  fetch(MODEL_PARTS_URL, { credentials: 'same-origin', cache: 'force-cache' })
                 ]);
-                if (!configResponse.ok || !modelResponse.ok) {
-                  throw new Error('Não encontrei os arquivos locais da voz feminina. Confira se a pasta assets/voices foi enviada junto com o CAE.');
+                if (!configResponse.ok) {
+                  throw new Error('Não encontrei a configuração da voz feminina. Confira se a pasta assets/voices foi enviada junto com o CAE.');
                 }
-                const [config, model] = await Promise.all([configResponse.json(), modelResponse.arrayBuffer()]);
+                const config = await configResponse.json();
                 if (config?.lang_code !== 'pt-BR' || config?.espeak?.voice !== 'pt-br') {
                   throw new Error('A configuração da voz feminina está inválida ou não corresponde ao português brasileiro.');
                 }
+
+                let model;
+                if (manifestResponse.ok) {
+                  const manifest = await manifestResponse.json();
+                  if (!Array.isArray(manifest?.parts) || !manifest.parts.length ||
+                      !Number.isSafeInteger(manifest.totalBytes) || manifest.totalBytes < 60000000 ||
+                      manifest.totalBytes > 150000000) {
+                    throw new Error('A lista de partes do modelo feminino está inválida. Atualize o CAE e tente novamente.');
+                  }
+
+                  const combinedModel = new Uint8Array(manifest.totalBytes);
+                  let modelOffset = 0;
+                  for (const partName of manifest.parts) {
+                    const prefix = 'dii_pt-BR.onnx.part-';
+                    if (typeof partName !== 'string' || !partName.startsWith(prefix) ||
+                        !/^\\d{3}$/.test(partName.slice(prefix.length))) {
+                      throw new Error('A lista de arquivos da voz feminina contém um nome inválido.');
+                    }
+                    const partResponse = await fetch(new URL(partName, MODEL_PARTS_URL), {
+                      credentials: 'same-origin',
+                      cache: 'force-cache'
+                    });
+                    if (!partResponse.ok) {
+                      throw new Error('Não consegui baixar uma das partes da voz feminina. Atualize a página e tente novamente.');
+                    }
+                    const partBuffer = await partResponse.arrayBuffer();
+                    if (!partBuffer.byteLength || modelOffset + partBuffer.byteLength > combinedModel.byteLength) {
+                      throw new Error('Uma parte do modelo feminino está incompleta ou inválida.');
+                    }
+                    combinedModel.set(new Uint8Array(partBuffer), modelOffset);
+                    modelOffset += partBuffer.byteLength;
+                  }
+                  if (modelOffset !== combinedModel.byteLength) {
+                    throw new Error('O modelo feminino foi baixado de forma incompleta. Tente novamente.');
+                  }
+                  model = combinedModel.buffer;
+                } else {
+                  // Compatibilidade com a publicação antiga do GitHub Pages.
+                  const modelResponse = await fetch(MODEL_URL, { credentials: 'same-origin', cache: 'force-cache' });
+                  if (!modelResponse.ok) {
+                    throw new Error('Não encontrei os arquivos da voz feminina. Confira se a pasta assets/voices foi enviada junto com o CAE.');
+                  }
+                  model = await modelResponse.arrayBuffer();
+                }
+
                 if (!model || model.byteLength < 60000000) {
                   throw new Error('O modelo feminino veio incompleto. Atualize os arquivos do CAE e tente novamente.');
                 }
