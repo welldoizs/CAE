@@ -4368,6 +4368,12 @@
     $('auth-tab-signup')?.addEventListener('click',()=>setAuthMode('signup'));
     $('login-form')?.addEventListener('submit',login);
     $('signup-form')?.addEventListener('submit',signup);
+    const authVisual = document.querySelector('.auth-visual');
+    ['login-password', 'signup-password'].forEach(id => {
+      const passwordInput = $(id);
+      passwordInput?.addEventListener('focus', () => authVisual?.classList.add('is-password-active'));
+      passwordInput?.addEventListener('blur', () => authVisual?.classList.remove('is-password-active'));
+    });
     $('magic-button')?.addEventListener('click',magicLogin);
     $('forgot-button')?.addEventListener('click',forgotPassword);
     $('password-form')?.addEventListener('submit',submitPasswordRecovery);
