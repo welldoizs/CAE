@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="style.css?v=52">
+  <link rel="stylesheet" href="style.css?v=53">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   <link rel="preconnect" href="https://challenges.cloudflare.com">
@@ -36,8 +36,12 @@
             <path d="M76 210c0-2 2-4 4-4h5c3 0 5 2 5 4s-2 4-5 4h-3l-4 3v-3c-1-1-2-2-2-4Z" fill="none" stroke="#165a83" stroke-width="1.8" stroke-linejoin="round"/>
             <text x="108" y="211" fill="#16324a" font-family="DM Sans, sans-serif" font-size="15" font-weight="700">Conversa e orientação</text>
             <text x="108" y="228" fill="#657b8d" font-family="DM Sans, sans-serif" font-size="11">Chat, código público e contatos de apoio</text>
-            <path d="M430 186c0-15 12-27 27-27s27 12 27 27-12 27-27 27h-8l-14 9 3-15c-5-5-8-12-8-21Z" fill="#165a83"/>
-            <circle cx="447" cy="186" r="2.8" fill="#fff"/><circle cx="457" cy="186" r="2.8" fill="#fff"/><circle cx="467" cy="186" r="2.8" fill="#fff"/>
+            <g class="auth-chat-bubble">
+              <path d="M430 186c0-15 12-27 27-27s27 12 27 27-12 27-27 27h-8l-14 9 3-15c-5-5-8-12-8-21Z" fill="#165a83"/>
+              <circle class="auth-chat-dot auth-chat-dot-1" cx="447" cy="186" r="2.8" fill="#fff"/>
+              <circle class="auth-chat-dot auth-chat-dot-2" cx="457" cy="186" r="2.8" fill="#fff"/>
+              <circle class="auth-chat-dot auth-chat-dot-3" cx="467" cy="186" r="2.8" fill="#fff"/>
+            </g>
           </svg>
         </div>
         <div class="auth-copy">
@@ -1306,6 +1310,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=59" defer></script>
+  <script src="script.js?v=60" defer></script>
 </body>
 </html>
