@@ -1590,7 +1590,7 @@
                   for (const partName of manifest.parts) {
                     const prefix = 'dii_pt-BR.onnx.part-';
                     if (typeof partName !== 'string' || !partName.startsWith(prefix) ||
-                        !/^\\d{3}$/.test(partName.slice(prefix.length))) {
+                        !/^[0-9]{3}$/.test(partName.slice(prefix.length))) {
                       throw new Error('A lista de arquivos da voz feminina contém um nome inválido.');
                     }
                     const partResponse = await fetch(new URL(partName, MODEL_PARTS_URL), {
