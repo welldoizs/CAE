@@ -4878,3 +4878,15 @@ select:focus-visible {
   font-weight: 700;
   line-height: 1.35;
 }
+
+
+/* Texto de apoio da central de notificações: informa o efeito da limpeza sem competir com os controles. */
+.notification-panel-note {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.4;
+}
+.notification-panel-actions .btn {
+  min-height: 36px;
+}
