@@ -4890,3 +4890,49 @@ select:focus-visible {
 .notification-panel-actions .btn {
   min-height: 36px;
 }
+
+
+/* A ilustração da entrada responde ao foco da senha, sem movimento contínuo gratuito. */
+.auth-illustration {
+  transform: translateY(0);
+  transition: transform .42s cubic-bezier(.2,.7,.2,1);
+}
+.auth-visual.is-password-active .auth-illustration {
+  transform: translateY(-4px);
+}
+.auth-chat-bubble {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform .35s ease;
+}
+.auth-visual.is-password-active .auth-chat-bubble {
+  animation: authBubbleFloat 1.9s ease-in-out infinite;
+}
+.auth-chat-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.auth-visual.is-password-active .auth-chat-dot {
+  animation: authDotPulse 1.15s ease-in-out infinite;
+}
+.auth-visual.is-password-active .auth-chat-dot-2 { animation-delay: .16s; }
+.auth-visual.is-password-active .auth-chat-dot-3 { animation-delay: .32s; }
+
+@keyframes authBubbleFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-4px) scale(1.025); }
+}
+@keyframes authDotPulse {
+  0%, 100% { opacity: .55; transform: scale(.82); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-illustration,
+  .auth-chat-bubble,
+  .auth-chat-dot {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
