@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&amp;family=Fraunces:opsz,wght@9..144,600;9..144,700&amp;display=swap" rel="stylesheet"></noscript>
-  <link rel="stylesheet" href="style.css?v=53">
+  <link rel="stylesheet" href="style.css?v=54">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js" defer></script>
   <link rel="preconnect" href="https://challenges.cloudflare.com">
@@ -110,7 +110,7 @@
 <div class="app-ambient ambient-b"></div>
     <header class="topbar">
       <div class="topbar-inner">
-        <button id="brand-home" class="brand-button" type="button">
+        <button id="brand-home" class="brand-button" type="button" aria-label="Voltar ao início do CAE">
           <span class="brand"><span class="brand-mark"><i data-lucide="heart-handshake"></i></span><span>CAE</span></span>
         </button>
         <nav class="nav" aria-label="Navegação principal">
@@ -129,10 +129,10 @@
             <button class="notification-button" id="notifications-button" type="button" aria-label="Notificações" aria-expanded="false">
               <i data-lucide="bell"></i><span id="notifications-badge" class="notification-badge hidden">0</span>
             </button>
-            <div id="notifications-panel" class="notification-panel hidden" aria-label="Central de notificações">
+            <div id="notifications-panel" class="notification-panel hidden" role="region" aria-labelledby="notifications-title">
               <div class="notification-panel-head">
 <div>
-<h3>Notificações</h3>
+<h3 id="notifications-title">Notificações</h3>
 <p class="notification-panel-note">Você pode apagar as lidas. As novas ficam.</p>
 </div>
 <div class="notification-panel-actions">
@@ -140,7 +140,7 @@
 <button class="btn ghost btn-small notification-delete-read" id="notifications-delete-read" type="button" aria-label="Excluir todas as notificações lidas" title="Apaga apenas as notificações já lidas. As novas são mantidas.">Excluir lidas <span class="notification-read-count" id="notifications-read-count" aria-live="polite">0</span></button>
 </div>
 </div>
-              <div id="notifications-list" class="notifications-list"><div class="notification-empty">Nenhuma notificação nova.</div></div>
+              <div id="notifications-list" class="notifications-list" aria-live="polite" aria-relevant="additions text" aria-atomic="false"><div class="notification-empty">Nenhuma notificação nova.</div></div>
             </div>
           </div>
           <span class="session-pill"><span class="session-dot"></span>Sessão ativa</span>
@@ -150,6 +150,7 @@
     </header>
 
     <main class="main" id="main-content" tabindex="-1">
+      <h1 class="sr-only">Centro de Acolhimento Estudantil</h1>
       <section id="home-view" class="view active">
         <div class="home-simple-head">
           <div>
@@ -763,6 +764,15 @@
         </div>
         <div class="card account-preferences-card" style="margin-top:16px">
           <div class="eyebrow">Preferências</div><h3>Como o CAE aparece para você</h3>
+          <div class="field preference-text-size">
+            <label for="preference-text-size">Tamanho do texto</label>
+            <select id="preference-text-size" aria-describedby="preference-text-size-help">
+              <option value="normal">Normal</option>
+              <option value="large">Grande</option>
+              <option value="larger">Muito grande</option>
+            </select>
+            <small id="preference-text-size-help">Ajuste a leitura neste dispositivo. A configuração fica salva neste navegador.</small>
+          </div>
           <label class="check-row"><input id="preference-notifications" type="checkbox" checked><span>Mostrar notificações do CAE neste dispositivo</span></label>
           <label class="check-row"><input id="preference-reduced-motion" type="checkbox"><span>Reduzir animações e movimentos</span></label>
           <p id="preferences-status" class="cae-muted" role="status" aria-live="polite"></p>
@@ -1310,6 +1320,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=61" defer></script>
+  <script src="script.js?v=62" defer></script>
 </body>
 </html>

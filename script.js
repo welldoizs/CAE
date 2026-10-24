@@ -32,6 +32,7 @@
   });
 
   const AUDIO_BUCKET = 'cae-audios';
+  const TEXT_SIZE_STORAGE_KEY = 'cae:accessibility:text-size:v1';
 
   const GUIDED_QUESTIONS = [
     'O que aconteceu hoje?',
@@ -139,7 +140,35 @@
   };
 
   const $ = (id) => document.getElementById(id);
-  const $$ = (selector) => [...document.querySelectorAll(selector)];
+  const $ = (selector) => [...document.querySelectorAll(selector)];
+
+  function applyTextSizePreference(value) {
+    const size = ['normal', 'large', 'larger'].includes(value) ? value : 'normal';
+    const root = document.documentElement;
+    root.classList.toggle('cae-text-large', size === 'large');
+    root.classList.toggle('cae-text-larger', size === 'larger');
+    const control = $('preference-text-size');
+    if (control && control.value !== size) control.value = size;
+    return size;
+  }
+
+  function loadTextSizePreference() {
+    let size = 'normal';
+    try { size = window.localStorage.getItem(TEXT_SIZE_STORAGE_KEY) || 'normal'; }
+    catch (error) { console.warn('TEXT SIZE PREFERENCE', error); }
+    applyTextSizePreference(size);
+  }
+
+  function saveTextSizePreference() {
+    const size = applyTextSizePreference($('preference-text-size')?.value || 'normal');
+    try {
+      window.localStorage.setItem(TEXT_SIZE_STORAGE_KEY, size);
+      setStatus('preferences-status', 'Tamanho do texto atualizado neste dispositivo.', 'ok');
+    } catch (error) {
+      console.warn('TEXT SIZE SAVE', error);
+      setStatus('preferences-status', 'O tamanho foi ajustado, mas não pôde ser salvo neste navegador.');
+    }
+  }
 
   const MURAL_ACTIVITY_LABELS = Object.freeze({
     announcements: 'avisos',
@@ -308,7 +337,9 @@
     const el = $(id);
     if (!el) return;
     if (!message) { el.innerHTML = ''; return; }
-    el.innerHTML = `<div class="message ${type === 'ok' ? 'ok' : 'error'}">${escapeHTML(message)}</div>`;
+    const role = type === 'ok' ? 'status' : 'alert';
+    const live = type === 'ok' ? 'polite' : 'assertive';
+    el.innerHTML = `<div class="message ${type === 'ok' ? 'ok' : 'error'}" role="${role}" aria-live="${live}" aria-atomic="true">${escapeHTML(message)}</div>`;
   }
 
   function toast(message, type = 'ok') {
@@ -317,10 +348,14 @@
       stack = document.createElement('div');
       stack.id = 'cae-toast-stack';
       stack.className = 'cae-toast-stack';
+      stack.setAttribute('aria-relevant', 'additions');
+      stack.setAttribute('aria-atomic', 'false');
       document.body.appendChild(stack);
     }
     const item = document.createElement('div');
     item.className = `cae-toast ${type === 'error' ? 'error' : ''}`;
+    item.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    item.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
     item.innerHTML = `<span>${escapeHTML(message)}</span><button type="button" aria-label="Fechar">×</button>`;
     item.querySelector('button').addEventListener('click', () => item.remove());
     stack.appendChild(item);
@@ -2663,7 +2698,12 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.polls }, () => queueMuralReload())
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.pollOptions }, () => queueMuralReload())
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.pollVotes }, () => queueMuralReload())
-      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.vents }, () => { loadPublicVents(); if (isStaff()) loadAdmin(); if (isAdmin()) loadAdminPrivateHistory(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.vents }, () => {
+        loadPublicVents();
+        if (state.currentView === 'history-view' && state.historyFilter === 'vents') loadVentHistory(state.ventHistoryFilter);
+        if (isStaff()) loadAdmin();
+        if (isAdmin()) loadAdminPrivateHistory();
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.support }, () => { loadSupportChat(); if (isStaff()) loadAdminSupport(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: TABLE.notifications }, (payload) => { loadNotifications(); const notification = payload?.new || payload?.old; if (state.currentView === 'private-conversations-view' && notification?.type !== 'private_message') loadPrivateChatData(state.privateSelectedConversationId); })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'cae_admin_notifications', filter: `user_id=eq.${state.user.id}` }, () => { if (isStaff()) loadNotifications(); })
@@ -3109,9 +3149,37 @@
         const body = getField(vent, ['body'], '');
         const feeling = getField(vent, ['feeling'], '');
         const audioPath = getField(vent, ['audio_url'], '');
-        const status = privateVentStatus(vent.status);
-        const statusClass = vent.status === 'approved' ? 'cae-status-approved' : vent.status === 'rejected' ? 'cae-status-rejected' : 'cae-status-pending';
-        return `<article class="card own-vent-card"><div class="own-vent-meta"><div><div class="eyebrow">${escapeHTML(visibilityLabel(vent.visibility))} · ${escapeHTML(formatDate(vent.created_at))}</div></div><span class="cae-status ${statusClass}">${escapeHTML(status)}</span></div>${feeling ? `<div class="notice" style="margin-top:10px"><b>${escapeHTML(feeling)}</b></div>` : ''}${body ? renderVentBody(vent.type, body, 'own-vent-body') : ''}${audioPath ? `<div class="actions" style="margin-top:10px"><button class="btn secondary" type="button" data-play-audio="${escapeHTML(audioPath)}"><i data-lucide="play"></i>Ouvir áudio</button></div>` : ''}<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-vent="${escapeHTML(vent.id)}" data-audio-path="${escapeHTML(audioPath)}">Excluir</button></div></article>`;
+        const statusValue = String(vent.status || 'pending');
+        const isApproved = statusValue === 'approved';
+        const isRejected = statusValue === 'rejected';
+        const statusClass = isApproved ? 'cae-status-approved' : isRejected ? 'cae-status-rejected' : 'cae-status-pending';
+        const statusLabel = isApproved
+          ? (vent.visibility === 'private' ? 'Analisado pela equipe' : 'Aprovado e publicado')
+          : isRejected ? 'Não aprovado' : 'Aguardando análise';
+        const statusMessage = isApproved
+          ? (vent.visibility === 'private'
+              ? 'A equipe analisou e aprovou este desabafo. Ele continua privado, conforme a opção de privacidade escolhida no envio.'
+              : 'A equipe aprovou este desabafo. Ele já está disponível no espaço público do CAE.')
+          : isRejected
+            ? 'A equipe decidiu não aprovar este desabafo. Consulte o motivo informado abaixo.'
+            : 'Seu desabafo foi enviado e está aguardando análise da equipe. Você não precisa enviá-lo novamente.';
+        const reviewDate = vent.moderated_at
+          ? `<p class="own-vent-review-date">Analisado em ${escapeHTML(formatDate(vent.moderated_at))}</p>`
+          : '';
+        const rejectionReason = isRejected && String(vent.moderation_reason || '').trim()
+          ? `<div class="own-vent-reason"><strong>Motivo informado pela equipe</strong><p>${escapeHTML(vent.moderation_reason).replace(/\n/g, '<br>')}</p></div>`
+          : '';
+        return `<article class="card own-vent-card">
+          <div class="own-vent-meta">
+            <div><div class="eyebrow">${escapeHTML(visibilityLabel(vent.visibility))} · ${escapeHTML(formatDate(vent.created_at))}</div></div>
+            <span class="cae-status ${statusClass}">${escapeHTML(statusLabel)}</span>
+          </div>
+          <div class="own-vent-status-detail"><p>${escapeHTML(statusMessage)}</p>${reviewDate}${rejectionReason}</div>
+          ${feeling ? `<div class="notice" style="margin-top:10px"><b>${escapeHTML(feeling)}</b></div>` : ''}
+          ${body ? renderVentBody(vent.type, body, 'own-vent-body') : ''}
+          ${audioPath ? `<div class="actions" style="margin-top:10px"><button class="btn secondary" type="button" data-play-audio="${escapeHTML(audioPath)}"><i data-lucide="play"></i>Ouvir áudio</button></div>` : ''}
+          <div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-vent="${escapeHTML(vent.id)}" data-audio-path="${escapeHTML(audioPath)}">Excluir</button></div>
+        </article>`;
       }).join('');
       filterHistoryCards();
       refreshIcons();
@@ -4320,6 +4388,7 @@
     });
     document.addEventListener('change',event=>{
       if(event.target.matches('#admin-support-conversation')) renderSelectedAdminSupportConversation();
+      if(event.target.matches('#preference-text-size')) saveTextSizePreference();
       if(event.target.matches('#preference-notifications,#preference-reduced-motion')) saveUserPreferences();
     });
     document.addEventListener('input',event=>{
@@ -4499,7 +4568,7 @@
   }
 
   async function init(){
-    if(state.initialized)return;state.initialized=true;bindEvents();refreshIcons();
+    if(state.initialized)return;state.initialized=true;loadTextSizePreference();bindEvents();refreshIcons();
     if(!ensureClient())return;
     initAuthListener();
     readAuthRedirectError();

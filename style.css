@@ -4936,3 +4936,201 @@ select:focus-visible {
     transform: none !important;
   }
 }
+
+
+/* Acessibilidade: foco visível, leitura ampliável e controles confortáveis. */
+:root { --focus-ring: #124b6d; }
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+html.cae-text-large { font-size: 112.5%; }
+html.cae-text-larger { font-size: 125%; }
+html { scroll-padding-top: 128px; }
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--focus-ring) !important;
+  outline-offset: 3px !important;
+}
+
+.btn,
+.nav button,
+.notification-button,
+.help-question,
+input:not([type="checkbox"]):not([type="radio"]),
+select { min-height: 44px; }
+
+.help-question { min-width: 44px; }
+
+.preference-text-size { margin: 12px 0 14px; }
+.preference-text-size small {
+  display: block;
+  margin-top: 5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.own-vent-status-detail {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #f6fafc;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+.own-vent-status-detail > p { margin: 0; }
+.own-vent-review-date {
+  margin: 7px 0 0 !important;
+  color: var(--muted);
+  font-size: .84rem;
+}
+.own-vent-reason {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-strong);
+}
+.own-vent-reason strong { display: block; margin-bottom: 4px; }
+.own-vent-reason p { margin: 0; overflow-wrap: anywhere; }
+
+#main-content,
+.view,
+.card,
+.section-head,
+.topbar-inner,
+.nav,
+.top-actions { min-width: 0; }
+#main-content,
+.card,
+.view { overflow-wrap: anywhere; }
+img, video, canvas, svg { max-width: 100%; }
+
+@media (max-width: 980px) {
+  .topbar-inner { gap: 10px; }
+  .top-actions { margin-left: auto; }
+  .nav {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+    scroll-snap-type: x proximity;
+  }
+}
+
+@media (max-width: 720px) {
+  .topbar-inner {
+    flex-wrap: wrap;
+    row-gap: 7px;
+    padding: 9px 12px;
+  }
+  .nav {
+    order: 3;
+    flex-basis: 100%;
+    gap: 4px;
+    width: 100%;
+    padding: 2px 0 7px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+  .nav::-webkit-scrollbar { display: block; height: 4px; }
+  .nav::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 99px; }
+  .nav button {
+    min-height: 44px;
+    padding: 10px 12px;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+  .main {
+    width: 100%;
+    max-width: 100%;
+    padding-inline: 14px;
+  }
+  .section-head {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .section-head > div { min-width: 0; }
+  .home-simple-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+  .home-simple-actions .btn {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+  }
+  .notification-panel { width: min(420px, calc(100vw - 24px)); right: 0; }
+}
+
+@media (max-width: 480px) {
+  .main { padding: 14px 11px 42px; }
+  .topbar-inner { padding-inline: 10px; }
+  .top-actions { gap: 5px; }
+  .home-simple-actions { grid-template-columns: 1fr; }
+  .section-head { flex-direction: column; }
+  .section-head > .btn { width: 100%; }
+  .history-vent-subtabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select { font-size: 16px; }
+  .actions > .btn { flex: 1 1 auto; }
+  .notification-panel {
+    position: fixed;
+    top: auto;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: auto;
+    max-height: min(75dvh, 620px);
+  }
+  .notification-panel-actions .btn { min-height: 44px; }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --muted: #3e5262;
+    --muted-2: #3e5262;
+    --line: #a9bdca;
+    --line-strong: #718b9d;
+  }
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  summary:focus-visible,
+  [tabindex]:focus-visible { outline-width: 4px !important; }
+}
+
+@media (forced-colors: active) {
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  summary:focus-visible,
+  [tabindex]:focus-visible { outline: 3px solid Highlight !important; }
+  .cae-status,
+  .own-vent-status-detail { border: 1px solid CanvasText; }
+}
