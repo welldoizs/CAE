@@ -30,7 +30,7 @@ function validateSiteFiles() {
       (jsCheck.stderr || jsCheck.error?.message || 'erro desconhecido'));
   }
 
-  const ids = [...html.matchAll(/\\bid\\s*=\\s*(["'])([^"']+)\\1/gi)].map(match => match[2]);
+  const ids = [...html.matchAll(/\bid\s*=\s*(["'])([^"']+)\1/gi)].map(match => match[2]);
   const seen = new Set();
   const duplicates = new Set();
   for (const id of ids) {
@@ -39,13 +39,20 @@ function validateSiteFiles() {
   }
   if (duplicates.size) throw new Error('IDs HTML duplicados: ' + [...duplicates].join(', '));
 
-  for (const match of html.matchAll(/\\b(?:src|href)\\s*=\\s*(["'])([^"']+)\\1/gi)) {
+  for (const match of html.matchAll(/\b(?:src|href)\s*=\s*(["'])([^"']+)\1/gi)) {
     const reference = match[2].trim();
-    if (!reference || /^(?:https?:)?\\/\\//i.test(reference) ||
-        /^(?:#|data:|mailto:|tel:|javascript:)/i.test(reference)) continue;
+    if (!reference ||
+        reference.startsWith('http://') ||
+        reference.startsWith('https://') ||
+        reference.startsWith('//') ||
+        reference.startsWith('#') ||
+        reference.startsWith('data:') ||
+        reference.startsWith('mailto:') ||
+        reference.startsWith('tel:') ||
+        reference.startsWith('javascript:')) continue;
     let relative = reference.split(/[?#]/, 1)[0];
     try { relative = decodeURIComponent(relative); } catch (_) {}
-    relative = relative.replace(/^\\/+/, '');
+    if (relative.startsWith('/')) relative = relative.slice(1);
     if (!relative) continue;
     const resolved = path.resolve(root, relative);
     if (resolved !== root && !resolved.startsWith(root + path.sep)) {
@@ -67,7 +74,7 @@ function validateSiteFiles() {
     }
     if (quote) {
       if (escaped) { escaped = false; continue; }
-      if (ch === '\\\\') { escaped = true; continue; }
+      if (ch === '\\') { escaped = true; continue; }
       if (ch === quote) quote = null;
       continue;
     }
@@ -85,7 +92,6 @@ function validateSiteFiles() {
 
   console.log('Validação estática concluída: sintaxe JS, IDs HTML, arquivos locais e blocos CSS.');
 }
-
 function removeBuildOnlyFiles() {
   for (const relative of ['SUPABASE_SETUP.md', 'scripts', 'supabase']) {
     fs.rmSync(path.join(process.cwd(), relative), { recursive: true, force: true });
