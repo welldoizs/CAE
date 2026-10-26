@@ -32,7 +32,7 @@
   });
 
   const AUDIO_BUCKET = 'cae-audios';
-  const VOICE_ANONYMIZER_WORKER_URL = new URL('assets/voice-anonymizer-worker.js', document.baseURI).href;
+  const VOICE_ANONYMIZER_WORKER_URL = new URL('assets/voice-anonymizer-worker.js?v=2', document.baseURI).href;
   const TEXT_SIZE_STORAGE_KEY = 'cae:accessibility:text-size:v1';
 
   const GUIDED_QUESTIONS = [
