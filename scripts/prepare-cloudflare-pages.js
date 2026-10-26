@@ -13,7 +13,7 @@ const maxAssetBytes = 25 * 1024 * 1024;
 
 function validateSiteFiles() {
   const root = process.cwd();
-  for (const filename of ['index.html', 'script.js', 'style.css']) {
+  for (const filename of ['index.html', 'script.js', 'style.css', 'assets/voice-anonymizer-worker.js']) {
     if (!fs.existsSync(path.join(root, filename))) {
       throw new Error('Arquivo obrigatório ausente: ' + filename);
     }
@@ -29,7 +29,7 @@ function validateSiteFiles() {
   }
 
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  for (const reference of ['style.css?v=54', 'script.js?v=63']) {
+  for (const reference of ['style.css?v=54', 'script.js?v=64']) {
     if (!html.includes(reference)) {
       throw new Error('Referência de recurso esperada não encontrada em index.html: ' + reference);
     }
