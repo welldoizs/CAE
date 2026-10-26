@@ -355,20 +355,26 @@
 <h3>Gravação de áudio</h3>
           <div class="audio-anonymity-notice">
 <span class="vent-tab-icon"><i data-lucide="mic"></i></span><div>
-<strong>Como a voz é protegida</strong><p id="audio-anonymity-text">Em desabafos públicos, o áudio será gerado por uma voz sintética.</p>
+<strong>Você pode usar sua própria voz</strong><p id="audio-anonymity-text">Em áudios públicos, sua gravação recebe um filtro antes de ser enviada.</p>
 </div>
-<button class="help-question" type="button" data-site-help data-help-title="Proteção da voz" data-help-text="Áudios públicos usam uma voz sintética, não a gravação original." data-help-detail="O texto é convertido em narração no aparelho, usando uma voz artificial. A fala usada para preencher o texto pode passar pelo serviço de reconhecimento do navegador; digitar evita essa etapa. A voz sintética protege o timbre, mas não oculta nomes ou detalhes pessoais mencionados.">?</button>
+<button class="help-question" type="button" data-site-help data-help-title="Proteção da voz" data-help-text="A gravação original é filtrada no seu aparelho antes do envio público." data-help-detail="O CAE usa uma técnica de alteração das ressonâncias da voz, chamada McAdams, para dificultar o reconhecimento do timbre sem transformar a fala em uma narração artificial. O teste e o processamento são feitos no aparelho. O filtro não garante anonimato completo: sotaque, ritmo, contexto e detalhes mencionados ainda podem identificar alguém.">?</button>
 </div>
-                    <div id="voice-filter-picker" class="voice-filter-picker">
+          <div id="voice-filter-picker" class="voice-filter-picker">
             <div class="field-label-row">
-              <div class="eyebrow">Proteção para áudio público</div>
-              <button class="help-question" type="button" data-site-help data-help-title="Voz sintética" data-help-text="O áudio público é recriado com uma voz artificial, em vez de publicar sua gravação original." data-help-detail="Você revisa o texto e o CAE gera uma narração sintética no próprio aparelho. A voz original não é anexada ao desabafo. Para usar o microfone para preencher o texto, o reconhecimento depende do navegador e pode usar processamento externo; digitar o texto evita essa etapa. Mesmo com voz sintética, não inclua nome, escola específica, endereço ou detalhes que possam identificar você.">?</button>
+              <div class="eyebrow">Filtro de voz para áudio público</div>
+              <button class="help-question" type="button" data-site-help data-help-title="Intensidade do filtro" data-help-text="Escolha a intensidade, grave e ouça a prévia antes de enviar." data-help-detail="O CAE altera características do timbre no próprio aparelho, sem enviar a gravação original ao servidor. A intensidade mais forte muda mais a voz, mas pode alterar a naturalidade. Confira se as palavras continuam compreensíveis. Nenhum filtro oferece anonimato garantido.">?</button>
             </div>
-            <p>Para publicar um áudio, use a opção <strong>Gerar áudio sem usar sua voz</strong> logo abaixo. O CAE cria uma narração artificial a partir do texto revisado, sem enviar o timbre da sua gravação junto com o desabafo.</p>
-            <p class="cae-muted">Você pode digitar o texto ou usar a transcrição do navegador. Se preferir não passar sua fala pelo serviço de reconhecimento do navegador, digite diretamente.</p>
+            <div class="voice-filter-grid" role="group" aria-label="Intensidade do filtro de voz">
+              <button class="voice-filter-option" type="button" data-voice-strength="subtle" aria-pressed="false"><i data-lucide="audio-lines"></i><span><b>Suave</b><small>Alteração discreta</small></span></button>
+              <button class="voice-filter-option active" type="button" data-voice-strength="balanced" aria-pressed="true"><i data-lucide="shield-check"></i><span><b>Equilibrado</b><small>Recomendado</small></span></button>
+              <button class="voice-filter-option" type="button" data-voice-strength="strong" aria-pressed="false"><i data-lucide="shield"></i><span><b>Mais intenso</b><small>Mais alteração</small></span></button>
+            </div>
+            <p id="audio-filter-selected" class="cae-muted">Equilibrado: altera as ressonâncias da voz sem exagerar no efeito. Recomendado para começar.</p>
+            <p class="cae-muted">Depois de parar, o CAE processa a gravação no aparelho e mostra uma prévia. Só o áudio processado pode ser enviado como público. Ouça antes de publicar.</p>
+            <p class="cae-muted">O filtro reduz características do timbre, mas não garante anonimato completo. Evite nomes e detalhes que identifiquem você.</p>
           </div>
-          <div id="direct-audio-recorder" class="hidden">
-            <p id="record-status" class="muted">Gravação disponível apenas para desabafos privados.</p>
+          <div id="direct-audio-recorder">
+            <p id="record-status" class="muted">Pronto para gravar sua voz.</p>
             <div class="actions">
               <button class="btn primary" id="record-start" type="button"><i data-lucide="mic"></i>Começar gravação</button>
               <button class="btn secondary" id="record-stop" type="button" disabled><i data-lucide="square"></i>Parar</button>
@@ -383,7 +389,7 @@
           <section class="text-voice-card" aria-labelledby="text-voice-title">
             <div class="text-voice-card-head">
               <div>
-<div class="eyebrow">Voz sintética</div>
+<div class="eyebrow">Alternativa opcional</div>
 <h3 id="text-voice-title">Gerar áudio sem usar sua voz</h3>
 <p class="muted">Digite ou transcreva sua mensagem, revise o texto e gere uma narração com voz artificial.</p>
 </div>
@@ -400,7 +406,7 @@
             <div id="tts-transcript-alternatives" class="tts-transcript-alternatives hidden" aria-live="polite"></div>
             <div class="field-label-row">
 <div class="eyebrow text-voice-choice-label">Escolha uma voz</div>
-<button class="help-question" type="button" data-site-help data-help-title="Escolha da voz" data-help-text="Escolha a voz usada na narração." data-help-detail="A voz feminina usa o modelo Dii em português brasileiro, de TigreGotico Lda. O modelo fica nos arquivos do CAE e é carregado no aparelho quando você usa essa opção. Ele é distribuído sem alterações e apenas para fins não comerciais, conforme a licença CC BY-NC-ND 4.0. Créditos: https://huggingface.co/OpenVoiceOS/pipertts_pt-BR_dii. A voz masculina mantém o mecanismo atual.">?</button>
+<button class="help-question" type="button" data-site-help data-help-title="Escolha da voz" data-help-text="Escolha a voz usada na narração." data-help-detail="A opção feminina usa o modelo Dii em português brasileiro, de TigreGotico Lda. O modelo fica nos arquivos do CAE e é carregado no aparelho quando você usa essa opção. Ele é distribuído sem alterações e apenas para fins não comerciais, conforme a licença CC BY-NC-ND 4.0. Créditos: https://huggingface.co/OpenVoiceOS/pipertts_pt-BR_dii. A voz masculina mantém o mecanismo atual.">?</button>
 </div>
             <div class="voice-filter-grid text-voice-grid" role="group" aria-label="Escolha a voz">
               <button class="voice-filter-option text-voice-option active" type="button" data-tts-voice="female" aria-pressed="true"><i data-lucide="mic-vocal"></i><span><b>Feminina</b><small>Voz feminina brasileira</small></span></button>
@@ -797,8 +803,8 @@
           <p>Desabafos e conversas privadas não aparecem para outros estudantes. Administradores podem consultá-los em situações de segurança.</p>
           <details class="site-more"><summary>Mais detalhes</summary><p>Desabafos marcados como privados e mensagens de conversas privadas não aparecem para outros estudantes. Administradores podem consultá-los para moderação e verificação de segurança.</p></details>
           <h3>Áudios e proteção da voz</h3>
-          <p>Áudios públicos usam uma voz sintética gerada a partir do texto revisado, não a gravação original.</p>
-          <details class="site-more"><summary>Mais detalhes</summary><p>O áudio público é recriado com uma voz artificial no aparelho. A transcrição pelo microfone depende do navegador e pode usar processamento externo; digitar o texto evita essa etapa. A voz sintética não impede que alguém seja reconhecido pelo conteúdo, por nomes ou por detalhes mencionados.</p></details>
+          <p>Em áudios públicos, sua própria gravação recebe um filtro local antes do envio. Em áudios privados, a gravação original é mantida.</p>
+          <details class="site-more"><summary>Mais detalhes</summary><p>O filtro local altera características do timbre sem substituir sua fala por uma narração artificial. O áudio original não é enviado como publicação pública. Ainda assim, o filtro não garante anonimato: sotaque, ritmo, contexto e detalhes mencionados podem identificar alguém.</p></details>
           <h3>Seus controles</h3>
           <p>Você pode ver seu histórico, apagar desabafos e pedir a exclusão da conta.</p>
           <details class="site-more"><summary>Mais detalhes</summary><p>Você pode consultar seu histórico, excluir seus próprios desabafos e solicitar a exclusão da conta. A solicitação de exclusão precisa ser processada pela equipe; não é instantânea.</p></details>
@@ -1314,6 +1320,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=63" defer></script>
+  <script src="script.js?v=64" defer></script>
 </body>
 </html>
