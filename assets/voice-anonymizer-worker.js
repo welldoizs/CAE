@@ -161,7 +161,7 @@ function coefficientsFromRoots(roots, alpha) {
     const x = roots.real[i];
     const y = roots.imag[i];
     const radius = Math.hypot(x, y);
-    if (!Number.isFinite(radius) || radius < 0.05 || radius >= 1.002) return null;
+    if (!Number.isFinite(radius) || radius >= 1.002) return null;
 
     if (Math.abs(y) < 1e-5) {
       used[i] = 1;
@@ -188,7 +188,9 @@ function coefficientsFromRoots(roots, alpha) {
     const partnerRadius = Math.hypot(roots.real[partner], roots.imag[partner]);
     if (!Number.isFinite(partnerRadius) || Math.abs(partnerRadius - radius) > pairingTolerance) return null;
     const meanRadius = (radius + partnerRadius) / 2;
-    const angle = Math.atan2(Math.abs(y) + Math.abs(roots.imag[partner]), x + roots.real[partner]) / 2;
+    const angle1 = Math.atan2(Math.abs(y), x);
+    const angle2 = Math.atan2(Math.abs(roots.imag[partner]), roots.real[partner]);
+    const angle = (angle1 + angle2) / 2;
     const warpedAngle = Math.pow(Math.max(0, angle), alpha);
     if (!Number.isFinite(warpedAngle)) return null;
 
