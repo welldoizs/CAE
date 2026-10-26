@@ -37,99 +37,187 @@ function autocorrelationLpc(frame, order) {
   return a;
 }
 
-function evaluatePolynomial(coefficients, zr, zi) {
-  let real = coefficients[0], imag = 0;
+function evaluatePolynomialAndDerivative(coefficients, zr, zi) {
+  let pr = coefficients[0], pi = 0;
+  let dr = 0, di = 0;
   for (let i = 1; i < coefficients.length; i++) {
-    const nextReal = real * zr - imag * zi + coefficients[i];
-    const nextImag = real * zi + imag * zr;
-    real = nextReal;
-    imag = nextImag;
+    const nextDr = dr * zr - di * zi + pr;
+    const nextDi = dr * zi + di * zr + pi;
+    const nextPr = pr * zr - pi * zi + coefficients[i];
+    const nextPi = pr * zi + pi * zr;
+    dr = nextDr;
+    di = nextDi;
+    pr = nextPr;
+    pi = nextPi;
   }
-  return [real, imag];
+  return { pr, pi, dr, di };
 }
 
 function polynomialRoots(coefficients) {
   const degree = coefficients.length - 1;
-  const real = new Float64Array(degree), imag = new Float64Array(degree);
-  const nextReal = new Float64Array(degree), nextImag = new Float64Array(degree);
+  if (degree < 1 || degree > 32 || !Number.isFinite(coefficients[0]) || Math.abs(coefficients[0]) < 1e-12) {
+    return null;
+  }
+
+  // Aberth-Ehrlich converges all roots together and is much more robust here
+  // than the previous 100-iteration Durand-Kerner approximation.
+  let cauchyBound = 1;
+  for (let i = 1; i < coefficients.length; i++) {
+    cauchyBound = Math.max(cauchyBound, 1 + Math.abs(coefficients[i] / coefficients[0]));
+  }
+  const initialRadius = Math.max(1.05, Math.min(2.5, cauchyBound));
+  const real = new Float64Array(degree);
+  const imag = new Float64Array(degree);
+  const nextReal = new Float64Array(degree);
+  const nextImag = new Float64Array(degree);
+
   for (let i = 0; i < degree; i++) {
-    const angle = 2 * Math.PI * (i + 0.371) / degree;
-    const radius = 0.91 + 0.07 * ((i % 3) / 2);
-    real[i] = radius * Math.cos(angle);
-    imag[i] = radius * Math.sin(angle);
+    const angle = (2 * Math.PI * (i + 0.1732050807) / degree) + 0.017 * Math.sin(i * 13.37);
+    real[i] = initialRadius * Math.cos(angle);
+    imag[i] = initialRadius * Math.sin(angle);
   }
 
   let converged = false;
-  for (let iteration = 0; iteration < 100; iteration++) {
-    let maxDelta = 0;
+  for (let iteration = 0; iteration < 600; iteration++) {
+    let maxStep = 0;
     for (let i = 0; i < degree; i++) {
-      const [pr, pi] = evaluatePolynomial(coefficients, real[i], imag[i]);
-      let dr = 1, di = 0;
+      const evaluated = evaluatePolynomialAndDerivative(coefficients, real[i], imag[i]);
+      const derivativeNorm = evaluated.dr * evaluated.dr + evaluated.di * evaluated.di;
+      if (!Number.isFinite(derivativeNorm) || derivativeNorm < 1e-28) return null;
+
+      const newtonReal = (evaluated.pr * evaluated.dr + evaluated.pi * evaluated.di) / derivativeNorm;
+      const newtonImag = (evaluated.pi * evaluated.dr - evaluated.pr * evaluated.di) / derivativeNorm;
+      let sumReal = 0, sumImag = 0;
+
       for (let j = 0; j < degree; j++) {
         if (j === i) continue;
-        const xr = real[i] - real[j], xi = imag[i] - imag[j];
-        const nr = dr * xr - di * xi, ni = dr * xi + di * xr;
-        dr = nr; di = ni;
+        const dx = real[i] - real[j];
+        const dy = imag[i] - imag[j];
+        const denominator = dx * dx + dy * dy;
+        if (denominator < 1e-24) continue;
+        sumReal += dx / denominator;
+        sumImag -= dy / denominator;
       }
-      const denominator = dr * dr + di * di;
-      if (!Number.isFinite(denominator) || denominator < 1e-24) return null;
-      const deltaReal = (pr * dr + pi * di) / denominator;
-      const deltaImag = (pi * dr - pr * di) / denominator;
-      nextReal[i] = real[i] - deltaReal;
-      nextImag[i] = imag[i] - deltaImag;
-      maxDelta = Math.max(maxDelta, Math.hypot(deltaReal, deltaImag));
+
+      const productReal = newtonReal * sumReal - newtonImag * sumImag;
+      const productImag = newtonReal * sumImag + newtonImag * sumReal;
+      const correctionDenominatorReal = 1 - productReal;
+      const correctionDenominatorImag = -productImag;
+      const correctionDenominatorNorm =
+        correctionDenominatorReal * correctionDenominatorReal +
+        correctionDenominatorImag * correctionDenominatorImag;
+
+      let correctionReal = newtonReal;
+      let correctionImag = newtonImag;
+      if (Number.isFinite(correctionDenominatorNorm) && correctionDenominatorNorm > 1e-20) {
+        correctionReal = (
+          newtonReal * correctionDenominatorReal + newtonImag * correctionDenominatorImag
+        ) / correctionDenominatorNorm;
+        correctionImag = (
+          newtonImag * correctionDenominatorReal - newtonReal * correctionDenominatorImag
+        ) / correctionDenominatorNorm;
+      }
+
+      if (!Number.isFinite(correctionReal) || !Number.isFinite(correctionImag)) return null;
+      nextReal[i] = real[i] - correctionReal;
+      nextImag[i] = imag[i] - correctionImag;
+      maxStep = Math.max(maxStep, Math.hypot(correctionReal, correctionImag));
     }
-    real.set(nextReal); imag.set(nextImag);
-    if (maxDelta < 2e-7) { converged = true; break; }
+
+    real.set(nextReal);
+    imag.set(nextImag);
+    if (maxStep < 1e-9) {
+      converged = true;
+      break;
+    }
   }
 
-  if (!converged) {
-    let residual = 0;
-    for (let i = 0; i < degree; i++) {
-      const [pr, pi] = evaluatePolynomial(coefficients, real[i], imag[i]);
-      residual = Math.max(residual, Math.hypot(pr, pi));
+  // A scale-independent residual check allows a valid result even when the
+  // final step is just above the strict convergence tolerance.
+  let maxRelativeResidual = 0;
+  for (let i = 0; i < degree; i++) {
+    const evaluated = evaluatePolynomialAndDerivative(coefficients, real[i], imag[i]);
+    const magnitude = Math.hypot(real[i], imag[i]);
+    let scale = 0;
+    for (let k = 0; k < coefficients.length; k++) {
+      scale += Math.abs(coefficients[k]) * Math.pow(magnitude, degree - k);
     }
-    if (!Number.isFinite(residual) || residual > 0.015) return null;
+    const relativeResidual = Math.hypot(evaluated.pr, evaluated.pi) / Math.max(scale, 1e-30);
+    if (!Number.isFinite(relativeResidual)) return null;
+    maxRelativeResidual = Math.max(maxRelativeResidual, relativeResidual);
   }
+
+  if ((!converged && maxRelativeResidual > 1e-8) || maxRelativeResidual > 1e-7) return null;
   return { real, imag };
 }
 
-function coefficientsFromRoots(roots) {
-  const n = roots.real.length;
-  const real = new Float64Array(n + 1), imag = new Float64Array(n + 1);
-  real[0] = 1;
-  let used = 0;
-  for (let i = 0; i < n; i++) {
-    const nextReal = new Float64Array(n + 1), nextImag = new Float64Array(n + 1);
-    for (let j = 0; j <= used; j++) {
-      nextReal[j] += real[j];
-      nextImag[j] += imag[j];
-      nextReal[j + 1] -= real[j] * roots.real[i] - imag[j] * roots.imag[i];
-      nextImag[j + 1] -= real[j] * roots.imag[i] + imag[j] * roots.real[i];
+function coefficientsFromRoots(roots, alpha) {
+  const count = roots.real.length;
+  const used = new Uint8Array(count);
+  const factors = [];
+
+  for (let i = 0; i < count; i++) {
+    if (used[i]) continue;
+    const x = roots.real[i];
+    const y = roots.imag[i];
+    const radius = Math.hypot(x, y);
+    if (!Number.isFinite(radius) || radius < 0.05 || radius >= 1.002) return null;
+
+    if (Math.abs(y) < 1e-5) {
+      used[i] = 1;
+      factors.push([1, -x]);
+      continue;
     }
-    real.set(nextReal); imag.set(nextImag); used++;
+
+    let partner = -1;
+    let bestDistance = Infinity;
+    for (let j = 0; j < count; j++) {
+      if (used[j] || j === i || Math.sign(roots.imag[j]) === Math.sign(y)) continue;
+      const distance = Math.hypot(roots.real[j] - x, roots.imag[j] + y);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        partner = j;
+      }
+    }
+
+    const pairingTolerance = 2e-3 * Math.max(1, radius);
+    if (partner < 0 || bestDistance > pairingTolerance) return null;
+    used[i] = 1;
+    used[partner] = 1;
+
+    const partnerRadius = Math.hypot(roots.real[partner], roots.imag[partner]);
+    if (!Number.isFinite(partnerRadius) || Math.abs(partnerRadius - radius) > pairingTolerance) return null;
+    const meanRadius = (radius + partnerRadius) / 2;
+    const angle = Math.atan2(Math.abs(y) + Math.abs(roots.imag[partner]), x + roots.real[partner]) / 2;
+    const warpedAngle = Math.pow(Math.max(0, angle), alpha);
+    if (!Number.isFinite(warpedAngle)) return null;
+
+    // Build a real-valued quadratic directly from each conjugate pole pair.
+    factors.push([
+      1,
+      -2 * meanRadius * Math.cos(warpedAngle),
+      meanRadius * meanRadius
+    ]);
   }
-  const coefficients = new Float64Array(n + 1);
-  for (let i = 0; i <= n; i++) {
-    if (!Number.isFinite(real[i]) || Math.abs(imag[i]) > 0.015) return null;
-    coefficients[i] = real[i] / real[0];
+
+  let coefficients = [1];
+  for (const factor of factors) {
+    const next = new Array(coefficients.length + factor.length - 1).fill(0);
+    for (let i = 0; i < coefficients.length; i++) {
+      for (let j = 0; j < factor.length; j++) next[i + j] += coefficients[i] * factor[j];
+    }
+    coefficients = next;
   }
-  return coefficients;
+
+  const result = Float64Array.from(coefficients);
+  for (const value of result) if (!Number.isFinite(value)) return null;
+  return result;
 }
 
 function mcadamsLpcCoefficients(lpc, alpha) {
   const roots = polynomialRoots(lpc);
   if (!roots) return null;
-  for (let i = 0; i < roots.real.length; i++) {
-    const radius = Math.hypot(roots.real[i], roots.imag[i]);
-    if (!Number.isFinite(radius) || radius < 0.05 || radius >= 1.002) return null;
-    const angle = Math.atan2(roots.imag[i], roots.real[i]);
-    if (Math.abs(roots.imag[i]) < 1e-7) continue;
-    const warpedAngle = Math.sign(angle) * Math.pow(Math.abs(angle), alpha);
-    roots.real[i] = radius * Math.cos(warpedAngle);
-    roots.imag[i] = radius * Math.sin(warpedAngle);
-  }
-  return coefficientsFromRoots(roots);
+  return coefficientsFromRoots(roots, alpha);
 }
 
 function lfilterAnalysis(coefficients, frame) {
