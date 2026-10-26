@@ -310,7 +310,7 @@ function processSpeech(input, sampleRate, strength) {
     peak = Math.max(peak, Math.abs(value));
   }
   if (failedFrames > frameCount * 0.08) {
-    throw new Error('Não consegui processar este áudio com qualidade suficiente. Tente gravar mais perto do microfone, em um ambiente silencioso.');
+    throw new Error('O filtro não conseguiu calcular algumas partes desta gravação. Isso não indica necessariamente um problema no microfone. Tente novamente com uma gravação curta.');
   }
   if (peak < 1e-5) throw new Error('Não detectei fala suficiente na gravação.');
 
