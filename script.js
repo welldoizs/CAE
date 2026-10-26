@@ -320,6 +320,7 @@
     if (/email not confirmed/i.test(raw)) return 'Confirme seu e-mail antes de entrar.';
     if (/already registered|user already registered/i.test(raw)) return 'Este e-mail já possui uma conta.';
     if (/password.*6|at least 6/i.test(raw)) return 'A senha precisa ter pelo menos 6 caracteres.';
+    if (/CAE_CHAT_OFFENSIVE/i.test(raw)) return 'O filtro identificou uma possível ofensa, ameaça ou ataque. Reformule a mensagem sem atacar uma pessoa ou grupo.';
     if (/CAE_ADMIN_REQUIRED/i.test(raw)) return 'Essa ação é exclusiva dos administradores e do dono.';
     if (/CAE_PROTECTED_ACCOUNT|PROTECTED_ACCOUNT/i.test(raw)) return 'Esta conta é protegida e não pode receber banimento, timeout ou alteração de cargo.';
     if (/rate limit|too many requests/i.test(raw)) return 'Você está enviando muito rápido. Aguarde alguns segundos.';
@@ -2065,6 +2066,15 @@
     const button = $('chat-send');
     setBusy(button, true, 'Enviando...');
     try {
+      const { data: moderationDecision, error: moderationError } = await state.supabase.rpc('cae_chat_moderation_check', {
+        p_text: body
+      });
+      if (moderationError) throw moderationError;
+      if (moderationDecision !== 'allow') {
+        toast('O filtro identificou uma possível ofensa, ameaça ou ataque. Reformule a mensagem sem atacar uma pessoa ou grupo. Palavrões usados sem direcionar ofensas continuam permitidos.', 'error');
+        return;
+      }
+
       const { error } = await state.supabase.from(TABLE.chat).insert({ user_id: state.user.id, body });
       if (error) throw error;
       $('chat-input').value = '';
