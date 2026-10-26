@@ -359,48 +359,42 @@
 </div>
 <button class="help-question" type="button" data-site-help data-help-title="Filtros de voz" data-help-text="Teste um efeito antes de enviar o áudio." data-help-detail="Escolha um efeito, grave até cinco segundos no botão de teste e ouça como ficou. O filtro muda a voz, mas não garante anonimato total. Evite dizer seu nome ou outros dados pessoais.">?</button>
 </div>
-          <div id="voice-filter-picker" class="voice-filter-picker">
+                    <div id="voice-filter-picker" class="voice-filter-picker">
             <div class="field-label-row">
-<div class="eyebrow">Efeitos de voz</div>
-<button class="help-question" type="button" data-site-help data-help-title="Como funcionam os efeitos" data-help-text="O teste é feito no seu aparelho e não é enviado." data-help-detail="Cada opção muda o som da gravação. O teste é feito no seu aparelho e não é enviado. Para um desabafo público, o efeito escolhido é aplicado antes do envio.">?</button>
-</div>
-            <div class="voice-filter-grid" role="group" aria-label="Escolha o filtro de voz">
-              <button class="voice-filter-option active" type="button" data-voice-filter="anonymized" aria-pressed="true"><i data-lucide="shield-check"></i><span><b>Disfarçado</b><small>Muda bastante</small></span></button>
-              <button class="voice-filter-option" type="button" data-voice-filter="robot" aria-pressed="false"><i data-lucide="bot"></i><span><b>Robô</b><small>Som eletrônico</small></span></button>
-              <button class="voice-filter-option" type="button" data-voice-filter="radio" aria-pressed="false"><i data-lucide="radio"></i><span><b>Rádio</b><small>Som de rádio</small></span></button>
-              <button class="voice-filter-option" type="button" data-voice-filter="muffled" aria-pressed="false"><i data-lucide="audio-lines"></i><span><b>Abafado</b><small>Som mais fechado</small></span></button>
+              <div class="eyebrow">Proteção para áudio público</div>
+              <button class="help-question" type="button" data-site-help data-help-title="Voz sintética" data-help-text="O áudio público é recriado com uma voz artificial, em vez de publicar sua gravação original." data-help-detail="Você revisa o texto e o CAE gera uma narração sintética no próprio aparelho. A voz original não é anexada ao desabafo. Para usar o microfone para preencher o texto, o reconhecimento depende do navegador e pode usar processamento externo; digitar o texto evita essa etapa. Mesmo com voz sintética, não inclua nome, escola específica, endereço ou detalhes que possam identificar você.">?</button>
             </div>
-            <p id="audio-filter-selected" class="cae-muted audio-filter-selected">Disfarçado: muda bastante o som da voz.</p>
-            <div class="voice-filter-test-row">
-              <button class="btn secondary" id="voice-filter-test" type="button"><i data-lucide="mic-2"></i>Testar efeito (5 segundos)</button>
-              <span id="voice-filter-test-status" class="cae-muted">O teste não é enviado.</span>
-            </div>
-            <audio id="voice-filter-test-preview" class="audio-preview hidden" controls></audio>
+            <p>Para publicar um áudio, use a opção <strong>Gerar áudio sem usar sua voz</strong> logo abaixo. O CAE cria uma narração artificial a partir do texto revisado, sem enviar o timbre da sua gravação junto com o desabafo.</p>
+            <p class="cae-muted">Você pode digitar o texto ou usar a transcrição do navegador. Se preferir não passar sua fala pelo serviço de reconhecimento do navegador, digite diretamente.</p>
           </div>
-          <p id="record-status" class="muted">Pronto para gravar.</p>
-          <div class="actions">
-            <button class="btn primary" id="record-start" type="button"><i data-lucide="mic"></i>Começar</button>
-            <button class="btn secondary" id="record-stop" type="button" disabled><i data-lucide="square"></i>Parar</button>
-            <button class="btn secondary" id="record-clear" type="button" disabled>Apagar gravação</button>
-            <button class="btn primary" id="record-send" type="button" disabled><i data-lucide="upload"></i>Enviar áudio</button>
+          <div id="direct-audio-recorder" class="hidden">
+            <p id="record-status" class="muted">Gravação disponível apenas para desabafos privados.</p>
+            <div class="actions">
+              <button class="btn primary" id="record-start" type="button"><i data-lucide="mic"></i>Começar gravação</button>
+              <button class="btn secondary" id="record-stop" type="button" disabled><i data-lucide="square"></i>Parar</button>
+            </div>
           </div>
           <audio id="audio-preview" class="audio-preview hidden" controls></audio>
+          <div class="actions audio-record-actions">
+            <button class="btn secondary" id="record-clear" type="button" disabled>Apagar áudio</button>
+            <button class="btn primary hidden" id="record-send" type="button" disabled><i data-lucide="upload"></i>Enviar áudio</button>
+          </div>
 
           <section class="text-voice-card" aria-labelledby="text-voice-title">
             <div class="text-voice-card-head">
               <div>
-<div class="eyebrow">Outra forma de gravar</div>
-<h3 id="text-voice-title">Transformar texto em áudio</h3>
-<p class="muted">Fale ou digite sua mensagem. Depois, escolha uma voz e gere o áudio.</p>
+<div class="eyebrow">Voz sintética</div>
+<h3 id="text-voice-title">Gerar áudio sem usar sua voz</h3>
+<p class="muted">Digite ou transcreva sua mensagem, revise o texto e gere uma narração com voz artificial.</p>
 </div>
               <button class="help-question" type="button" data-site-help data-help-title="Transformar texto em áudio" data-help-text="Digite ou fale, revise o texto e gere a narração." data-help-detail="Você pode falar para preencher o texto ou digitar. Confira e corrija a mensagem, escolha uma voz e toque em Gerar áudio. O áudio criado é uma narração; ele não usa sua voz natural. A transcrição depende do navegador e pode precisar de internet.">?</button>
             </div>
             <div class="text-voice-record-row">
-              <button class="btn secondary" id="tts-dictate" type="button"><i data-lucide="mic"></i>Falar agora</button>
+              <button class="btn secondary" id="tts-dictate" type="button"><i data-lucide="mic"></i>Falar e transcrever</button>
               <span id="tts-dictation-status" class="cae-muted" aria-live="polite">Toque e fale sua mensagem.</span>
             </div>
             <div class="field-label-row">
-<label class="text-voice-label" for="tts-transcript">Texto do áudio</label><button class="help-question" type="button" data-site-help data-help-title="Revise o texto" data-help-text="Confira a transcrição antes de gerar o áudio." data-help-detail="A transcrição pode errar algumas palavras. Leia o texto, corrija o que precisar ou escreva diretamente aqui antes de gerar o áudio. Quando o navegador oferecer, você também poderá escolher outra sugestão para um trecho.">?</button>
+<label class="text-voice-label" for="tts-transcript">Texto do áudio</label><button class="help-question" type="button" data-site-help data-help-title="Revise o texto" data-help-text="Confira a transcrição antes de gerar o áudio." data-help-detail="A transcrição pode errar palavras. Revise e corrija o texto antes de gerar o áudio. O reconhecimento de fala é oferecido pelo navegador e pode usar processamento externo; digitar o texto evita essa etapa. A narração final é gerada no aparelho com uma voz sintética.">?</button>
 </div>
             <textarea id="tts-transcript" maxlength="1600" placeholder="Sua mensagem aparecerá aqui. Você também pode digitar."></textarea>
             <div id="tts-transcript-alternatives" class="tts-transcript-alternatives hidden" aria-live="polite"></div>
@@ -802,9 +796,9 @@
           <h3>O que é privado?</h3>
           <p>Desabafos e conversas privadas não aparecem para outros estudantes. Administradores podem consultá-los em situações de segurança.</p>
           <details class="site-more"><summary>Mais detalhes</summary><p>Desabafos marcados como privados e mensagens de conversas privadas não aparecem para outros estudantes. Administradores podem consultá-los para moderação e verificação de segurança.</p></details>
-          <h3>Áudios e anonimato</h3>
-          <p>Filtros mudam a voz, mas não garantem anonimato.</p>
-          <details class="site-more"><summary>Mais detalhes</summary><p>Filtros de voz alteram características do áudio, mas não garantem anonimato completo. Voz, contexto e detalhes mencionados podem identificar alguém. Pense nisso antes de enviar uma gravação.</p></details>
+          <h3>Áudios e proteção da voz</h3>
+          <p>Áudios públicos usam uma voz sintética gerada a partir do texto revisado, não a gravação original.</p>
+          <details class="site-more"><summary>Mais detalhes</summary><p>O áudio público é recriado com uma voz artificial no aparelho. A transcrição pelo microfone depende do navegador e pode usar processamento externo; digitar o texto evita essa etapa. A voz sintética não impede que alguém seja reconhecido pelo conteúdo, por nomes ou por detalhes mencionados.</p></details>
           <h3>Seus controles</h3>
           <p>Você pode ver seu histórico, apagar desabafos e pedir a exclusão da conta.</p>
           <details class="site-more"><summary>Mais detalhes</summary><p>Você pode consultar seu histórico, excluir seus próprios desabafos e solicitar a exclusão da conta. A solicitação de exclusão precisa ser processada pela equipe; não é instantânea.</p></details>
@@ -1320,6 +1314,6 @@
       </form>
     </div>
   </div>
-  <script src="script.js?v=62" defer></script>
+  <script src="script.js?v=63" defer></script>
 </body>
 </html>
