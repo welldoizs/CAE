@@ -112,6 +112,8 @@
     adminReportCounts: { chat: 0, content: 0 },
     recordingStream: null,
     recordingContext: null,
+    recordingStartedAt: null,
+    recordingTimerInterval: null,
     ttsRecognition: null,
     ttsDictationRunning: false,
     ttsFinalTranscript: '',
@@ -1092,7 +1094,38 @@
     });
   }
 
+  function updateRecordingTimer() {
+    if (!state.recordingStartedAt) return;
+    const elapsedSeconds = Math.floor((Date.now() - state.recordingStartedAt) / 1000);
+    const minutes = Math.floor(elapsedSeconds / 60);
+    const seconds = elapsedSeconds % 60;
+    const display = $('recording-time');
+    if (display) {
+      display.textContent = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+    }
+  }
+
+  function stopRecordingTimer() {
+    if (state.recordingTimerInterval !== null) {
+      window.clearInterval(state.recordingTimerInterval);
+      state.recordingTimerInterval = null;
+    }
+    state.recordingStartedAt = null;
+    $('recording-timer')?.classList.add('hidden');
+    const display = $('recording-time');
+    if (display) display.textContent = '00:00';
+  }
+
+  function startRecordingTimer() {
+    stopRecordingTimer();
+    state.recordingStartedAt = Date.now();
+    $('recording-timer')?.classList.remove('hidden');
+    updateRecordingTimer();
+    state.recordingTimerInterval = window.setInterval(updateRecordingTimer, 1000);
+  }
+
   function resetRecordingUI() {
+    stopRecordingTimer();
     if (state.audioObjectUrl) {
       URL.revokeObjectURL(state.audioObjectUrl);
       state.audioObjectUrl = null;
@@ -1170,6 +1203,7 @@
         toast('A gravação encontrou um erro.', 'error');
       };
       state.recorder.onstop = async () => {
+        stopRecordingTimer();
         const rawBlob = new Blob(state.recordingChunks, { type: state.audioMime || 'audio/webm' });
         state.recordingChunks = [];
         if (state.recordingStream) {
@@ -1226,6 +1260,7 @@
       };
 
       state.recorder.start();
+      startRecordingTimer();
       $('record-status').textContent = state.ventVisibility === 'public'
         ? 'Gravando sua voz… o filtro será aplicado depois que você parar.'
         : 'Gravando áudio privado… toque em Parar quando terminar.';
@@ -1242,7 +1277,10 @@
     }
   }
   function stopRecording() {
-    if (state.recorder?.state && state.recorder.state !== 'inactive') state.recorder.stop();
+    if (state.recorder?.state && state.recorder.state !== 'inactive') {
+      stopRecordingTimer();
+      state.recorder.stop();
+    }
   }
 
   function clearRecording() { resetRecordingUI(); }
