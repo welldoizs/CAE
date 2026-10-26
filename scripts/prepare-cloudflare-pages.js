@@ -28,6 +28,15 @@ function validateSiteFiles() {
       (check.stderr || check.error?.message || 'erro desconhecido'));
   }
 
+  const workerCheck = spawnSync(process.execPath, ['--check', path.join(root, 'assets', 'voice-anonymizer-worker.js')], {
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024
+  });
+  if (workerCheck.error || workerCheck.status !== 0) {
+    throw new Error('Erro de sintaxe no filtro local de voz: ' +
+      (workerCheck.stderr || workerCheck.error?.message || 'erro desconhecido'));
+  }
+
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   for (const reference of ['style.css?v=54', 'script.js?v=64']) {
     if (!html.includes(reference)) {
