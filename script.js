@@ -75,7 +75,6 @@
     audioBlob: null,
     audioMime: '',
     audioObjectUrl: null,
-    publicVoiceFilter: 'anonymized',
     lastHydratedAccessToken: null,
     chatLoading: false,
     chatReloadQueued: false,
@@ -109,11 +108,6 @@
     adminReportCounts: { chat: 0, content: 0 },
     recordingStream: null,
     recordingContext: null,
-    voiceTestRecorder: null,
-    voiceTestChunks: [],
-    voiceTestStream: null,
-    voiceTestContext: null,
-    voiceTestObjectUrl: null,
     ttsRecognition: null,
     ttsDictationRunning: false,
     ttsFinalTranscript: '',
@@ -875,6 +869,10 @@
   function setVentVisibility(visibility) {
     const value = visibility === 'private' ? 'private' : 'public';
     state.ventVisibility = value;
+    if (value === 'public' && state.recorder?.state === 'recording') {
+      try { state.recorder.stop(); } catch (error) { console.warn('STOP PRIVATE RECORDING', error); }
+    }
+    if (value === 'public' && state.audioSource === 'recorded') resetRecordingUI();
     $$('[data-vent-visibility]').forEach(button => {
       const active = button.dataset.ventVisibility === value;
       button.classList.toggle('active', active);
@@ -991,14 +989,14 @@
   }
 
   function updateAudioAnonymityNotice() {
-    selectPublicVoiceFilter(state.publicVoiceFilter);
-    const picker = $('voice-filter-picker');
-    picker?.classList.toggle('hidden', state.ventVisibility !== 'public');
+    const isPublic = state.ventVisibility === 'public';
+    $('voice-filter-picker')?.classList.toggle('hidden', !isPublic);
+    $('direct-audio-recorder')?.classList.toggle('hidden', isPublic);
     const note = $('audio-anonymity-text');
     if (!note) return;
-    note.textContent = state.ventVisibility === 'public'
-      ? 'Quando este desabafo estiver público, sua voz receberá um filtro real antes do envio para dificultar sua identificação. Áudio privado não recebe esse filtro.'
-      : 'Este desabafo está privado, então o áudio não recebe o filtro de anonimização. Ele fica acessível somente às pessoas autorizadas.';
+    note.textContent = isPublic
+      ? 'O áudio público é gerado com uma voz sintética a partir do texto revisado. Assim, o timbre da sua voz não é enviado junto com o desabafo.'
+      : 'Neste desabafo privado, você pode gravar sua voz original. A gravação fica restrita às pessoas autorizadas, incluindo a equipe de moderação.';
   }
 
   function resetRecordingUI() {
@@ -1030,198 +1028,58 @@
     $('record-stop').disabled = true;
     $('record-clear').disabled = true;
     $('record-send').disabled = true;
+    $('record-send').classList.add('hidden');
     updateAudioAnonymityNotice();
   }
 
-  const PUBLIC_VOICE_FILTERS = Object.freeze({
-    anonymized: { label: 'Anônimo', description: 'Filtro mais forte para alterar bastante o timbre da voz.', color: 'blue' },
-    robot: { label: 'Robótico', description: 'Timbre metálico e modulado, deixando a voz menos natural.', color: 'violet' },
-    radio: { label: 'Rádio', description: 'Faixa de frequência reduzida, parecida com uma transmissão de rádio.', color: 'slate' },
-    muffled: { label: 'Abafado', description: 'Corta parte das frequências para deixar a voz mais fechada e diferente.', color: 'cyan' }
-  });
-
-  function selectPublicVoiceFilter(filter) {
-    if (state.recorder?.state === 'recording') return toast('Pare a gravação antes de trocar o filtro de voz.', 'error');
-    if (state.voiceTestRecorder?.state === 'recording') return toast('Pare o teste antes de trocar o filtro de voz.', 'error');
-    const value = PUBLIC_VOICE_FILTERS[filter] ? filter : 'anonymized';
-    state.publicVoiceFilter = value;
-    document.querySelectorAll('[data-voice-filter]').forEach(button => {
-      const active = button.dataset.voiceFilter === value;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
-    const selected = $('audio-filter-selected');
-    if (selected) selected.textContent = `${PUBLIC_VOICE_FILTERS[value].label}: ${PUBLIC_VOICE_FILTERS[value].description}`;
-    clearVoiceTestPreview();
-    const status=$('voice-filter-test-status');
-    if(status)status.textContent='O teste é local e não é enviado.';
-  }
-
-  function stopVoiceTestResources() {
-    if(state.voiceTestStream){state.voiceTestStream.getTracks().forEach(track=>track.stop());state.voiceTestStream=null;}
-    if(state.voiceTestContext){state.voiceTestContext.close().catch(()=>{});state.voiceTestContext=null;}
-    state.voiceTestRecorder=null;
-  }
-
-  function clearVoiceTestPreview() {
-    if(state.voiceTestObjectUrl){URL.revokeObjectURL(state.voiceTestObjectUrl);state.voiceTestObjectUrl=null;}
-    const preview=$('voice-filter-test-preview');
-    if(preview){preview.pause();preview.removeAttribute('src');preview.load();preview.classList.add('hidden');}
-  }
-
-  async function testSelectedVoiceFilter(button) {
-    if(state.recorder?.state==='recording')return toast('Pare a gravação principal antes de testar um filtro.','error');
-    if(state.ttsDictationRunning)return toast('Pare a transcrição por voz antes de testar um filtro.','error');
-    if(state.voiceTestRecorder?.state==='recording'){state.voiceTestRecorder.stop();return;}
-    if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined')return toast('Seu navegador não permite o teste de áudio.','error');
-    try{
-      clearVoiceTestPreview();stopVoiceTestResources();
-      const rawStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-      const AudioContextCtor=window.AudioContext||window.webkitAudioContext;
-      if(!AudioContextCtor)throw new Error('Seu navegador não suporta os filtros de voz necessários.');
-      const context=new AudioContextCtor();if(context.state==='suspended')await context.resume();
-      const source=context.createMediaStreamSource(rawStream),destination=context.createMediaStreamDestination();
-      const filter=buildPublicVoiceFilter(context);source.connect(filter.input);let current=filter.input;
-      for(const node of filter.nodes.slice(1)){current.connect(node);current=node;}
-      current.connect(filter.output);filter.output.connect(destination);
-      const candidates=['audio/webm;codecs=opus','audio/webm','audio/mp4'];const mime=candidates.find(type=>MediaRecorder.isTypeSupported?.(type))||'';
-      const recorder=mime?new MediaRecorder(destination.stream,{mimeType:mime}):new MediaRecorder(destination.stream);
-      state.voiceTestRecorder=recorder;state.voiceTestChunks=[];state.voiceTestStream=rawStream;state.voiceTestContext=context;
-      const startedAt=Date.now();
-      const timer=window.setInterval(()=>{const elapsed=Math.min(5000,Date.now()-startedAt),remaining=Math.max(0,5000-elapsed);const status=$('voice-filter-test-status');if(status)status.textContent=`Gravando teste… ${Math.ceil(remaining/1000)} s. Fale normalmente.`;if(elapsed>=5000&&recorder.state!=='inactive'){window.clearInterval(timer);recorder.stop();}},100);
-      recorder.ondataavailable=event=>{if(event.data?.size)state.voiceTestChunks.push(event.data);};
-      recorder.onerror=event=>{window.clearInterval(timer);console.error('VOICE TEST',event);stopVoiceTestResources();const status=$('voice-filter-test-status');if(status)status.textContent='O teste falhou. Tente novamente.';};
-      recorder.onstop=()=>{window.clearInterval(timer);const blob=new Blob(state.voiceTestChunks,{type:mime||'audio/webm'});if(state.voiceTestObjectUrl)URL.revokeObjectURL(state.voiceTestObjectUrl);state.voiceTestObjectUrl=URL.createObjectURL(blob);const preview=$('voice-filter-test-preview');if(preview){preview.src=state.voiceTestObjectUrl;preview.classList.remove('hidden');}const status=$('voice-filter-test-status');if(status)status.textContent=`Teste pronto com “${PUBLIC_VOICE_FILTERS[state.publicVoiceFilter].label}”. Não foi enviado.`;stopVoiceTestResources();if(button){button.disabled=false;button.innerHTML='<i data-lucide="mic-2"></i>Testar este filtro (até 5 s)';refreshIcons();}};
-      recorder.start();button.disabled=false;button.innerHTML='<i data-lucide="square"></i>Parar teste';refreshIcons();const status=$('voice-filter-test-status');if(status)status.textContent='Gravando teste… até 5 s. Fale normalmente.';
-    }catch(error){console.error('VOICE TEST START',error);stopVoiceTestResources();const status=$('voice-filter-test-status');if(status)status.textContent='Não foi possível iniciar o teste.';toast(error?.message||'Não foi possível acessar o microfone.','error');}
-  }
-
-  function createVoiceFilterCurve(amount = 2.4) {
-    const curve = new Float32Array(44100);
-    for (let i = 0; i < curve.length; i++) {
-      const x = (i * 2) / curve.length - 1;
-      curve[i] = Math.tanh(x * amount) * 0.82;
-    }
-    return curve;
-  }
-
-  function buildPublicVoiceFilter(context) {
-    const highpass = context.createBiquadFilter();
-    const lowpass = context.createBiquadFilter();
-    const shaper = context.createWaveShaper();
-    const compressor = context.createDynamicsCompressor();
-    const output = context.createGain();
-    highpass.type = 'highpass';
-    lowpass.type = 'lowpass';
-    output.gain.value = 0.82;
-    compressor.threshold.value = -24;
-    compressor.knee.value = 24;
-    compressor.ratio.value = 8;
-    compressor.attack.value = 0.004;
-    compressor.release.value = 0.16;
-
-    const extras = [];
-    let nodes = [highpass, lowpass, shaper, compressor];
-
-    switch (state.publicVoiceFilter) {
-      case 'robot': {
-        highpass.frequency.value = 190;
-        lowpass.frequency.value = 2700;
-        shaper.curve = createVoiceFilterCurve(4.5);
-        shaper.oversample = '4x';
-        const ringGain = context.createGain();
-        const ring = context.createOscillator();
-        ring.frequency.value = 46;
-        ring.connect(ringGain.gain);
-        ring.start();
-        nodes.push(ringGain);
-        const tremolo = context.createOscillator();
-        const depth = context.createGain();
-        tremolo.frequency.value = 12;
-        depth.gain.value = 0.13;
-        tremolo.connect(depth).connect(output.gain);
-        tremolo.start();
-        extras.push(ring, ringGain, tremolo, depth);
-        break;
-      }
-      case 'radio':
-        highpass.frequency.value = 320;
-        lowpass.frequency.value = 2300;
-        shaper.curve = createVoiceFilterCurve(3.0);
-        shaper.oversample = '4x';
-        break;
-      case 'muffled':
-        highpass.frequency.value = 85;
-        lowpass.frequency.value = 1450;
-        shaper.curve = createVoiceFilterCurve(1.55);
-        shaper.oversample = '2x';
-        break;
-      default: {
-        highpass.frequency.value = 170;
-        lowpass.frequency.value = 3000;
-        shaper.curve = createVoiceFilterCurve(4.1);
-        shaper.oversample = '4x';
-        const ringGain = context.createGain();
-        const ring = context.createOscillator();
-        ring.frequency.value = 33;
-        ring.connect(ringGain.gain);
-        ring.start();
-        nodes.push(ringGain);
-        extras.push(ring, ringGain);
-        break;
-      }
-    }
-
-    return { input: highpass, nodes, output, extras };
-  }
-
   async function startRecording() {
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') return toast('Seu navegador não permite gravação de áudio aqui.', 'error');
+    if (state.ventVisibility !== 'private') {
+      return toast('Para um áudio público, use a voz sintética: digite ou transcreva o texto, revise e gere o áudio.', 'error');
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      return toast('Seu navegador não permite gravação de áudio aqui.', 'error');
+    }
     if (!ensureAccountCanInteract()) return;
     if (state.ttsDictationRunning) stopTtsDictation();
     try {
-      const rawStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      const rawStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      });
       const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
       const mime = candidates.find(type => MediaRecorder.isTypeSupported?.(type)) || '';
       state.audioMime = mime;
       state.recordingChunks = [];
       state.audioBlob = null;
       state.audioSource = null;
-      if (state.audioObjectUrl) { URL.revokeObjectURL(state.audioObjectUrl); state.audioObjectUrl = null; }
-      const previousPreview = $('audio-preview');
-      if (previousPreview) { previousPreview.pause(); previousPreview.removeAttribute('src'); previousPreview.load(); previousPreview.classList.add('hidden'); }
-      state.recordingStream = rawStream;
-
-      let recordStream = rawStream;
-      if (state.ventVisibility === 'public') {
-        const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextCtor) {
-          rawStream.getTracks().forEach(track => track.stop());
-          state.recordingStream = null;
-          throw new Error('Seu navegador não suporta os filtros de voz necessários para publicar este áudio. Tente usar um navegador atualizado.');
-        }
-        const context = new AudioContextCtor();
-        if (context.state === 'suspended') await context.resume();
-        const source = context.createMediaStreamSource(rawStream);
-        const destination = context.createMediaStreamDestination();
-        const filter = buildPublicVoiceFilter(context);
-        let current = source;
-        current.connect(filter.input);
-        current = filter.input;
-        for (const node of filter.nodes.slice(1)) {
-          current.connect(node);
-          current = node;
-        }
-        current.connect(filter.output);
-        filter.output.connect(destination);
-        state.recordingContext = context;
-        recordStream = destination.stream;
+      if (state.audioObjectUrl) {
+        URL.revokeObjectURL(state.audioObjectUrl);
+        state.audioObjectUrl = null;
       }
-
-      state.recorder = mime ? new MediaRecorder(recordStream, { mimeType: mime }) : new MediaRecorder(recordStream);
-      state.recorder.ondataavailable = event => { if (event.data?.size) state.recordingChunks.push(event.data); };
-      state.recorder.onerror = event => { console.error('MEDIA RECORDER', event); toast('A gravação encontrou um erro.', 'error'); };
+      const previousPreview = $('audio-preview');
+      if (previousPreview) {
+        previousPreview.pause();
+        previousPreview.removeAttribute('src');
+        previousPreview.load();
+        previousPreview.classList.add('hidden');
+      }
+      state.recordingStream = rawStream;
+      state.recorder = mime
+        ? new MediaRecorder(rawStream, { mimeType: mime })
+        : new MediaRecorder(rawStream);
+      state.recorder.ondataavailable = event => {
+        if (event.data?.size) state.recordingChunks.push(event.data);
+      };
+      state.recorder.onerror = event => {
+        console.error('MEDIA RECORDER', event);
+        toast('A gravação encontrou um erro.', 'error');
+      };
       state.recorder.onstop = () => {
+        // Se a privacidade foi alterada durante a gravação, o áudio original é descartado.
+        if (state.ventVisibility !== 'private') {
+          state.recordingChunks = [];
+          resetRecordingUI();
+          return;
+        }
         const type = state.audioMime || 'audio/webm';
         state.audioBlob = new Blob(state.recordingChunks, { type });
         state.audioSource = 'recorded';
@@ -1229,33 +1087,31 @@
         const preview = $('audio-preview');
         preview.src = state.audioObjectUrl;
         preview.classList.remove('hidden');
-        $('record-status').textContent = state.ventVisibility === 'public'
-          ? `Gravação com filtro “${PUBLIC_VOICE_FILTERS[state.publicVoiceFilter].label}” pronta. Ouça antes de enviar.`
-          : 'Gravação pronta. Ouça antes de enviar.';
+        $('record-status').textContent = 'Gravação privada pronta. Ouça antes de enviar.';
         $('record-start').disabled = false;
         $('record-stop').disabled = true;
         $('record-clear').disabled = false;
         $('record-send').disabled = false;
-        if (state.recordingStream) { state.recordingStream.getTracks().forEach(track => track.stop()); state.recordingStream = null; }
-        if (state.recordingContext) { state.recordingContext.close().catch(() => {}); state.recordingContext = null; }
+        $('record-send').classList.remove('hidden');
+        if (state.recordingStream) {
+          state.recordingStream.getTracks().forEach(track => track.stop());
+          state.recordingStream = null;
+        }
       };
       state.recorder.start();
-      $('record-status').textContent = state.ventVisibility === 'public'
-        ? `Gravando com filtro “${PUBLIC_VOICE_FILTERS[state.publicVoiceFilter].label}”...`
-        : 'Gravando... toque em Parar quando terminar.';
+      $('record-status').textContent = 'Gravando áudio privado… toque em Parar quando terminar.';
       $('record-start').disabled = true;
       $('record-stop').disabled = false;
       $('record-clear').disabled = true;
       $('record-send').disabled = true;
+      $('record-send').classList.add('hidden');
     } catch (error) {
       console.error('RECORD', error);
       if (state.recordingStream) state.recordingStream.getTracks().forEach(track => track.stop());
       state.recordingStream = null;
-      if (state.recordingContext) { state.recordingContext.close().catch(() => {}); state.recordingContext = null; }
       toast(error?.message || 'Não foi possível acessar o microfone. Confira a permissão do navegador.', 'error');
     }
   }
-
   function stopRecording() {
     if (state.recorder?.state && state.recorder.state !== 'inactive') state.recorder.stop();
   }
@@ -1273,7 +1129,10 @@
   }
 
   async function sendAudioVent() {
-    if (!state.audioBlob) return toast('Grave um áudio primeiro.', 'error');
+    if (!state.audioBlob) return toast('Grave ou gere um áudio primeiro.', 'error');
+    if (state.ventVisibility === 'public' && state.audioSource !== 'tts') {
+      return toast('Áudios públicos precisam usar voz sintética. A gravação original não será publicada.', 'error');
+    }
     const button = $('record-send');
     setBusy(button, true, 'Enviando...');
     try {
@@ -1414,7 +1273,7 @@
 
   function startTtsDictation() {
     if (state.ttsGenerating) return toast('Espere a geração de voz terminar antes de iniciar outra ação.', 'error');
-    if (state.recorder?.state === 'recording' || state.voiceTestRecorder?.state === 'recording') {
+    if (state.recorder?.state === 'recording') {
       toast('Pare a gravação ou o teste de filtro antes de iniciar a transcrição.', 'error');
       return;
     }
@@ -1847,6 +1706,7 @@
       $('record-stop').disabled = true;
       $('record-clear').disabled = false;
       $('record-send').disabled = false;
+      $('record-send').classList.remove('hidden');
       if (status) status.textContent = `Áudio gerado com voz sintética ${voiceLabel}. Ouça o resultado antes de enviar. A transcrição não é anexada ao desabafo.`;
     } catch (error) {
       if (state.ttsVoiceStyle === 'female') destroyFemaleTtsWorker();
@@ -4519,8 +4379,6 @@
     $('record-stop')?.addEventListener('click',stopRecording);
     $('record-clear')?.addEventListener('click',clearRecording);
     $('record-send')?.addEventListener('click',sendAudioVent);
-    $$('[data-voice-filter]').forEach(button=>button.addEventListener('click',()=>selectPublicVoiceFilter(button.dataset.voiceFilter)));
-    $('voice-filter-test')?.addEventListener('click',()=>testSelectedVoiceFilter($('voice-filter-test')));
     $('tts-dictate')?.addEventListener('click',startTtsDictation);
     $('tts-generate')?.addEventListener('click',generateTextVoice);
     $$('[data-tts-voice]').forEach(button=>button.addEventListener('click',()=>chooseTextVoice(button.dataset.ttsVoice)));
