@@ -38,7 +38,7 @@ function validateSiteFiles() {
   }
 
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  for (const reference of ['style.css?v=55', 'script.js?v=66']) {
+  for (const reference of ['style.css?v=55', 'script.js?v=67']) {
     if (!html.includes(reference)) {
       throw new Error('Referência de recurso esperada não encontrada em index.html: ' + reference);
     }
