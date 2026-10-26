@@ -3249,6 +3249,87 @@ input:focus,textarea:focus,select:focus {
   font-size: .76rem;
 }
 
+.audio-privacy-tips {
+  margin-top: 12px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+
+.audio-privacy-tips summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 800;
+  cursor: pointer;
+  list-style: none;
+}
+
+.audio-privacy-tips summary::-webkit-details-marker {
+  display: none;
+}
+
+.audio-privacy-tips summary::after {
+  content: "+";
+  margin-left: auto;
+  font-size: 1rem;
+}
+
+.audio-privacy-tips[open] summary::after {
+  content: "−";
+}
+
+.audio-privacy-tips summary>i {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+.audio-privacy-tips-body {
+  margin-top: 9px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.72);
+}
+
+.audio-privacy-tips-body ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 19px;
+  color: var(--muted);
+  font-size: .77rem;
+  line-height: 1.55;
+}
+
+.audio-privacy-tips-body p {
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: .74rem;
+  line-height: 1.5;
+}
+
+.recording-timer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 4px;
+  padding: 10px 13px;
+  border: 1px solid #cce6f3;
+  border-radius: 13px;
+  background: #f4fbfe;
+  color: var(--ink);
+  font-size: .8rem;
+}
+
+.recording-timer strong {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .04em;
+}
+
 .notification-panel {
   z-index: 1200;
 }
