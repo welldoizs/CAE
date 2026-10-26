@@ -29,7 +29,7 @@ function validateSiteFiles() {
   }
 
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  for (const reference of ['style.css?v=54', 'script.js?v=62']) {
+  for (const reference of ['style.css?v=54', 'script.js?v=63']) {
     if (!html.includes(reference)) {
       throw new Error('Referência de recurso esperada não encontrada em index.html: ' + reference);
     }
