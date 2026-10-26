@@ -2066,6 +2066,15 @@
     const button = $('chat-send');
     setBusy(button, true, 'Enviando...');
     try {
+      const { data: extendedDecision, error: extendedModerationError } = await state.supabase.rpc('cae_chat_extended_moderation_check', {
+        p_text: body
+      });
+      if (extendedModerationError) throw extendedModerationError;
+      if (extendedDecision !== 'allow') {
+        toast('O filtro identificou uma ofensa direta ou um termo discriminatório. Reformule a mensagem sem atacar uma pessoa ou grupo.', 'error');
+        return;
+      }
+
       const { data: moderationDecision, error: moderationError } = await state.supabase.rpc('cae_chat_moderation_check', {
         p_text: body
       });
