@@ -3877,13 +3877,12 @@
     event.preventDefault();if(!isStaff())return;const payload={title:$('event-title').value.trim(),event_date:$('event-date').value,event_time:$('event-time').value,place:$('event-place').value.trim(),description:$('event-description').value.trim(),created_by:state.user.id,published_by:state.user.id};if(Object.values(payload).slice(0,5).some(v=>!v))return;
     const button=event.submitter;setBusy(button,true,'Publicando...');try{const {error}=await state.supabase.from(TABLE.events).insert(payload);if(error)throw error;event.target.reset();await logAdmin('create_event','event');toast('Evento publicado.');await loadEvents();}catch(error){console.error('EVENT',error);toast(errorMessage(error),'error');}finally{setBusy(button,false);}
   }
-  function eventPublisherId(row) {
-    return row?.published_by || row?.created_by || null;
-  }
-
   function canEditEvent(row) {
     if (!row || !state.user || !isStaff()) return false;
-    return isAdmin() || String(eventPublisherId(row) || '') === String(state.user.id);
+    if (isAdmin()) return true;
+    const userId = String(state.user.id);
+    return [row.created_by, row.published_by]
+      .some(authorId => authorId && String(authorId) === userId);
   }
 
   function ensureEventEditModal() {
