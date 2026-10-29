@@ -324,6 +324,7 @@
     if (/password.*6|at least 6/i.test(raw)) return 'A senha precisa ter pelo menos 6 caracteres.';
     if (/CAE_CHAT_OFFENSIVE/i.test(raw)) return 'O filtro identificou uma possível ofensa, ameaça ou ataque. Reformule a mensagem sem atacar uma pessoa ou grupo.';
     if (/CAE_ADMIN_REQUIRED/i.test(raw)) return 'Essa ação é exclusiva dos administradores e do dono.';
+    if (/CAE_EVENT_EDIT_FORBIDDEN/i.test(raw)) return 'Você só pode editar eventos publicados por você. Administradores e o owner podem editar todos.';
     if (/CAE_EDIT_REQUEST_ALREADY_REVIEWED|CAE_EDIT_REQUEST_NOT_PENDING/i.test(raw)) return 'Este pedido de edição já foi analisado. Atualize a lista.';
     if (/CAE_EDIT_REQUEST_REASON_REQUIRED/i.test(raw)) return 'Informe o motivo da recusa.';
     if (/cae_post_edit_requests_one_pending_per_user|duplicate key value.*cae_post_edit_requests/i.test(raw)) return 'Você já tem um pedido de edição pendente para esta publicação.';
@@ -2771,6 +2772,13 @@
       await loadNotifications();
       return;
     }
+    const muralPanels = { staff_announcement: 'announcements', staff_event: 'events', staff_poll: 'polls', staff_post: 'posts', staff_podcast: 'podcasts' };
+    const muralPanel = muralPanels[notification.type];
+    if (muralPanel) {
+      showView('mural-view');
+      switchMuralPanel(muralPanel);
+      return;
+    }
     const target = notification.target_view || 'private-conversations-view';
     showView(target);
     if (target === 'private-conversations-view' && notification.target_id) await loadPrivateChatData(notification.target_id);
@@ -3053,7 +3061,8 @@
     updateMuralActivityBadge('events', data || []);
     list.innerHTML = data?.length ? data.map(row => {
       const date = getField(row,['event_date'],null); const time = String(getField(row,['event_time'],'')).slice(0,5);
-      const staffActions = isStaff() ? `<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-content="1" data-content-type="event" data-content-id="${escapeHTML(row.id)}" data-content-label="este evento">Excluir</button></div>` : '';
+      const editAction = canEditEvent(row) ? `<button class="btn secondary" type="button" data-edit-event="${escapeHTML(row.id)}">Editar</button>` : '';
+      const staffActions = isStaff() ? `<div class="actions" style="margin-top:12px">${editAction}<button class="btn danger" type="button" data-delete-content="1" data-content-type="event" data-content-id="${escapeHTML(row.id)}" data-content-label="este evento">Excluir</button></div>` : '';
       return `<article class="card mural-searchable"><div class="eyebrow">${escapeHTML(formatDateOnly(date))}${time ? ` · ${escapeHTML(time)}` : ''}</div><h3>${escapeHTML(getField(row,['title'],'Evento'))}</h3><p>${escapeHTML(getField(row,['description'],'')).replace(/\n/g,'<br>')}</p><p class="cae-muted">${escapeHTML(getField(row,['place'],'')).replace(/\n/g,'<br>')}</p><div class="actions"><button class="btn secondary btn-small" type="button" data-download-event="${escapeHTML(row.id)}"><i data-lucide="calendar-plus"></i>Adicionar ao calendário</button>${bookmarkButtonHTML('event',row.id)}</div>${staffActions}</article>`;
     }).join('') : '<div class="card mural-empty-state"><span class="mural-empty-icon"><i data-lucide="calendar-days"></i></span><h3>Não há eventos cadastrados.</h3><p class="muted">Os eventos publicados pela equipe aparecem nesta aba.</p></div>';
   }
@@ -3778,7 +3787,7 @@
     const button=event.submitter; setBusy(button,true,'Publicando...');
     let pollId=null;
     try {
-      const {data:poll,error:pollError}=await state.supabase.from(TABLE.polls).insert({question,closes_at:closes?new Date(closes).toISOString():null,published_by:state.user.id}).select('*').single();
+      const {data:poll,error:pollError}=await state.supabase.from(TABLE.polls).insert({question,closes_at:closes?new Date(closes).toISOString():null,created_by:state.user.id,published_by:state.user.id}).select('*').single();
       if(pollError)throw pollError; pollId=poll.id;
       const {error:optionError}=await state.supabase.from(TABLE.pollOptions).insert(options.map(text=>({poll_id:poll.id,text,option_text:text})));
       if(optionError)throw optionError;
@@ -3861,12 +3870,129 @@
 
   async function createAnnouncement(event){
     event.preventDefault();if(!isStaff())return;const title=$('announcement-title').value.trim();const body=$('announcement-body').value.trim();if(!title||!body)return;
-    const button=event.submitter;setBusy(button,true,'Publicando...');try{const {error}=await state.supabase.from(TABLE.announcements).insert({title,body,published_by:state.user.id});if(error)throw error;event.target.reset();await logAdmin('create_announcement','announcement');toast('Aviso publicado.');await loadAnnouncements();}catch(error){console.error('ANNOUNCEMENT',error);toast(errorMessage(error),'error');}finally{setBusy(button,false);}
+    const button=event.submitter;setBusy(button,true,'Publicando...');try{const {error}=await state.supabase.from(TABLE.announcements).insert({title,body,created_by:state.user.id,published_by:state.user.id});if(error)throw error;event.target.reset();await logAdmin('create_announcement','announcement');toast('Aviso publicado.');await loadAnnouncements();}catch(error){console.error('ANNOUNCEMENT',error);toast(errorMessage(error),'error');}finally{setBusy(button,false);}
   }
 
   async function createEvent(event){
-    event.preventDefault();if(!isStaff())return;const payload={title:$('event-title').value.trim(),event_date:$('event-date').value,event_time:$('event-time').value,place:$('event-place').value.trim(),description:$('event-description').value.trim(),published_by:state.user.id};if(Object.values(payload).slice(0,5).some(v=>!v))return;
+    event.preventDefault();if(!isStaff())return;const payload={title:$('event-title').value.trim(),event_date:$('event-date').value,event_time:$('event-time').value,place:$('event-place').value.trim(),description:$('event-description').value.trim(),created_by:state.user.id,published_by:state.user.id};if(Object.values(payload).slice(0,5).some(v=>!v))return;
     const button=event.submitter;setBusy(button,true,'Publicando...');try{const {error}=await state.supabase.from(TABLE.events).insert(payload);if(error)throw error;event.target.reset();await logAdmin('create_event','event');toast('Evento publicado.');await loadEvents();}catch(error){console.error('EVENT',error);toast(errorMessage(error),'error');}finally{setBusy(button,false);}
+  }
+  function eventPublisherId(row) {
+    return row?.published_by || row?.created_by || null;
+  }
+
+  function canEditEvent(row) {
+    if (!row || !state.user || !isStaff()) return false;
+    return isAdmin() || String(eventPublisherId(row) || '') === String(state.user.id);
+  }
+
+  function ensureEventEditModal() {
+    let modal = $('cae-event-edit-modal');
+    if (modal) return modal;
+    modal = document.createElement('div');
+    modal.id = 'cae-event-edit-modal';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.style.cssText = 'position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.62);z-index:100002;padding:16px;overflow:auto;';
+    modal.innerHTML = `
+      <form id="cae-event-edit-form" role="dialog" aria-modal="true" aria-labelledby="cae-event-edit-title" style="width:min(680px,100%);max-height:90vh;overflow:auto;box-sizing:border-box;background:var(--card,#fff);color:var(--text,#222);border:1px solid var(--border,rgba(128,128,128,.2));border-radius:18px;padding:22px;box-shadow:0 24px 80px rgba(0,0,0,.28);">
+        <div class="eyebrow">Equipe CAE · edição do evento</div>
+        <h3 id="cae-event-edit-title" style="margin:0 0 8px;">Editar evento</h3>
+        <div class="field"><label for="cae-event-edit-name">Título</label><input id="cae-event-edit-name" required maxlength="200"></div>
+        <div class="grid-2">
+          <div class="field"><label for="cae-event-edit-date">Data</label><input id="cae-event-edit-date" type="date" required></div>
+          <div class="field"><label for="cae-event-edit-time">Hora</label><input id="cae-event-edit-time" type="time" required></div>
+        </div>
+        <div class="field"><label for="cae-event-edit-place">Local</label><input id="cae-event-edit-place" required maxlength="200"></div>
+        <div class="field"><label for="cae-event-edit-description">Descrição</label><textarea id="cae-event-edit-description" required maxlength="3000" rows="6"></textarea></div>
+        <div class="actions" style="justify-content:flex-end;margin-top:14px;">
+          <button type="button" class="btn secondary" data-close-event-edit>Cancelar</button>
+          <button type="submit" class="btn primary">Salvar alterações</button>
+        </div>
+      </form>`;
+    modal.addEventListener('click', event => {
+      if (event.target === modal) closeEventEditModal();
+    });
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  function closeEventEditModal() {
+    const modal = $('cae-event-edit-modal');
+    if (!modal) return;
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+  }
+
+  async function openEventEditModal(eventId) {
+    if (!state.user || !state.supabase || !isStaff()) return;
+    try {
+      let row = state.eventRows.find(item => String(item.id) === String(eventId));
+      if (!row) {
+        const { data, error } = await state.supabase.from(TABLE.events).select('*').eq('id', eventId).single();
+        if (error) throw error;
+        row = data;
+        state.eventRows = [...state.eventRows.filter(item => String(item.id) !== String(row.id)), row];
+      }
+      if (!canEditEvent(row)) {
+        toast('Você só pode editar eventos publicados por você. Administradores e o owner podem editar todos.', 'error');
+        return;
+      }
+      const modal = ensureEventEditModal();
+      modal.dataset.eventId = row.id;
+      $('cae-event-edit-name').value = String(row.title || '');
+      $('cae-event-edit-date').value = String(row.event_date || '').slice(0, 10);
+      $('cae-event-edit-time').value = String(row.event_time || '').slice(0, 5);
+      $('cae-event-edit-place').value = String(row.place || '');
+      $('cae-event-edit-description').value = String(row.description || '');
+      modal.style.display = 'grid';
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+      $('cae-event-edit-name')?.focus();
+    } catch (error) {
+      console.error('OPEN EVENT EDIT', error);
+      toast(errorMessage(error), 'error');
+    }
+  }
+
+  async function saveEventEdit(event) {
+    event.preventDefault();
+    const modal = $('cae-event-edit-modal');
+    const eventId = modal?.dataset.eventId;
+    const row = state.eventRows.find(item => String(item.id) === String(eventId));
+    if (!eventId || !canEditEvent(row)) {
+      toast('Você não tem permissão para editar este evento.', 'error');
+      return;
+    }
+    const payload = {
+      title: $('cae-event-edit-name')?.value.trim() || '',
+      event_date: $('cae-event-edit-date')?.value || '',
+      event_time: $('cae-event-edit-time')?.value || '',
+      place: $('cae-event-edit-place')?.value.trim() || '',
+      description: $('cae-event-edit-description')?.value.trim() || ''
+    };
+    if (Object.values(payload).some(value => !value)) {
+      toast('Preencha todos os campos do evento.', 'error');
+      return;
+    }
+    const submit = event.submitter;
+    setBusy(submit, true, 'Salvando...');
+    try {
+      const { data, error } = await state.supabase.from(TABLE.events)
+        .update(payload).eq('id', eventId).select('id').maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error('CAE_EVENT_EDIT_FORBIDDEN');
+      closeEventEditModal();
+      await logAdmin('edit_event', 'event', eventId);
+      toast('Evento atualizado.');
+      await loadEvents();
+      if (state.currentView === 'admin-view') await loadAdmin();
+    } catch (error) {
+      console.error('SAVE EVENT EDIT', error);
+      toast(errorMessage(error), 'error');
+    } finally {
+      setBusy(submit, false);
+    }
   }
 
   const labelsForType = type => ({free:'Texto livre',guided:'Perguntas guiadas',feelings:'Como eu me sinto',audio:'Áudio'}[type] || 'Desabafo');
@@ -3952,7 +4078,7 @@
       ]);
       [announcementRows,eventRows,pollRows].forEach(result=>{if(result.error)throw result.error;});
       $('admin-announcement-list').innerHTML=announcementRows.data?.length?announcementRows.data.map(row=>`<article class="card"><div class="eyebrow">Aviso · ${escapeHTML(formatDate(row.created_at))}</div><h3>${escapeHTML(getField(row,['title'],'Aviso'))}</h3><p>${escapeHTML(getField(row,['body'],'')).replace(/\n/g,'<br>')}</p><div class="actions"><button class="btn danger" type="button" data-delete-content="1" data-content-type="announcement" data-content-id="${escapeHTML(row.id)}" data-content-label="este aviso">Excluir</button></div></article>`).join(''):'<div class="card"><p>Nenhum aviso publicado.</p></div>';
-      $('admin-event-list').innerHTML=eventRows.data?.length?eventRows.data.map(row=>`<article class="card"><div class="eyebrow">${escapeHTML(formatDateOnly(getField(row,['event_date'],null)))}${getField(row,['event_time'],'')?` · ${escapeHTML(String(getField(row,['event_time'],'')).slice(0,5))}`:''}</div><h3>${escapeHTML(getField(row,['title'],'Evento'))}</h3><p>${escapeHTML(getField(row,['description'],'')).replace(/\n/g,'<br>')}</p><p class="cae-muted">${escapeHTML(getField(row,['place'],'')).replace(/\n/g,'<br>')}</p><div class="actions"><button class="btn danger" type="button" data-delete-content="1" data-content-type="event" data-content-id="${escapeHTML(row.id)}" data-content-label="este evento">Excluir</button></div></article>`).join(''):'<div class="card"><p>Nenhum evento publicado.</p></div>';
+      $('admin-event-list').innerHTML=eventRows.data?.length?eventRows.data.map(row=>`<article class="card"><div class="eyebrow">${escapeHTML(formatDateOnly(getField(row,['event_date'],null)))}${getField(row,['event_time'],'')?` · ${escapeHTML(String(getField(row,['event_time'],'')).slice(0,5))}`:''}</div><h3>${escapeHTML(getField(row,['title'],'Evento'))}</h3><p>${escapeHTML(getField(row,['description'],'')).replace(/\n/g,'<br>')}</p><p class="cae-muted">${escapeHTML(getField(row,['place'],'')).replace(/\n/g,'<br>')}</p><div class="actions">${canEditEvent(row)?`<button class="btn secondary" type="button" data-edit-event="${escapeHTML(row.id)}">Editar</button>`:''}<button class="btn danger" type="button" data-delete-content="1" data-content-type="event" data-content-id="${escapeHTML(row.id)}" data-content-label="este evento">Excluir</button></div></article>`).join(''):'<div class="card"><p>Nenhum evento publicado.</p></div>';
       const pollList=$('admin-poll-list');
       if(pollList){pollList.innerHTML=pollRows.data?.length?pollRows.data.map(row=>`<article class="card"><div class="eyebrow">Enquete · ${escapeHTML(formatDate(row.created_at))}</div><h3>${escapeHTML(getField(row,['question'],'Enquete'))}</h3><div class="actions"><button class="btn danger" type="button" data-delete-content="1" data-content-type="poll" data-content-id="${escapeHTML(row.id)}" data-content-label="esta enquete">Excluir</button></div></article>`).join(''):'<div class="card"><p>Nenhuma enquete publicada.</p></div>';}
 
@@ -4708,6 +4834,7 @@
       if(event.target.matches('#private-chat-form')) return sendPrivateMessage(event);
       if(event.target.matches('#cae-post-edit-request-form')) return submitPostEditRequest(event);
       if(event.target.matches('#cae-admin-post-edit-form')) return saveAdminPostEdit(event);
+      if(event.target.matches('#cae-event-edit-form')) return saveEventEdit(event);
     });
     document.addEventListener('change',event=>{
       if(event.target.matches('#admin-support-conversation')) renderSelectedAdminSupportConversation();
@@ -4744,6 +4871,8 @@
       if(button.matches('#request-account-deletion')){await requestAccountDeletion();return;}
       if(button.matches('#tts-cancel')){cancelTextVoiceGeneration();return;}
       if(button.matches('[data-admin-post-char-filter]')){state.adminPostFilter=button.dataset.adminPostCharFilter;renderAdminPostModerationList();return;}
+      if(button.matches('[data-edit-event]')){await openEventEditModal(button.dataset.editEvent);return;}
+      if(button.matches('[data-close-event-edit]')){closeEventEditModal();return;}
       if(button.matches('[data-edit-post]')){await openAdminPostEditModal(button.dataset.editPost);return;}
       if(button.matches('[data-request-post-edit]')){await openPostEditRequestModal(button.dataset.requestPostEdit);return;}
       if(button.matches('[data-edit-post-request]')){await openAdminPostEditModal(button.dataset.postId,button.dataset.editPostRequest);return;}
@@ -4862,7 +4991,7 @@
       area.addEventListener('input',()=>{area.style.height='auto';area.style.height=`${Math.min(area.scrollHeight,320)}px`;});
       area.addEventListener('keydown',event=>{if(area.id==='chat-input'&&event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();$('chat-form')?.requestSubmit();}});
     });
-    document.addEventListener('keydown',event=>{if(event.key==='Escape'){openNotificationsPanel(false);closeEmailConfirmationModal();closePrivateReplyModal();closeSiteHelp();}});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'){openNotificationsPanel(false);closeEmailConfirmationModal();closePrivateReplyModal();closeEventEditModal();closeSiteHelp();}});
     bindDelegatedEvents();
   }
 
