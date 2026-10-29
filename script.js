@@ -2114,13 +2114,15 @@
   }
 
   function closePostEditModals() {
+    let closed = false;
     ['cae-post-edit-request-modal','cae-admin-post-edit-modal'].forEach(id => {
       const modal = $(id);
-      if (!modal) return;
+      if (!modal || modal.style.display === 'none') return;
       modal.style.display = 'none';
       modal.setAttribute('aria-hidden','true');
+      closed = true;
     });
-    document.body.classList.remove('modal-open');
+    if (closed) document.body.classList.remove('modal-open');
   }
 
   function ensurePostEditRequestModal() {
