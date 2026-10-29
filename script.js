@@ -3699,6 +3699,10 @@
     if (isProtectedAccount(target)) return toast('Esta é uma conta protegida e não pode ser alterada por esta tela.', 'error');
     const role = $('admin-user-role')?.value;
     if (!['student', 'moderator'].includes(role)) return toast('Escolha somente Estudante ou Moderador.', 'error');
+    const currentRole = String(target.role || state.publicDirectory.get(target.user_id)?.role || 'student');
+    if (currentRole === 'moderator' && role === 'student' && state.profile?.role !== 'owner') {
+      return toast('Somente o owner pode rebaixar moderadores.', 'error');
+    }
     const button = $('admin-role-button');
     setBusy(button, true, 'Salvando...');
     try {
