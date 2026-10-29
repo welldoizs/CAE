@@ -2071,6 +2071,15 @@
     const button = $('chat-send');
     setBusy(button, true, 'Enviando...');
     try {
+      const { data: contextDecision, error: contextModerationError } = await state.supabase.rpc('cae_chat_context_moderation_check', {
+        p_text: body
+      });
+      if (contextModerationError) throw contextModerationError;
+      if (contextDecision !== 'allow') {
+        toast('O filtro identificou uma ofensa direcionada. Reformule a mensagem sem atacar uma pessoa ou grupo.', 'error');
+        return;
+      }
+
       const { data: attackDecision, error: attackModerationError } = await state.supabase.rpc('cae_chat_attack_moderation_check', {
         p_text: body
       });
