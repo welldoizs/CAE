@@ -28,7 +28,8 @@
     preferences: 'cae_user_preferences',
     deletionRequests: 'cae_account_deletion_requests',
     contentReports: 'cae_content_reports',
-    sharedPodcasts: 'cae_shared_podcasts'
+    sharedPodcasts: 'cae_shared_podcasts',
+    postEditRequests: 'cae_post_edit_requests'
   });
 
   const AUDIO_BUCKET = 'cae-audios';
@@ -107,6 +108,7 @@
     privateReplyVentId: null,
     adminPrivateChatData: [] ,
     adminPostRows: [],
+    adminPostEditRequests: [],
     adminPostFilter: 'all',
     adminReportFilter: 'all',
     adminReportCounts: { chat: 0, content: 0 },
@@ -322,6 +324,9 @@
     if (/password.*6|at least 6/i.test(raw)) return 'A senha precisa ter pelo menos 6 caracteres.';
     if (/CAE_CHAT_OFFENSIVE/i.test(raw)) return 'O filtro identificou uma possível ofensa, ameaça ou ataque. Reformule a mensagem sem atacar uma pessoa ou grupo.';
     if (/CAE_ADMIN_REQUIRED/i.test(raw)) return 'Essa ação é exclusiva dos administradores e do dono.';
+    if (/CAE_EDIT_REQUEST_ALREADY_REVIEWED|CAE_EDIT_REQUEST_NOT_PENDING/i.test(raw)) return 'Este pedido de edição já foi analisado. Atualize a lista.';
+    if (/CAE_EDIT_REQUEST_REASON_REQUIRED/i.test(raw)) return 'Informe o motivo da recusa.';
+    if (/cae_post_edit_requests_one_pending_per_user|duplicate key value.*cae_post_edit_requests/i.test(raw)) return 'Você já tem um pedido de edição pendente para esta publicação.';
     if (/CAE_PROTECTED_ACCOUNT|PROTECTED_ACCOUNT/i.test(raw)) return 'Esta conta é protegida e não pode receber banimento, timeout ou alteração de cargo.';
     if (/rate limit|too many requests/i.test(raw)) return 'Você está enviando muito rápido. Aguarde alguns segundos.';
     if (/row-level security|rls|not allowed|permission denied/i.test(raw)) return 'O banco bloqueou essa ação. Verifique as políticas RLS do CAE.';
@@ -2066,6 +2071,15 @@
     const button = $('chat-send');
     setBusy(button, true, 'Enviando...');
     try {
+      const { data: attackDecision, error: attackModerationError } = await state.supabase.rpc('cae_chat_attack_moderation_check', {
+        p_text: body
+      });
+      if (attackModerationError) throw attackModerationError;
+      if (attackDecision !== 'allow') {
+        toast('O filtro identificou uma ofensa direta, ataque ou tentativa de disfarçar um insulto. Reformule a mensagem sem atacar uma pessoa ou grupo.', 'error');
+        return;
+      }
+
       const { data: extendedDecision, error: extendedModerationError } = await state.supabase.rpc('cae_chat_extended_moderation_check', {
         p_text: body
       });
@@ -2098,6 +2112,239 @@
       $('chat-input')?.focus();
     }
   }
+
+  function closePostEditModals() {
+    ['cae-post-edit-request-modal','cae-admin-post-edit-modal'].forEach(id => {
+      const modal = $(id);
+      if (!modal) return;
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden','true');
+    });
+    document.body.classList.remove('modal-open');
+  }
+
+  function ensurePostEditRequestModal() {
+    let modal = $('cae-post-edit-request-modal');
+    if (modal) return modal;
+    modal = document.createElement('div');
+    modal.id = 'cae-post-edit-request-modal';
+    modal.setAttribute('aria-hidden','true');
+    modal.style.cssText = 'position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.62);z-index:100001;padding:16px;overflow:auto;';
+    modal.innerHTML = `
+      <form id="cae-post-edit-request-form" role="dialog" aria-modal="true" aria-labelledby="cae-post-edit-request-title" style="width:min(620px,100%);max-height:90vh;overflow:auto;box-sizing:border-box;background:var(--card,#fff);color:var(--text,#222);border:1px solid var(--border,rgba(128,128,128,.2));border-radius:18px;padding:22px;box-shadow:0 24px 80px rgba(0,0,0,.28);">
+        <div class="eyebrow">Mural · sua publicação</div>
+        <h3 id="cae-post-edit-request-title" style="margin:0 0 8px;">Pedir edição</h3>
+        <p class="cae-muted">Explique o que precisa ser corrigido. O pedido será privado e enviado aos administradores.</p>
+        <div class="field"><label for="cae-post-edit-request-text">O que você quer alterar?</label><textarea id="cae-post-edit-request-text" required minlength="3" maxlength="1000" rows="4" placeholder="Ex.: corrigir um erro de digitação no segundo parágrafo."></textarea></div>
+        <div class="field"><label for="cae-post-edit-request-suggestion">Texto sugerido (opcional)</label><textarea id="cae-post-edit-request-suggestion" maxlength="6000" rows="5" placeholder="Você também pode escrever como gostaria que ficasse."></textarea></div>
+        <div class="actions" style="justify-content:flex-end;margin-top:14px;">
+          <button type="button" class="btn secondary" data-close-post-edit-modal>Cancelar</button>
+          <button type="submit" class="btn primary">Enviar pedido</button>
+        </div>
+      </form>`;
+    modal.addEventListener('click',event=>{if(event.target===modal)closePostEditModals();});
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  async function openPostEditRequestModal(postId) {
+    if (!state.user || !state.supabase) return;
+    try {
+      const {data:post,error} = await state.supabase.from(TABLE.posts)
+        .select('id,user_id').eq('id',postId).maybeSingle();
+      if(error) throw error;
+      if(!post || post.user_id !== state.user.id) {
+        toast('Você só pode solicitar a edição da sua própria publicação.','error');
+        return;
+      }
+      const modal=ensurePostEditRequestModal();
+      modal.dataset.postId=postId;
+      $('cae-post-edit-request-text').value='';
+      $('cae-post-edit-request-suggestion').value='';
+      modal.style.display='grid';
+      modal.setAttribute('aria-hidden','false');
+      document.body.classList.add('modal-open');
+      $('cae-post-edit-request-text')?.focus();
+    } catch(error) {
+      console.error('OPEN POST EDIT REQUEST',error);
+      toast(errorMessage(error),'error');
+    }
+  }
+
+  async function submitPostEditRequest(event) {
+    event.preventDefault();
+    const modal=$('cae-post-edit-request-modal');
+    const postId=modal?.dataset.postId;
+    const requestText=$('cae-post-edit-request-text')?.value.trim()||'';
+    const suggestedBody=$('cae-post-edit-request-suggestion')?.value.trim()||'';
+    if(!state.user||!postId||requestText.length<3) return toast('Explique o que precisa ser alterado.','error');
+    const submit=event.submitter;
+    setBusy(submit,true,'Enviando...');
+    try {
+      const {error}=await state.supabase.from(TABLE.postEditRequests).insert({
+        post_id:postId,requester_id:state.user.id,request_text:requestText,
+        suggested_body:suggestedBody||null
+      });
+      if(error) throw error;
+      closePostEditModals();
+      toast('Pedido enviado aos administradores. Você receberá uma notificação quando for analisado.');
+    } catch(error) {
+      console.error('SUBMIT POST EDIT REQUEST',error);
+      toast(errorMessage(error),'error');
+    } finally {
+      setBusy(submit,false);
+    }
+  }
+
+  function ensureAdminPostEditModal() {
+    let modal=$('cae-admin-post-edit-modal');
+    if(modal) return modal;
+    modal=document.createElement('div');
+    modal.id='cae-admin-post-edit-modal';
+    modal.setAttribute('aria-hidden','true');
+    modal.style.cssText='position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.62);z-index:100001;padding:16px;overflow:auto;';
+    modal.innerHTML=`
+      <form id="cae-admin-post-edit-form" role="dialog" aria-modal="true" aria-labelledby="cae-admin-post-edit-title" style="width:min(680px,100%);max-height:90vh;overflow:auto;box-sizing:border-box;background:var(--card,#fff);color:var(--text,#222);border:1px solid var(--border,rgba(128,128,128,.2));border-radius:18px;padding:22px;box-shadow:0 24px 80px rgba(0,0,0,.28);">
+        <div class="eyebrow">Equipe CAE · administrador</div>
+        <h3 id="cae-admin-post-edit-title" style="margin:0 0 8px;">Editar publicação</h3>
+        <p id="cae-admin-post-edit-context" class="cae-muted">As alterações serão salvas diretamente no mural.</p>
+        <div class="field"><label for="cae-admin-post-edit-category">Categoria</label><input id="cae-admin-post-edit-category" required maxlength="80"></div>
+        <div class="field"><label for="cae-admin-post-edit-body">Texto da publicação</label><textarea id="cae-admin-post-edit-body" required maxlength="6000" rows="9"></textarea></div>
+        <div class="field"><label for="cae-admin-post-edit-note">Nota para o estudante (opcional)</label><textarea id="cae-admin-post-edit-note" maxlength="700" rows="3" placeholder="Mensagem curta explicando a alteração, se necessário."></textarea></div>
+        <div class="actions" style="justify-content:flex-end;margin-top:14px;">
+          <button type="button" class="btn secondary" data-close-post-edit-modal>Cancelar</button>
+          <button type="submit" class="btn primary">Salvar alterações</button>
+        </div>
+      </form>`;
+    modal.addEventListener('click',event=>{if(event.target===modal)closePostEditModals();});
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  async function openAdminPostEditModal(postId,requestId=null) {
+    if(!isAdmin()||!state.user||!state.supabase) {
+      toast('Somente administradores e o dono podem editar publicações.','error');
+      return;
+    }
+    try {
+      let post=state.adminPostRows.find(row=>String(row.id)===String(postId));
+      if(!post) {
+        const {data,error}=await state.supabase.from(TABLE.posts).select('*').eq('id',postId).single();
+        if(error) throw error;
+        post=data;
+      }
+      const editRequest=requestId?state.adminPostEditRequests.find(row=>String(row.id)===String(requestId)):null;
+      if(requestId && (!editRequest || editRequest.status!=='pending' || editRequest.post_id!==post.id)) {
+        toast('Este pedido já foi analisado ou não está disponível. Atualize a lista.','error');
+        return;
+      }
+      const modal=ensureAdminPostEditModal();
+      modal.dataset.postId=post.id;
+      modal.dataset.requestId=requestId||'';
+      $('cae-admin-post-edit-category').value=String(post.category||'Geral');
+      $('cae-admin-post-edit-body').value=String(editRequest?.suggested_body||post.body||'');
+      $('cae-admin-post-edit-note').value='';
+      $('cae-admin-post-edit-context').textContent=requestId
+        ? `Pedido de ${publicName(editRequest.requester_id)}: ${editRequest.request_text}`
+        : 'As alterações serão salvas diretamente no mural.';
+      modal.style.display='grid';
+      modal.setAttribute('aria-hidden','false');
+      document.body.classList.add('modal-open');
+      $('cae-admin-post-edit-body')?.focus();
+    } catch(error) {
+      console.error('OPEN ADMIN POST EDIT',error);
+      toast(errorMessage(error),'error');
+    }
+  }
+
+  async function saveAdminPostEdit(event) {
+    event.preventDefault();
+    if(!isAdmin()) return toast('Somente administradores podem editar publicações.','error');
+    const modal=$('cae-admin-post-edit-modal');
+    const postId=modal?.dataset.postId;
+    const requestId=modal?.dataset.requestId||null;
+    const category=$('cae-admin-post-edit-category')?.value.trim()||'';
+    const body=$('cae-admin-post-edit-body')?.value.trim()||'';
+    const adminNote=$('cae-admin-post-edit-note')?.value.trim()||'';
+    if(!postId||!category||!body) return toast('Preencha a categoria e o texto.','error');
+    const submit=event.submitter;
+    setBusy(submit,true,'Salvando...');
+    try {
+      const {error}=await state.supabase.rpc('cae_admin_edit_post',{
+        p_post_id:postId,p_category:category,p_body:body,
+        p_request_id:requestId||null,p_admin_note:adminNote||null
+      });
+      if(error) throw error;
+      closePostEditModals();
+      await logAdmin('edit_post','post',postId,{request_id:requestId||null});
+      toast(requestId?'Publicação atualizada e pedido concluído.':'Publicação atualizada.');
+      await loadAdmin();
+      await loadPosts();
+    } catch(error) {
+      console.error('SAVE ADMIN POST EDIT',error);
+      toast(errorMessage(error),'error');
+    } finally {
+      setBusy(submit,false);
+    }
+  }
+
+  async function rejectAdminPostEditRequest(requestId) {
+    if(!isAdmin()) return;
+    const request=state.adminPostEditRequests.find(row=>String(row.id)===String(requestId));
+    if(!request || request.status!=='pending') return toast('Este pedido já foi analisado. Atualize a lista.','error');
+    const reason=await askModerationReason('reject_content','este pedido de edição');
+    if(!reason) return;
+    try {
+      const {error}=await state.supabase.from(TABLE.postEditRequests)
+        .update({status:'rejected',admin_note:reason})
+        .eq('id',requestId).eq('status','pending');
+      if(error) throw error;
+      await logAdmin('reject_post_edit_request','post_edit_request',requestId);
+      toast('Pedido recusado. O estudante receberá o motivo por notificação.');
+      await loadAdmin();
+    } catch(error) {
+      console.error('REJECT POST EDIT REQUEST',error);
+      toast(errorMessage(error),'error');
+    }
+  }
+
+  function renderAdminPostEditRequests() {
+    const target=$('admin-post-edit-requests');
+    if(!target) return;
+    if(!isAdmin()) {
+      target.innerHTML='';
+      const card=$('admin-post-edit-request-card');
+      card?.classList.add('hidden');
+      return;
+    }
+    const rows=state.adminPostEditRequests||[];
+    const count=$('admin-post-edit-request-count');
+    if(count) count.textContent=`${rows.length} pendente${rows.length===1?'':'s'}`;
+    const card=$('admin-post-edit-request-card');
+    card?.classList.remove('hidden');
+    if(!rows.length) {
+      target.innerHTML='<div class="admin-private-empty"><p>Nenhum pedido de edição pendente.</p></div>';
+      return;
+    }
+    target.innerHTML=rows.map(request=>{
+      const post=state.adminPostRows.find(row=>row.id===request.post_id);
+      return `<article class="card">
+        <div class="cae-post-meta">Pedido de ${escapeHTML(publicName(request.requester_id))} · ${escapeHTML(formatDate(request.created_at))}</div>
+        <p><strong>O que a pessoa pediu:</strong><br>${escapeHTML(request.request_text).replace(/\n/g,'<br>')}</p>
+        ${request.suggested_body?`<div class="post-private-reason"><strong>Texto sugerido:</strong><p>${escapeHTML(request.suggested_body).replace(/\n/g,'<br>')}</p></div>`:''}
+        <div class="post-private-reason"><strong>Texto atual:</strong><p>${escapeHTML(post?.body||'Publicação indisponível.').replace(/\n/g,'<br>')}</p></div>
+        <div class="actions">
+          ${post?`<button type="button" class="btn primary" data-edit-post-request="${escapeHTML(request.id)}" data-post-id="${escapeHTML(post.id)}"><i data-lucide="pencil"></i>Editar e concluir</button>`:''}
+          <button type="button" class="btn secondary" data-reject-post-edit="${escapeHTML(request.id)}">Recusar</button>
+        </div>
+      </article>`;
+    }).join('');
+    refreshIcons();
+  }
+
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape') closePostEditModals();
+  });
 
   function ensureReasonModal() {
     let modal = $('cae-moderation-reason-modal');
@@ -2840,6 +3087,12 @@
       const staffActions = isStaff()
         ? `<div class="actions" style="margin-top:12px"><button class="btn danger" type="button" data-delete-content="1" data-content-type="post" data-content-id="${escapeHTML(post.id)}" data-content-label="esta publicação">Excluir</button></div>`
         : '';
+      const adminEditAction = isAdmin()
+        ? `<button class="btn secondary btn-small" type="button" data-edit-post="${escapeHTML(post.id)}"><i data-lucide="pencil"></i>Editar</button>`
+        : '';
+      const requestEditAction = !isAdmin() && post.user_id === state.user.id
+        ? `<button class="btn secondary btn-small" type="button" data-request-post-edit="${escapeHTML(post.id)}"><i data-lucide="message-square-edit"></i>Pedir edição</button>`
+        : '';
       const reportAction = !privateOnly && post.user_id !== state.user.id && status === 'approved'
         ? `<button class="btn ghost btn-small" type="button" data-report-content="post" data-report-id="${escapeHTML(post.id)}">Denunciar</button>`
         : '';
@@ -2856,7 +3109,7 @@
         <p>${escapeHTML(getField(post, ['body'], '')).replace(/\n/g, '<br>')}</p>
         ${privateStatus}${moderationReason}
         ${!privateOnly && status === 'approved' ? `<div class="cae-reactions">${reactionHTML}</div>` : ''}
-        <div class="actions">${!privateOnly ? bookmarkButtonHTML('post', post.id) : ''}${reportAction}</div>
+        <div class="actions">${!privateOnly ? bookmarkButtonHTML('post', post.id) : ''}${adminEditAction}${requestEditAction}${reportAction}</div>
         ${staffActions}
       </article>`;
     };
@@ -3633,7 +3886,7 @@
     const matching = rows.filter(post => postMatchesCharacterFilter(post, filter));
     const pendingPosts = matching.filter(post => String(post.status || 'pending') === 'pending');
     const existingPosts = matching.filter(post => String(post.status || 'approved') !== 'pending');
-    const renderCard = (post, canModerate) => `<article class="card"><div class="cae-post-meta">${escapeHTML(getField(post,['category'],'Geral'))} · ${escapeHTML(formatDate(post.created_at))}</div><p>${escapeHTML(getField(post,['body'],''))}</p><div class="cae-muted">Status: ${escapeHTML(String(post.status||'approved'))}</div><div class="actions">${canModerate?`<button class="btn primary" type="button" data-approve-post="${escapeHTML(post.id)}">Aprovar</button><button class="btn secondary" type="button" data-reject-post="${escapeHTML(post.id)}">Recusar</button>`:''}<button class="btn danger" type="button" data-delete-content="1" data-content-type="post" data-content-id="${escapeHTML(post.id)}" data-content-label="esta publicação">Excluir</button></div></article>`;
+    const renderCard = (post, canModerate) => `<article class="card"><div class="cae-post-meta">${escapeHTML(getField(post,['category'],'Geral'))} · ${escapeHTML(formatDate(post.created_at))} · ${escapeHTML(publicName(post.user_id))}</div><p>${escapeHTML(getField(post,['body'],''))}</p><div class="cae-muted">Status: ${escapeHTML(String(post.status||'approved'))}</div><div class="actions">${canModerate?`<button class="btn primary" type="button" data-approve-post="${escapeHTML(post.id)}">Aprovar</button><button class="btn secondary" type="button" data-reject-post="${escapeHTML(post.id)}">Recusar</button>`:''}${isAdmin()?`<button class="btn secondary" type="button" data-edit-post="${escapeHTML(post.id)}"><i data-lucide="pencil"></i>Editar</button>`:''}<button class="btn danger" type="button" data-delete-content="1" data-content-type="post" data-content-id="${escapeHTML(post.id)}" data-content-label="esta publicação">Excluir</button></div></article>`;
     const filterNames = { all: 'publicações', emoji: 'publicações com emojis', number: 'publicações com números', symbol: 'publicações com símbolos' };
     if (!matching.length) {
       target.innerHTML = `<div class="admin-private-empty"><p>Nenhuma ${filterNames[filter]} foi encontrada.</p></div>`;
@@ -3669,6 +3922,17 @@
       const {data:postRows,error:postError}=await state.supabase.from(TABLE.posts).select('*').order('created_at',{ascending:false}).limit(150);if(postError)throw postError;
       state.adminPostRows = postRows || [];
       renderAdminPostModerationList();
+      if (isAdmin()) {
+        const { data: editRequests, error: editRequestError } = await state.supabase
+          .from(TABLE.postEditRequests).select('*').eq('status','pending')
+          .order('created_at',{ascending:true}).limit(100);
+        if (editRequestError) throw editRequestError;
+        state.adminPostEditRequests = editRequests || [];
+        renderAdminPostEditRequests();
+      } else {
+        state.adminPostEditRequests = [];
+        renderAdminPostEditRequests();
+      }
 
       const [announcementRows,eventRows,pollRows]=await Promise.all([
         state.supabase.from(TABLE.announcements).select('*').order('created_at',{ascending:false}).limit(100),
@@ -4431,6 +4695,8 @@
       if(event.target.matches('#support-form')) return sendSupportMessage(event);
       if(event.target.matches('#admin-support-form')) return sendAdminSupportMessage(event);
       if(event.target.matches('#private-chat-form')) return sendPrivateMessage(event);
+      if(event.target.matches('#cae-post-edit-request-form')) return submitPostEditRequest(event);
+      if(event.target.matches('#cae-admin-post-edit-form')) return saveAdminPostEdit(event);
     });
     document.addEventListener('change',event=>{
       if(event.target.matches('#admin-support-conversation')) renderSelectedAdminSupportConversation();
@@ -4467,6 +4733,11 @@
       if(button.matches('#request-account-deletion')){await requestAccountDeletion();return;}
       if(button.matches('#tts-cancel')){cancelTextVoiceGeneration();return;}
       if(button.matches('[data-admin-post-char-filter]')){state.adminPostFilter=button.dataset.adminPostCharFilter;renderAdminPostModerationList();return;}
+      if(button.matches('[data-edit-post]')){await openAdminPostEditModal(button.dataset.editPost);return;}
+      if(button.matches('[data-request-post-edit]')){await openPostEditRequestModal(button.dataset.requestPostEdit);return;}
+      if(button.matches('[data-edit-post-request]')){await openAdminPostEditModal(button.dataset.postId,button.dataset.editPostRequest);return;}
+      if(button.matches('[data-reject-post-edit]')){await rejectAdminPostEditRequest(button.dataset.rejectPostEdit);return;}
+      if(button.matches('[data-close-post-edit-modal]')){closePostEditModals();return;}
       if(button.matches('[data-admin-vent-filter]')){showAdminPanel('vents');await loadAdmin(button.dataset.adminVentFilter);return;}
       if(button.matches('[data-direct-timeout]')){await directAccountModeration(button.dataset.directTimeout,'timeout',button);return;}
       if(button.matches('[data-direct-ban]')){await directAccountModeration(button.dataset.directBan,'ban',button);return;}
