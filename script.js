@@ -754,7 +754,7 @@
       'mural-view': ['Mural', 'Veja avisos, eventos, publicações, enquetes e podcasts.', 'Use as abas para trocar de assunto. Toque em Salvar para encontrar um conteúdo depois, no Histórico.'],
       'history-view': ['Seu histórico', 'Veja seus desabafos, registros do diário e itens salvos.', 'O diário e os itens salvos são pessoais. Desabafos privados podem ser consultados por administradores em situações de segurança.'],
       'help-view': ['Ajuda e contatos', 'Veja contatos de apoio e serviços de atendimento.', 'Em risco imediato, use os telefones de emergência exibidos nesta página. O CAE não é um serviço de emergência.'],
-      'account-view': ['Sua conta', 'Gerencie seu código público e suas preferências.', 'Seu código público permite conversar sem mostrar seu e-mail ou nome real. Aqui também ficam as opções de privacidade e o aplicativo.'],
+      'account-view': ['Sua conta', 'Gerencie seu código público e suas preferências.', 'Seu código público permite conversar sem mostrar seu e-mail ou nome real. Aqui também ficam as opções de privacidade e gerenciamento de acesso.'],
       'privacy-view': ['Central de privacidade', 'Entenda o que fica público e o que fica privado.', 'Consulte também os detalhes sobre dados da conta, moderação, áudios e pedidos de exclusão.'],
       'admin-view': ['Central da equipe', 'Escolha a tarefa que precisa realizar.', 'A área é exclusiva da equipe. As abas separam moderação, denúncias, recomendações e solicitações.'],
       'admin-private-history-view': ['Histórico privado', 'Área restrita à equipe de moderação.', 'O acesso serve para verificar desabafos privados em situações previstas pelas regras de segurança.']
