@@ -946,7 +946,7 @@
       const sent = await finishVent('free', text);
       if (!sent) return;
       $('free-text').value = '';
-      $('free-counter').textContent = '0 / 2000';
+      $('free-counter').textContent = '0 / 20000';
     } catch (error) {
       console.error('VENT FREE', error);
       toast(errorMessage(error), 'error');
@@ -4989,7 +4989,7 @@
     $('admin-role-identifier')?.addEventListener('input',()=>renderAdminTarget('admin-role-identifier','admin-role-target','admin-role-status'));
     $('admin-moderation-identifier')?.addEventListener('input',()=>renderAdminTarget('admin-moderation-identifier','admin-moderation-target','admin-moderation-status'));
 
-    $('free-text')?.addEventListener('input',()=>{const n=$('free-text').value.length;$('free-counter').textContent=`${n} / 2000`;});
+    $('free-text')?.addEventListener('input',()=>{const n=$('free-text').value.length;$('free-counter').textContent=`${n} / 20000`;});
     $$('textarea').forEach(area=>{
       area.addEventListener('input',()=>{area.style.height='auto';area.style.height=`${Math.min(area.scrollHeight,320)}px`;});
       area.addEventListener('keydown',event=>{if(area.id==='chat-input'&&event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();$('chat-form')?.requestSubmit();}});
